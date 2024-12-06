@@ -1,9 +1,17 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from pydantic import BaseModel
-from typing_extensions import List
+from typing import Annotated
+
+from pydantic import BaseModel, Field
+from typing import List
 
 from geolib.models import DStabilityModel
+
+from dstability_toolbox.geometry import Geometry
+from dstability_toolbox.model import Model, Stage
+from dstability_toolbox.state import create_state_points_from_subsoil
+from dstability_toolbox.subsoil import Subsoil
+from dstability_toolbox.water import Waternet
 
 
 # TODO: Deze nog even laten zitten? Nut afwegen na aan de gang te zijn gegaan met dstability_tool
@@ -16,11 +24,29 @@ class BaseSequence(ABC):
         """Runs the sequence"""
 
 
-class InitiateTwoStages(BaseModel):
+class NewTwoStagesModelInput(BaseModel):
+    pass
+
+
+class NewTwoStagesModel(BaseModel):
     """Sequence for creating a two stage D-Stability calculation
 
-    The first stage represents the daily conditions, which (possibly) contains the state (stress history).
-    The second stage represents the situation to be assessed."""
+    The first stage represents the daily conditions, which (possibly) contains
+    the state (stress history). The second stage represents the situation to be assessed."""
+    stages: Annotated[List[Stage], Field(min_length=2, max_length=2)]
+
+    def run(
+            self,
+            geometry: Geometry,
+            subsoil: Subsoil,
+            waternet: Annotated[List[Waternet], Field(min_length=2, max_length=2)]
+    ) -> Model:
+        pass
+
+# Eigenlijk heb je heel veel aftakkingen over hoe je een sequence kan maken. Ook betreft 1D of 2D ondergrond etc.
+#  waterspanningen...
+
+
 
     # de module stix heeft de functionaliteiten
     # De sequence heeft de logica.

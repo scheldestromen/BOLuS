@@ -30,6 +30,10 @@ def set_subsoil(subsoil: Subsoil, scenario_index: int, stage_index: int):
     pass
 
 
+def create_state():
+    pass
+
+
 def set_state():
     pass
 

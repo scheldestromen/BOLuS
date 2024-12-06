@@ -4,12 +4,13 @@ Parses the input file
 from pydantic import BaseModel
 
 from pathlib import Path
-from typing import List
+from typing import List, Any
 import openpyxl
 
 from dstability_tool.excel_utils import parse_row_instance, parse_key_row
-from dstability_toolbox.geometry import CharPointType
-
+from dstability_toolbox.geometry import CharPointType, SurfaceLineCollection, CharPointsProfileCollection
+from dstability_toolbox.soils import SoilCollection
+from dstability_toolbox.subsoil import SoilProfileCollection
 
 INPUT_SHEETS = {
     "surface_lines": "Dwarsprofielen",
@@ -94,10 +95,15 @@ SOIL_PROFILE_COLS = {
 }
 
 
-class InputStructure(BaseModel):
+def remove_key(d: dict, key: Any):
+    d.pop(key)
+    return d
+
+
+class RawUserInput(BaseModel):
     """Represents the Input Excel file"""
     surface_lines: dict
-    char_points: List[dict]
+    char_points: dict[str, dict]
     soil_params: List[dict]
     soil_profiles: List[dict]
 
@@ -114,6 +120,7 @@ class InputStructure(BaseModel):
             skip_rows=1,
             col_dict=CHAR_POINT_COLS
         )
+        char_points = {char_dict["name"]: remove_key(char_dict, "name") for char_dict in char_points}
         soil_params = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["soil_params"]],
             header_row=1,
@@ -135,4 +142,20 @@ class InputStructure(BaseModel):
         )
 
 
+class UserInputStructure(BaseModel):
+    surface_lines: SurfaceLineCollection
+    char_points: CharPointsProfileCollection
+    # soil_params: SoilCollection
+    # soil_profiles: SoilProfileCollection
+
+    @classmethod
+    def from_raw_input(cls, raw_input: RawUserInput):
+        surface_lines = SurfaceLineCollection.from_dict(raw_input.surface_lines)
+        char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
+
+        return cls(surface_lines=surface_lines, char_points=char_points)
+
+
 # REMINDER: Houdt de invoerstructuur zo algemeen mogelijk. list met dicts is algemeen als tabel handig
+# Behalve dingen die obvious een invoerbestand zijn (zoals surfacelines en charpoints)
+

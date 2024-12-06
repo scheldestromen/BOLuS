@@ -32,14 +32,29 @@ class CharPoint(Point):
 
 
 class CharPointsProfile(BaseModel):
-    # Karakteristieke punten behorende tot één dwarsprofiel
+    """Represents the characteristic points of a profile"""
     name: str
     char_points: List[CharPoint]
 
+    @classmethod
+    def from_dict(cls, name, char_points_dict):
+        """Instantiates a CharPointsProfile from a dictionary
 
-class GeometryElementCollection(BaseModel):
-    # Idee om from_csv en get_set_by_name gezamenlijk te gebruiken
-    pass
+        Args:
+            name: The name of the profile
+            char_points_dict: The dictionary containing the characteristic points"""
+
+        char_points = []
+
+        for char_type in CharPointType:
+            x = char_points_dict[f"x_{char_type}"]
+            y = char_points_dict[f"y_{char_type}"]
+            z = char_points_dict[f"z_{char_type}"]
+
+            char_point = CharPoint(x=x, y=y, z=z, type=char_type)
+            char_points.append(char_point)
+
+        return cls(name=name, char_points=char_points)
 
 
 class SurfaceLine(BaseModel):
@@ -47,16 +62,42 @@ class SurfaceLine(BaseModel):
     name: str
     points: List[Point]
 
+    @classmethod
+    def from_list(cls, name, point_list):
+        """Instantiates a SurfaceLine from a flat list of points
+
+        Args:
+            name: The name of the SurfaceLine
+            point_list: A flat list of points [x1, y1, z1, x2, y2, z2, ...]"""
+
+        x = point_list[0::3]
+        y = point_list[1::3]
+        z = point_list[2::3]
+
+        points = [Point(x=x, y=y, z=z) for x, y, z in zip(x, y, z)]
+
+        return cls(name=name, points=points)
+
 
 class SurfaceLineCollection(BaseModel):
     # o.a. t.b.v. inlezen surface_lines.csv
     surface_lines: List[SurfaceLine]
 
-    # TODO: verder uitdenken - Bv gebruik csv vs. Excel i.r.t. de Excel-module en invoersheet. Eigenlijk import
-    #       helemaal scheiden
     @classmethod
-    def from_json(cls):
-        pass
+    def from_dict(cls, surface_lines_dict):
+        """Parses the dictionary into a SurfaceLineCollection
+
+        Args:
+            surface_lines_dict (dict): The dictionary to parse. The keys should be the profile names
+              and the values a flat list of points of that profile [x1, y1, z1, x2, y2, z2, ...]"""
+
+        surface_lines = []
+
+        for name, points in surface_lines_dict.items():
+            surface_line = SurfaceLine.from_list(name=name, point_list=points)
+            surface_lines.append(surface_line)
+
+        return cls(surface_lines=surface_lines)
 
     def to_csv(self, file_path):
         pass
@@ -70,15 +111,22 @@ class CharPointsProfileCollection(BaseModel):
     char_points_profiles: List[CharPointsProfile]
 
     @classmethod
-    def from_csv(cls, file_path):
-        pass
+    def from_dict(cls, char_points_dict):
+        """Parses the dictionary into a CharPointsProfileCollection
 
-    @classmethod
-    def from_excel(cls, file_path):
-        pass
+        Args:
+            char_points_dict: The dictionary to parse. The keys should be the
+              profile names and the values dicts with the characteristic points,
+              for example {x_surface_level_water_side: 0, y_surface_level_water_side:
+              0, z_surface_level_water_side: 0, ...}"""
 
-    def to_csv(self, file_path):
-        pass
+        char_point_profiles = []
+
+        for name, char_points in char_points_dict.items():
+            char_points_profile = CharPointsProfile.from_dict(name=name, char_points_dict=char_points)
+            char_point_profiles.append(char_points_profile)
+
+        return cls(char_points_profiles=char_point_profiles)
 
     def get_by_name(self, name):
         pass
