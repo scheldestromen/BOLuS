@@ -66,4 +66,11 @@ def subsoil_from_soil_profiles(
     if len(soil_profiles) != len(transitions) - 1:
         raise ValueError("The number of soil profiles does not match the number of transitions.")
 
-    # TODO: verder gaan. Eerst grenzen uit surf
+    surface_line.check_l_coordinates_present()
+    l_coords = [p.l for p in surface_line.points]
+
+    l_min = min(l_coords)
+    l_max = max(l_coords)
+    bounds = [l_min] + transitions + [l_max]
+
+    # TODO: Hier gebleven
