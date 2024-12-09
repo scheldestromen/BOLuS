@@ -1,5 +1,5 @@
-from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator, Field
+from typing import Self
 
 from dstability_toolbox.geometry import  SurfaceLine
 
@@ -15,10 +15,32 @@ class SoilProfile(BaseModel):
     name: str
     layers: list[SoilLayer]
 
+    @model_validator(mode='after')
+    def check_descending_tops(self) -> Self:
+        tops = [layer.top for layer in self.layers]
+
+        if tops != sorted(tops, reverse=True):
+            raise ValueError(
+                f"The soil layers in the soil profile {self.name} are not in descending order. "
+                f"Make sure each top is lower than the previous one."
+            )
+
+        return self
+
 
 class SoilProfileCollection(BaseModel):
     """Collection of 1D soil profiles of type SoilProfile"""
-    pass
+    profiles: list[SoilProfile]
+
+    @classmethod
+    def from_dict(cls, soil_profile_dict: dict):
+        profiles = []
+
+        for name, layer_dicts in soil_profile_dict.items():
+            layers = [SoilLayer.model_validate(layer_dict) for layer_dict in layer_dicts]
+            profiles.append(SoilProfile(name=name, layers=layers))
+
+        return cls(profiles=profiles)
 
 
 class SoilPolygon(BaseModel):
@@ -32,12 +54,16 @@ class Subsoil(BaseModel):
     SoilPolygon's belonging to the same cross-sectional schematization."""
     polygons: list[SoilPolygon]
 
-
-def subsoil_from_single_profile(soil_profile: SoilProfile, surface_line: SurfaceLine) -> Subsoil:
-    """Creates an instance of Subsoil from a single SoilProfile."""
-    # TODO: Dit is eigenlijk een bijzonder geval van 'multiple_soil_profiles'
+    # TODO: Validate non-overlapping
 
 
-def subsoil_from_multiple_profiles(soil_profiles: List[SoilProfile], transitions: List[float]) -> Subsoil:
-    """Creates an instance of Subsoil from multiple SoilProfile's."""
-    # Check lengte soil_profiles en lengte sides
+def subsoil_from_soil_profiles(
+        soil_profiles: list[SoilProfile],
+        transitions: list[float],
+        surface_line: SurfaceLine
+) -> Subsoil:
+    """Creates an instance of Subsoil from one or more SoilProfile objects."""
+    if len(soil_profiles) != len(transitions) - 1:
+        raise ValueError("The number of soil profiles does not match the number of transitions.")
+
+    # TODO: verder gaan. Eerst grenzen uit surf

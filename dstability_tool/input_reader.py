@@ -4,13 +4,15 @@ Parses the input file
 from pydantic import BaseModel
 
 from pathlib import Path
-from typing import List, Any
+from typing import List
 import openpyxl
 
 from dstability_tool.excel_utils import parse_row_instance, parse_key_row
 from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
+from utils.dict_utils import remove_key, group_dicts_by_key
+from utils.list_utils import check_list_of_dicts_for_duplicate_values
 
 INPUT_SHEETS = {
     "surface_lines": "Dwarsprofielen",
@@ -95,17 +97,12 @@ SOIL_PROFILE_COLS = {
 }
 
 
-def remove_key(d: dict, key: Any):
-    d.pop(key)
-    return d
-
-
 class RawUserInput(BaseModel):
     """Represents the Input Excel file"""
     surface_lines: dict
     char_points: dict[str, dict]
-    soil_params: List[dict]
-    soil_profiles: List[dict]
+    soil_params: list[dict]
+    soil_profiles: dict
 
     @classmethod
     def read_from_file(cls, file_path: str | Path):
@@ -120,7 +117,9 @@ class RawUserInput(BaseModel):
             skip_rows=1,
             col_dict=CHAR_POINT_COLS
         )
+        check_list_of_dicts_for_duplicate_values(char_points, "name")  # Check uniqueness of names
         char_points = {char_dict["name"]: remove_key(char_dict, "name") for char_dict in char_points}
+
         soil_params = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["soil_params"]],
             header_row=1,
@@ -133,6 +132,7 @@ class RawUserInput(BaseModel):
             skip_rows=2,
             col_dict=SOIL_PROFILE_COLS
         )
+        soil_profiles = group_dicts_by_key(soil_profiles, "name")
 
         return cls(
             surface_lines=surface_lines,
@@ -146,16 +146,22 @@ class UserInputStructure(BaseModel):
     surface_lines: SurfaceLineCollection
     char_points: CharPointsProfileCollection
     soil_collection: SoilCollection
-    # soil_profiles: SoilProfileCollection
+    soil_profiles: SoilProfileCollection
 
     @classmethod
     def from_raw_input(cls, raw_input: RawUserInput):
         surface_lines = SurfaceLineCollection.from_dict(raw_input.surface_lines)
         char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
         soil_collection = SoilCollection.from_list(raw_input.soil_params)
+        soil_profiles = SoilProfileCollection.from_dict(raw_input.soil_profiles)
 
-        return cls(surface_lines=surface_lines, char_points=char_points, soil_collection=soil_collection)
-
+        return cls(
+            surface_lines=surface_lines,
+            char_points=char_points,
+            soil_collection=soil_collection,
+            soil_profiles=soil_profiles
+        )
 
 # REMINDER: Houdt de invoerstructuur zo algemeen mogelijk. list met dicts is algemeen als tabel handig
 # Behalve dingen die obvious een invoerbestand zijn (zoals surfacelines en charpoints)
+# En als een dict logischer is, bv met soil profiles, waarbij de naam bovenliggend is en per regel een workaround is
