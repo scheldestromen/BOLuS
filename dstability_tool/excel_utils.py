@@ -71,7 +71,7 @@ def parse_key_row(sheet: Any, skip_rows: int) -> dict:
             continue
 
         if name in row_dict:
-            raise ValueError(f"A duplicate name was found: {name}")
+            raise ValueError(f"A duplicate name was found: `{name}` in sheet {sheet.name}")
 
         values = []
 

@@ -8,7 +8,7 @@ from typing import List, Any
 import openpyxl
 
 from dstability_tool.excel_utils import parse_row_instance, parse_key_row
-from dstability_toolbox.geometry import CharPointType, SurfaceLineCollection, CharPointsProfileCollection
+from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
 
@@ -145,17 +145,17 @@ class RawUserInput(BaseModel):
 class UserInputStructure(BaseModel):
     surface_lines: SurfaceLineCollection
     char_points: CharPointsProfileCollection
-    # soil_params: SoilCollection
+    soil_collection: SoilCollection
     # soil_profiles: SoilProfileCollection
 
     @classmethod
     def from_raw_input(cls, raw_input: RawUserInput):
         surface_lines = SurfaceLineCollection.from_dict(raw_input.surface_lines)
         char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
+        soil_collection = SoilCollection.from_list(raw_input.soil_params)
 
-        return cls(surface_lines=surface_lines, char_points=char_points)
+        return cls(surface_lines=surface_lines, char_points=char_points, soil_collection=soil_collection)
 
 
 # REMINDER: Houdt de invoerstructuur zo algemeen mogelijk. list met dicts is algemeen als tabel handig
 # Behalve dingen die obvious een invoerbestand zijn (zoals surfacelines en charpoints)
-

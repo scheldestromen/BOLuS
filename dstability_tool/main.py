@@ -12,7 +12,6 @@ if __name__ == "__main__":
     raw_user_input = RawUserInput.read_from_file(INPUT_FILE_PATH)
 
     # Convert the input to models. input_to_models has al the logic
-    print(type(raw_user_input))
     input_structure = UserInputStructure.from_raw_input(raw_user_input)
     # models = input_to_models(raw_user_input)
 
@@ -30,3 +29,5 @@ if __name__ == "__main__":
     # print(input_structure.model_dump())
     print(input_structure.surface_lines)
     print(input_structure.char_points)
+    print(input_structure.soil_collection)
+    print(input_structure.soil_profiles)

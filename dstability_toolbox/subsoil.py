@@ -6,10 +6,14 @@ from dstability_toolbox.geometry import  SurfaceLine
 
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
+    soil_type: str
+    top: float
 
 
 class SoilProfile(BaseModel):
     """Representation of a 1D soil profile"""
+    name: str
+    layers: list[SoilLayer]
 
 
 class SoilProfileCollection(BaseModel):
@@ -26,7 +30,7 @@ class SoilPolygon(BaseModel):
 class Subsoil(BaseModel):
     """Representation of a 2D subsoil schematization. This is a collection of (multiple)
     SoilPolygon's belonging to the same cross-sectional schematization."""
-    polygons: List[SoilPolygon]
+    polygons: list[SoilPolygon]
 
 
 def subsoil_from_single_profile(soil_profile: SoilProfile, surface_line: SurfaceLine) -> Subsoil:
