@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # Reading the input sheet
     raw_user_input = RawUserInput.read_from_file(INPUT_FILE_PATH)
 
-    # Convert the input to models. input_to_models has al the logic
+    # Convert the input to models. input_to_models has all the logic
     input_structure = UserInputStructure.from_raw_input(raw_user_input)
     # models = input_to_models(raw_user_input)
 

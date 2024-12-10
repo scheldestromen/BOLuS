@@ -2,11 +2,9 @@
 from typing import Optional, List
 
 from pydantic import BaseModel
-from pydantic.color import Color
 
 from geolib.soils.soil import Soil as GLSoil
 from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel
-
 
 from utils.dict_utils import check_for_missing_keys
 from utils.list_utils import check_list_of_dicts_for_duplicate_values
