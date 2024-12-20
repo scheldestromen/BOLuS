@@ -106,19 +106,17 @@ class ProfileLine(BaseModel):
         if ref_point:
             shift = ref_point.distance(left_point)
         else:
-            shift = None
+            shift = 0
 
         for point in self.points:
             dist_from_left = point.distance(left_point)
-
-            if shift:
-                point.l = dist_from_left - shift
+            point.l = dist_from_left - shift
 
 
 class CharPointsProfile(ProfileLine):
     """Represents the characteristic points of a profile"""
     name: str
-    char_points: List[CharPoint]
+    points: List[CharPoint]
 
     @classmethod
     def from_dict(cls, name, char_points_dict):
@@ -144,11 +142,11 @@ class CharPointsProfile(ProfileLine):
             char_point = CharPoint(x=x, y=y, z=z, type=char_type)
             char_points.append(char_point)
 
-        return cls(name=name, char_points=char_points)
+        return cls(name=name, points=char_points)
 
     def get_point_by_type(self, char_type: CharPointType) -> CharPoint:
         """Returns the characteristic point of the given type"""
-        for char_point in self.char_points:
+        for char_point in self.points:
             if char_point.type == char_type:
                 return char_point
 

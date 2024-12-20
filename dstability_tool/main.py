@@ -3,7 +3,7 @@ Main module for dstability_tool
 """
 from input_reader import RawUserInput, UserInputStructure
 from creator import input_to_models
-from dstability_toolbox.model import create_d_stability_models
+from dstability_toolbox.model import create_d_stability_model
 
 INPUT_FILE_PATH = "Invoer D-Stability tool.xlsx"
 
@@ -13,13 +13,14 @@ if __name__ == "__main__":
 
     # Convert the input to models. input_to_models has all the logic
     input_structure = UserInputStructure.from_raw_input(raw_user_input)
-    # models = input_to_models(raw_user_input)
-
+    models = input_to_models(raw_user_input)
 
     # Create new calculations from the DStability models
-    # dm_list = create_d_stability_models(models)
+    dm_dict = {model.name: create_d_stability_model(model) for model in models}
 
     # Export the DStabilityModels to .stix
+    for name, dm in dm_dict.items():
+        dm.serialize(f"{name}")
 
     # Run the calculations
 
@@ -27,7 +28,8 @@ if __name__ == "__main__":
 
     # Space to fiddle around
     # print(input_structure.model_dump())
-    print(input_structure.surface_lines)
-    print(input_structure.char_points)
-    print(input_structure.soil_collection)
-    print(input_structure.soil_profiles)
+    # print(input_structure.surface_lines)
+    # print(input_structure.char_points)
+    # print(input_structure.soil_collection)
+    # print(input_structure.soil_profiles)
+    # print(input_structure)

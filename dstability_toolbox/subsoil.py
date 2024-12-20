@@ -3,8 +3,10 @@ from typing import Self, Optional
 
 from geolib.geometry.one import Point as GLPoint
 from shapely.geometry import Polygon
+from shapely.ops import polygonize
+from shapely import unary_union, LineString
 
-from dstability_toolbox.geometry import SurfaceLine, Point
+from dstability_toolbox.geometry import SurfaceLine
 
 
 class SoilLayer(BaseModel):
@@ -103,7 +105,7 @@ def subsoil_from_soil_profiles(
     if len(soil_profiles) == 0:
         raise ValueError("At least one soil profile must be provided")
 
-    if len(soil_profiles) != len(transitions) - 1:
+    if len(transitions) != len(soil_profiles) - 1:
         raise ValueError("The number of soil profiles does not match the number of transitions")
 
     if transitions != sorted(transitions):
@@ -146,33 +148,18 @@ def subsoil_from_soil_profiles(
 
             soil_polygons.append(polygon)
 
-    sub_soil = process_shared_polygon_points_in_subsoil(
-        Subsoil(soil_polygons=soil_polygons)
-    )
+    subsoil = Subsoil(soil_polygons=soil_polygons)
 
-    return sub_soil
+    return subsoil
 
 
-def add_shared_points_to_polygon(polygon: Polygon, polygons: list[Polygon]) -> Polygon:
-    for other_poly in polygons:
-        intersect = polygon.intersection(other_poly)
-
-        # TODO: geometry_utils afmaken
-        # intersect bepalen met andere polys
-        # Intersect exploderen naar punten
-        # Poly exploderen naar lijnen
-        # Per lijnstuk punt toevoegen (wat als meerdere punten, pythagoras?)
-        # Polygon bouwen
-        # En door.
-
-    return polygon
-
-
+# TODO: Kan vervallen. In tegenstelling tot wat in de docs staat, doet GEOLib dit zelf
 def process_shared_polygon_points_in_subsoil(subsoil: Subsoil) -> Subsoil:
     """
     Iterates through all soil polygons in the subsoil. For each soil polygon
-    it checks if there are any other polygons that share the same points. If so,
-    it adds the shared points to the polygon. This is necessary for creating
+    it checks if there are any adjacent polygons with points on the shared
+    boundary that are not part of both polygons. If so, the shared points
+    are added to the polygon. This is necessary for creating
     valid geometries with GEOLib.
 
     Args:
@@ -184,14 +171,32 @@ def process_shared_polygon_points_in_subsoil(subsoil: Subsoil) -> Subsoil:
     soil_types = [poly.soil_type for poly in subsoil.soil_polygons]
     polygons = [poly.to_shapely() for poly in subsoil.soil_polygons]
 
+    # Get the exteriors (rings) of all the polygons
+    polygon_rings = [LineString(list(poly.exterior.coords)) for poly in polygons]
+
+    # Make a union of all the rings, this adds adjacent points to the rings
+    union = unary_union(polygon_rings)
+
+    # Convert the rings back to polygons
+    corrected_polygons = [geom for geom in polygonize(union)]
+
+    # Assigning the soil types
     corrected_soil_polygons = []
 
-    for soil_type, polygon in zip(soil_types, polygons):
-        other_polygons = [poly for poly in polygons if poly != polygon]
-        corrected_polygon = add_shared_points_to_polygon(polygon, other_polygons)
+    # The polygon order was not preserved, so we match the soil type
+    # based on the coordinates
+    for corrected_polygon in corrected_polygons:
+        for soil_type, polygon in zip(soil_types, polygons):
+            coords_old = list(polygon.exterior.coords)
+            coords_new = list(corrected_polygon.exterior.coords)
 
-        corrected_soil_polygons.append(
-            SoilPolygon.from_shapely(soil_type=soil_type, polygon=corrected_polygon)
-        )
+            # All coords_old should be in coords_new, then pols are equal
+            if len(set(coords_old) - set(coords_new)) == 0:
+                corrected_soil_polygons.append(
+                    SoilPolygon.from_shapely(
+                        soil_type=soil_type,
+                        polygon=corrected_polygon
+                    )
+                )
 
     return Subsoil(soil_polygons=corrected_soil_polygons)
