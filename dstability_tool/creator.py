@@ -29,7 +29,7 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
     geometries = create_geometries(
         surface_line_collection=surface_line_collection,
         char_point_collection=char_point_collection,
-        char_type_left_point=CharPointType.SURFACE_LEVEL_WATER_SIDE  # TODO Bij landside loopt L van hoog naar laag
+        char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE
     )
 
     # Proefberekening
@@ -43,7 +43,7 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
     )
 
     model = Model(
-        name="test.stix",
+        name="test_2.stix",
         soil_collection=soil_collection,
         scenarios=[
             Scenario(

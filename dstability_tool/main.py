@@ -15,7 +15,7 @@ if __name__ == "__main__":
     input_structure = UserInputStructure.from_raw_input(raw_user_input)
     models = input_to_models(raw_user_input)
 
-    # Create new calculations from the DStability models
+    # Create new DStability calculations from the DStability models
     dm_dict = {model.name: create_d_stability_model(model) for model in models}
 
     # Export the DStabilityModels to .stix

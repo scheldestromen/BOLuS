@@ -80,9 +80,13 @@ class ProfileLine(BaseModel):
     def check_l_coordinates_increasing(self):
         """Checks if the l-coordinates are monotonically increasing"""
         l_coords = [point.l for point in self.points]
-        if l_coords != sorted(l_coords):
+        steps = [l_coords[i + 1] - l_coords[i] for i in range(len(l_coords) - 1)]
+        steps_filtered = [step for step in steps if step != 0]
+
+        if abs(sum(steps_filtered)) != sum([abs(step) for step in steps_filtered]):
             raise ValueError(f"Profile {self.name} of type {type(self)} has "
-                             f"non-monotonically increasing l-coordinates")
+                             f"non-monotonically increasing or decreasing "
+                             f"l-coordinates")
 
     def set_l_coordinates(
             self,
