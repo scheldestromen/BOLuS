@@ -64,7 +64,7 @@ class SoilPolygon(BaseModel):
         if not isinstance(polygon, Polygon):
             raise ValueError(f"Input must be a Shapely Polygon but is of type {type(polygon)}")
 
-        points = list(polygon.exterior.coords)[:-1]  # Remove repeated first point
+        points = list(polygon.exterior.coords)[:-1]  # Remove the repeated first point
         return cls(soil_type=soil_type, points=points)
 
     def to_shapely(self) -> Polygon:
@@ -123,6 +123,10 @@ def subsoil_from_soil_profiles(
     if bounds != sorted(bounds):
         raise ValueError("One or more soil profile transitions lie beyond the surface line geometry")
 
+    geometry_points = ([(surface_line.points[0].l, -100)]
+                       + [(p.l, p.z) for p in surface_line.points]
+                       + [(surface_line.points[-1].l, -100)])
+    geometry_polygon = Polygon(geometry_points)
     soil_polygons = []
 
     for i, soil_profile in enumerate(soil_profiles):
@@ -137,6 +141,16 @@ def subsoil_from_soil_profiles(
                 bottom = top - thickness_bottom_layer
             else:
                 bottom = soil_profile.layers[j + 1].top
+
+            polygon = Polygon(
+                [(left, top),
+                 (right, top),
+                 (right, bottom),
+                 (left, bottom)]
+            )
+            # TODO: functie maken die hiermee omgaat. BV geval dat een polygon gesplits wordt (Bij sloot) of er buiten valt
+            # Correct for surface level
+            corrected_polygon = polygon.intersection(geometry_polygon)
 
             polygon = SoilPolygon(
                 soil_type=layer.soil_type,
@@ -154,49 +168,49 @@ def subsoil_from_soil_profiles(
 
 
 # TODO: Kan vervallen. In tegenstelling tot wat in de docs staat, doet GEOLib dit zelf
-def process_shared_polygon_points_in_subsoil(subsoil: Subsoil) -> Subsoil:
-    """
-    Iterates through all soil polygons in the subsoil. For each soil polygon
-    it checks if there are any adjacent polygons with points on the shared
-    boundary that are not part of both polygons. If so, the shared points
-    are added to the polygon. This is necessary for creating
-    valid geometries with GEOLib.
-
-    Args:
-        subsoil: A Subsoil object
-
-    Returns:
-        A Subsoil object with corrected polygons
-    """
-    soil_types = [poly.soil_type for poly in subsoil.soil_polygons]
-    polygons = [poly.to_shapely() for poly in subsoil.soil_polygons]
-
-    # Get the exteriors (rings) of all the polygons
-    polygon_rings = [LineString(list(poly.exterior.coords)) for poly in polygons]
-
-    # Make a union of all the rings, this adds adjacent points to the rings
-    union = unary_union(polygon_rings)
-
-    # Convert the rings back to polygons
-    corrected_polygons = [geom for geom in polygonize(union)]
-
-    # Assigning the soil types
-    corrected_soil_polygons = []
-
-    # The polygon order was not preserved, so we match the soil type
-    # based on the coordinates
-    for corrected_polygon in corrected_polygons:
-        for soil_type, polygon in zip(soil_types, polygons):
-            coords_old = list(polygon.exterior.coords)
-            coords_new = list(corrected_polygon.exterior.coords)
-
-            # All coords_old should be in coords_new, then pols are equal
-            if len(set(coords_old) - set(coords_new)) == 0:
-                corrected_soil_polygons.append(
-                    SoilPolygon.from_shapely(
-                        soil_type=soil_type,
-                        polygon=corrected_polygon
-                    )
-                )
-
-    return Subsoil(soil_polygons=corrected_soil_polygons)
+# def process_shared_polygon_points_in_subsoil(subsoil: Subsoil) -> Subsoil:
+#     """
+#     Iterates through all soil polygons in the subsoil. For each soil polygon
+#     it checks if there are any adjacent polygons with points on the shared
+#     boundary that are not part of both polygons. If so, the shared points
+#     are added to the polygon. This is necessary for creating
+#     valid geometries with GEOLib.
+#
+#     Args:
+#         subsoil: A Subsoil object
+#
+#     Returns:
+#         A Subsoil object with corrected polygons
+#     """
+#     soil_types = [poly.soil_type for poly in subsoil.soil_polygons]
+#     polygons = [poly.to_shapely() for poly in subsoil.soil_polygons]
+#
+#     # Get the exteriors (rings) of all the polygons
+#     polygon_rings = [LineString(list(poly.exterior.coords)) for poly in polygons]
+#
+#     # Make a union of all the rings, this adds adjacent points to the rings
+#     union = unary_union(polygon_rings)
+#
+#     # Convert the rings back to polygons
+#     corrected_polygons = [geom for geom in polygonize(union)]
+#
+#     # Assigning the soil types
+#     corrected_soil_polygons = []
+#
+#     # The polygon order was not preserved, so we match the soil type
+#     # based on the coordinates
+#     for corrected_polygon in corrected_polygons:
+#         for soil_type, polygon in zip(soil_types, polygons):
+#             coords_old = list(polygon.exterior.coords)
+#             coords_new = list(corrected_polygon.exterior.coords)
+#
+#             # All coords_old should be in coords_new, then pols are equal
+#             if len(set(coords_old) - set(coords_new)) == 0:
+#                 corrected_soil_polygons.append(
+#                     SoilPolygon.from_shapely(
+#                         soil_type=soil_type,
+#                         polygon=corrected_polygon
+#                     )
+#                 )
+#
+#     return Subsoil(soil_polygons=corrected_soil_polygons)
