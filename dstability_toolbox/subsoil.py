@@ -1,3 +1,4 @@
+from geolib import DStabilityModel
 from pydantic import BaseModel, model_validator
 from typing import Self, Optional
 
@@ -7,6 +8,7 @@ from shapely.ops import polygonize
 from shapely import unary_union, LineString
 
 from dstability_toolbox.geometry import SurfaceLine
+from dstability_toolbox.dm_getter import get_soil_by_id
 from utils.geometry_utils import geometry_to_polygons
 
 
@@ -53,6 +55,13 @@ class SoilPolygon(BaseModel):
     """Representation of a 2D soil layer"""
     soil_type: str
     points: list[tuple[float, float]]
+    dm_layer_id: Optional[str] = None
+
+    @classmethod
+    def from_geolib_points(cls, soil_type: str, gl_points: list[GLPoint], dm_layer_id: Optional[str] = None) -> Self:
+        """Creates a SoilPolygon from a list of GEOLib points"""
+        points = [(point.X, point.Z) for point in gl_points]
+        return cls(soil_type=soil_type, points=points, dm_layer_id=dm_layer_id)
 
     def to_geolib_points(self) -> list[GLPoint]:
         """Returns a list of GEOLib points"""
@@ -79,6 +88,29 @@ class Subsoil(BaseModel):
     soil_polygons: list[SoilPolygon]
 
     # TODO: Validate non-overlapping?
+    @classmethod
+    def from_geolib(cls, dm: DStabilityModel, scenario_index: int, stage_index: int) -> Self:
+        soil_layers = dm._get_soil_layers(scenario_index=scenario_index, stage_index=stage_index)
+        geometry = dm._get_geometry(scenario_index=scenario_index, stage_index=stage_index)
+
+        soil_polygons = []
+
+        for soil_layer in soil_layers.SoilLayers:
+            soil_id = soil_layer.SoilId
+            soil = get_soil_by_id(soil_id=soil_id, dm=dm)
+
+            layer_id = soil_layer.LayerId
+            layer = geometry.get_layer(id=layer_id)
+            gl_points = layer.Points
+
+            soil_polygon = SoilPolygon.from_geolib_points(
+                soil_type=soil.Code,
+                gl_points=gl_points,
+                dm_layer_id=layer_id
+            )
+            soil_polygons.append(soil_polygon)
+
+        return cls(soil_polygons=soil_polygons)
 
 
 def subsoil_from_soil_profiles(

@@ -3,7 +3,7 @@ Main module for dstability_tool
 """
 from input_reader import RawUserInput, UserInputStructure
 from creator import input_to_models
-from dstability_toolbox.model import create_d_stability_model
+from dstability_toolbox.modifier import create_d_stability_model
 
 INPUT_FILE_PATH = "Invoer D-Stability tool.xlsx"
 

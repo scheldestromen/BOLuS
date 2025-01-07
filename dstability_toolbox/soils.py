@@ -20,16 +20,26 @@ class Soil(BaseModel):
     to apply a pre-overburden pressure per soil type.
 
     Attributes:
-        dm_soil: The DStabilityModel soil object
+        gl_soil: The GEOLib soil object
         pop: The Pre-overburden pressure value for the soil"""
-    dm_soil: GLSoil
-    pop: Optional[float]
+    gl_soil: GLSoil
+    pop: Optional[float] = None
+    ocr: Optional[float] = None
 
 
 class SoilCollection(BaseModel):
     """Represents a collection of soil types."""
     name: Optional[str] = None
     soils: List[Soil]
+
+    def get_by_name(self, name: str) -> Soil:
+        """Returns the soil with the given name"""
+        soil = next((soil for soil in self.soils if soil.gl_soil.name == name), None)
+
+        if soil is None:
+            raise NameError(f"Could not find soil with name {name}")
+
+        return soil
 
     @classmethod
     def from_list(cls, soil_list: list[dict]):
@@ -85,7 +95,7 @@ class SoilCollection(BaseModel):
             if soil_dict["color"] is not None:
                 gl_soil.color = soil_dict["color"]
 
-            soil = Soil(dm_soil=gl_soil, pop=soil_dict["pop"])
+            soil = Soil(gl_soil=gl_soil, pop=soil_dict["pop"])
             soils.append(soil)
 
         return cls(soils=soils)

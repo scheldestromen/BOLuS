@@ -8,6 +8,7 @@ from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfile
 from dstability_toolbox.model import Model, Scenario, Stage
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import Subsoil, subsoil_from_soil_profiles, SoilProfileCollection
+from dstability_toolbox.state import create_state_points_from_subsoil
 
 from input_reader import RawUserInput
 
@@ -42,6 +43,12 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
         transitions=[80],
     )
 
+    state_points = create_state_points_from_subsoil(
+        subsoil=subsoil,
+        soil_collection=soil_collection,
+        state_type='POP'
+    )
+
     model = Model(
         name="test_2.stix",
         soil_collection=soil_collection,
@@ -54,6 +61,7 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
                         notes="Stage voor dagelijkse omstandigheden",
                         geometry=geometries[0],
                         subsoil=subsoil,
+                        state_points=state_points
                     ),
                     Stage(
                         name="Hoogwater",
