@@ -25,6 +25,7 @@ class Soil(BaseModel):
     gl_soil: GLSoil
     pop: Optional[float] = None
     ocr: Optional[float] = None
+    consolidation_traffic_load: int = 80  # TODO: o.b.v. invoer en default verwijderen
 
 
 class SoilCollection(BaseModel):

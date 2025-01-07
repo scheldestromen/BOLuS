@@ -1,12 +1,14 @@
-from geolib import DStabilityModel
-from geolib.models.dstability.states import DStabilityStatePoint
 from pydantic import BaseModel
 from shapely import Point
-from typing_extensions import List
 
+from geolib import DStabilityModel
+from geolib.models.dstability.loads import UniformLoad
+from geolib.models.dstability.states import DStabilityStatePoint
 from geolib.geometry.one import Point as GLPoint
 from geolib.models.dstability.internal import SoilCollection as GLSoilCollection
 from geolib.models.dstability.states import DStabilityStatePoint, DStabilityStress
+from geolib.models.dstability.loads import UniformLoad, Consolidation
+
 from dstability_toolbox.model import Stage, Model
 from dstability_toolbox.geometry import Geometry
 from dstability_toolbox.soils import SoilCollection
@@ -115,6 +117,63 @@ def set_state_points(
 
     return dm
 
+
+def add_uniform_load(
+        label: str,
+        magnitude: float,
+        angle: float,
+        x_start: float,
+        x_end: float,
+        soil_collection: SoilCollection,
+        dm: DStabilityModel,
+        scenario_index: int,
+        stage_index: int
+):
+    """Adds a uniform load to the DStabilityModel based on the input.
+
+    The consolidation percentages of the load are based on the soil_collection
+
+    Args:
+        label: The label of the load
+        magnitude: The magnitude of the load
+        angle: The distribution angle of the load
+        x_start: The left bound of the load
+        x_end: The right bound of the load
+        soil_collection: The soil_collection to use, containing the consolidation percentages
+        dm: The DStabilityModel to add the load to
+        scenario_index: The index of the scenario to add the load to
+        stage_index: The index of the stage to add the load to
+
+    Returns:
+        The modified DStabilityModel
+    """
+
+    uniform_load = UniformLoad(
+        label=label,
+        magnitude=magnitude,
+        angle_of_distribution=angle,
+        start=x_start,
+        end=x_end
+    )
+
+    # Add consolidation percentages. When added, each layer must have a consolidation percentage
+    subsoil = Subsoil.from_geolib(dm=dm, scenario_index=scenario_index, stage_index=stage_index)
+    consolidations = []
+
+    for soil_polygon in subsoil.soil_polygons:
+        soil = soil_collection.get_by_name(soil_polygon.soil_type)
+        consolidation = Consolidation(
+            degree=soil.consolidation_traffic_load,
+            layer_id=soil_polygon.dm_layer_id
+        )
+        consolidations.append(consolidation)
+
+    dm.add_load(
+        load=uniform_load,
+        consolidations=consolidations,
+        scenario_index=scenario_index,
+        stage_index=stage_index
+    )
 
 def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, stage_index: int):
     pass
