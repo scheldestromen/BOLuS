@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing_extensions import List
 
 from geolib.models.dstability import DStabilityModel
-from geolib.models.dstability.internal import SoilCollection as GLSoilCollection
+from geolib.models.dstability.internal import SoilCollection as GLSoilCollection, DStabilityStructure
 
 from .soils import SoilCollection
 from .water import Waternet
@@ -43,11 +43,21 @@ def create_d_stability_model(model: Model):
         dm.add_soil(soil.dm_soil)
 
     # Add the scenarios
-    for scenario in model.scenarios:
-        dm.add_scenario(label=scenario.name, notes=scenario.notes, set_current=True)
+    for i, scenario in enumerate(model.scenarios):
+        # By default a first stage is created
+        if i == 0:
+            dm.scenarios[0].Label = scenario.name
+            dm.scenarios[0].Notes = scenario.notes
 
-        for stage in scenario.stages:
-            dm.add_stage(label=stage.name, notes=stage.notes, set_current=True)
+        else:
+            dm.add_scenario(label=scenario.name, notes=scenario.notes, set_current=True)
+
+        for j, stage in enumerate(scenario.stages):
+            if j == 0:
+                dm.scenarios[dm.current_scenario].Stages[0].Label = stage.name
+                dm.scenarios[dm.current_scenario].Stages[0].Notes = stage.notes
+            else:
+                dm.add_stage(label=stage.name, notes=stage.notes, set_current=True)
 
             # Add subsoil
             for soil_polygon in stage.subsoil.soil_polygons:

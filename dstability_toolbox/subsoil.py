@@ -7,6 +7,7 @@ from shapely.ops import polygonize
 from shapely import unary_union, LineString
 
 from dstability_toolbox.geometry import SurfaceLine
+from utils.geometry_utils import geometry_to_polygons
 
 
 class SoilLayer(BaseModel):
@@ -148,19 +149,14 @@ def subsoil_from_soil_profiles(
                  (right, bottom),
                  (left, bottom)]
             )
-            # TODO: functie maken die hiermee omgaat. BV geval dat een polygon gesplits wordt (Bij sloot) of er buiten valt
-            # Correct for surface level
-            corrected_polygon = polygon.intersection(geometry_polygon)
 
-            polygon = SoilPolygon(
-                soil_type=layer.soil_type,
-                points=[(left, top),
-                        (right, top),
-                        (right, bottom),
-                        (left, bottom)]
-            )
+            # Adjust for the surface level
+            geometry = polygon.intersection(geometry_polygon)
+            polygons = geometry_to_polygons(geometry)
 
-            soil_polygons.append(polygon)
+            for polygon in polygons:
+                soil_polygon = SoilPolygon.from_shapely(soil_type=layer.soil_type, polygon=polygon)
+                soil_polygons.append(soil_polygon)
 
     subsoil = Subsoil(soil_polygons=soil_polygons)
 
