@@ -284,8 +284,8 @@ def create_geometries(
     if set(surf_names) != set(char_names):
         raise ValueError(
             f"Each surface line should have a corresponding characteristic "
-            f"point profile and vice versa. This is not the case."
-            f"Missing in surface lines: {set(char_names) - set(surf_names)}"
+            f"point profile and vice versa. This is not the case. "
+            f"Missing in surface lines: {set(char_names) - set(surf_names)} "
             f"Missing in characteristic points: {set(surf_names) - set(char_names)}")
 
     geometries = []

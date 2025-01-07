@@ -34,7 +34,7 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
     )
 
     # Proefberekening
-    geometry = geometries[0]
+    geometry = geometries[1]
     surface_line = geometry.surface_line
 
     subsoil = subsoil_from_soil_profiles(
@@ -59,14 +59,14 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
                     Stage(
                         name="Dagelijks",
                         notes="Stage voor dagelijkse omstandigheden",
-                        geometry=geometries[0],
+                        geometry=geometry,
                         subsoil=subsoil,
                         state_points=state_points
                     ),
                     Stage(
                         name="Hoogwater",
                         notes="Stage voor hoogwater",
-                        geometry=geometries[0],
+                        geometry=geometry,
                         subsoil=subsoil,
                     )
                 ]
