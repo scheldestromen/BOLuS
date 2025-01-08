@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List
 import openpyxl
 
-from dstability_tool.excel_utils import parse_row_instance, parse_key_row
+from dstability_tool.excel_utils import parse_row_instance, parse_key_row, parse_row_instance_remainder
 from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
@@ -20,7 +20,8 @@ INPUT_SHEETS = {
     "char_points": "Kar. punten",
     "soil_params": "Sterkteparameters",
     "soil_profiles": "Bodemopbouw",
-    "loads": "Belasting"
+    "loads": "Belasting",
+    "hydraulic_pressure": "Waterspanningsschematisatie"
 }
 
 CHAR_POINT_COLS = {
@@ -105,14 +106,23 @@ LOAD_COLS = {
     "angle": "Spreiding",
 }
 
+HYDRAULIC_PRESSURE_COLS = {
+    "calc_name": "Berekening",
+    "scenario": "Scenario",
+    "stage": "Stage",
+    "head_line": "Stijghoogte",
+    "values_apply_to": "Waardes",
+}
+
 
 class RawUserInput(BaseModel):
     """Represents the Input Excel file"""
     surface_lines: dict
     char_points: dict[str, dict]
     soil_params: list[dict]
-    soil_profiles: dict
-    loads: list
+    soil_profiles: dict[dict]
+    loads: list[dict]
+    hydraulic_pressure: list[dict]
 
     @classmethod
     def read_from_file(cls, file_path: str | Path):
@@ -142,7 +152,7 @@ class RawUserInput(BaseModel):
             skip_rows=2,
             col_dict=SOIL_PROFILE_COLS
         )
-        soil_profiles = group_dicts_by_key(soil_profiles, "name")
+        soil_profiles = group_dicts_by_key(soil_profiles, group_by_key="name")
 
         loads = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["loads"]],
@@ -150,6 +160,19 @@ class RawUserInput(BaseModel):
             skip_rows=2,
             col_dict=LOAD_COLS
         )
+
+        hydraulic_pressure = parse_row_instance_remainder(
+            sheet=workbook[INPUT_SHEETS["hydraulic_pressure"]],
+            header_row=1,
+            skip_rows=2,
+            col_dict=HYDRAULIC_PRESSURE_COLS
+        )
+        hydraulic_pressure = group_dicts_by_key(hydraulic_pressure, group_by_key="calc_name")
+        hydraulic_pressure = {
+            calc_name: group_dicts_by_key(calc_dict, group_by_key="scenario")
+            for calc_name, calc_dict in hydraulic_pressure.items()
+        }
+        # TODO: afmaken zodat stage ook gegroupeerd owrdt!
 
         return cls(
             surface_lines=surface_lines,

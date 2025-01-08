@@ -53,6 +53,49 @@ def parse_row_instance(sheet: Any, header_row: int, skip_rows: int, col_dict: di
     return rows
 
 
+def parse_row_instance_remainder(sheet: Any, header_row: int, skip_rows: int, col_dict: dict) -> list:
+    """
+    Reads an Excelsheet. Every row becomes a dictionary with the keys from the col_dict based on the header_row.
+    The columns for which the column name is not present in col_dict are parsed to the dictionary with key 'other'.
+    The values are read from the i + 1 column, where i is the position of the most right column, upto the
+    first empty cell.
+    """
+    header_list = [cell.value for cell in sheet[header_row]]
+    indices = get_list_item_indices(header_list, col_dict)
+    max_index = max(indices.values())
+
+    rows = []
+
+    for i, row in enumerate(sheet):
+        # Skip header
+        if i in list(range(skip_rows)):
+            continue
+
+        row_dict = {key: row[indices[key]].value for key in col_dict}
+
+        other = []
+
+        # Loop through the values until an empty cell is found
+        for cell in row[max_index:]:
+            if cell.value is None:
+                break
+            other.append(cell.value)
+
+        row_dict['other'] = other
+
+        first_header = next(
+            header_alias
+            for header_alias in col_dict
+            if col_dict[header_alias] == header_list[0]
+        )
+
+        # If the first cell of the header is empty then we ignore the row
+        if row_dict[first_header]:
+            rows.append(row_dict)
+
+    return rows
+
+
 def parse_key_row(sheet: Any, skip_rows: int) -> dict:
     """Parses an Excel worksheet assuming the first column contains a unique key.
     Each row is parsed to a dictionary with as key, the value in the first column and
