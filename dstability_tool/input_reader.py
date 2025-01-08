@@ -173,7 +173,7 @@ class UserInputStructure(BaseModel):
         char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
         soil_collection = SoilCollection.from_list(raw_input.soil_params)
         soil_profiles = SoilProfileCollection.from_dict(raw_input.soil_profiles)
-        loads = LoadCollection.from_dict(raw_input.loads)
+        loads = LoadCollection.from_list(raw_input.loads)
 
         return cls(
             surface_lines=surface_lines,

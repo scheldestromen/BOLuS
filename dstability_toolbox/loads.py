@@ -12,8 +12,16 @@ class Load(BaseModel):
 class LoadCollection(BaseModel):
     loads: list[Load]
 
+    def get_by_name(self, name) -> Load:
+        """Returns the load with the given name"""
+        for load in self.loads:
+            if load.name == name:
+                return load
+
+        raise NameError(f"Could not find load with name {name}")
+
     @classmethod
-    def from_dict(cls, loads_dicts: list):
+    def from_list(cls, loads_dicts: list):
         """Parses the dictionary into a LoadCollection
 
         Args:

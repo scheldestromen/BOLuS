@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     # Convert the input to models. input_to_models has all the logic
     input_structure = UserInputStructure.from_raw_input(raw_user_input)
-    models = input_to_models(raw_user_input)
+    models = input_to_models(input_structure)
 
     # Create new DStability calculations from the DStability models
     dm_dict = {model.name: create_d_stability_model(model) for model in models}

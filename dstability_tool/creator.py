@@ -10,10 +10,10 @@ from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import Subsoil, subsoil_from_soil_profiles, SoilProfileCollection
 from dstability_toolbox.state import create_state_points_from_subsoil
 
-from input_reader import RawUserInput
+from input_reader import UserInputStructure
 
 
-def input_to_models(input_structure: RawUserInput) -> List[Model]:
+def input_to_models(input_structure: UserInputStructure) -> List[Model]:
     """Creates Model objects from the user input"""
 
     # In input hoor te zitten of het om een STBI/STBU berekening gaat en bijbehorende waterspanningen
@@ -22,14 +22,9 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
     # - bv. SoilCollection,
     # Niet iedere sequence gebruikt de zelfde invoer.
 
-    surface_line_collection = SurfaceLineCollection.from_dict(input_structure.surface_lines)
-    char_point_collection = CharPointsProfileCollection.from_dict(input_structure.char_points)
-    soil_collection = SoilCollection.from_list(input_structure.soil_params)
-    soil_profile_collection = SoilProfileCollection.from_dict(input_structure.soil_profiles)
-
     geometries = create_geometries(
-        surface_line_collection=surface_line_collection,
-        char_point_collection=char_point_collection,
+        surface_line_collection=input_structure.surface_lines,
+        char_point_collection=input_structure.char_points,
         char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE
     )
 
@@ -39,19 +34,19 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
 
     subsoil = subsoil_from_soil_profiles(
         surface_line=surface_line,
-        soil_profiles=soil_profile_collection.profiles,  # dit zijn er 2
+        soil_profiles=input_structure.soil_profiles.profiles,  # dit zijn er 2
         transitions=[80],
     )
 
     state_points = create_state_points_from_subsoil(
         subsoil=subsoil,
-        soil_collection=soil_collection,
+        soil_collection=input_structure.soil_collection,
         state_type='POP'
     )
 
     model = Model(
         name="test_2.stix",
-        soil_collection=soil_collection,
+        soil_collection=input_structure.soil_collection,
         scenarios=[
             Scenario(
                 name="Basis",
@@ -68,6 +63,7 @@ def input_to_models(input_structure: RawUserInput) -> List[Model]:
                         notes="Stage voor hoogwater",
                         geometry=geometry,
                         subsoil=subsoil,
+                        load=input_structure.loads.get_by_name("Verkeerslast zwaar"),
                     )
                 ]
             )

@@ -9,8 +9,9 @@ from geolib.models.dstability.internal import SoilCollection as GLSoilCollection
 from geolib.models.dstability.states import DStabilityStatePoint, DStabilityStress
 from geolib.models.dstability.loads import UniformLoad, Consolidation
 
+from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Stage, Model
-from dstability_toolbox.geometry import Geometry
+from dstability_toolbox.geometry import Geometry, CharPointsProfile, CharPointType
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.state import StatePoint
 from dstability_toolbox.subsoil import Subsoil
@@ -119,12 +120,9 @@ def set_state_points(
 
 
 def add_uniform_load(
-        label: str,
-        magnitude: float,
-        angle: float,
-        x_start: float,
-        x_end: float,
+        load: Load,
         soil_collection: SoilCollection,
+        char_point_profile: CharPointsProfile,
         dm: DStabilityModel,
         scenario_index: int,
         stage_index: int
@@ -134,12 +132,9 @@ def add_uniform_load(
     The consolidation percentages of the load are based on the soil_collection
 
     Args:
-        label: The label of the load
-        magnitude: The magnitude of the load
-        angle: The distribution angle of the load
-        x_start: The left bound of the load
-        x_end: The right bound of the load
+        load: The load to add to the DStabilityModel
         soil_collection: The soil_collection to use, containing the consolidation percentages
+        char_point_profile: The CharPointsProfile to base the load position on
         dm: The DStabilityModel to add the load to
         scenario_index: The index of the scenario to add the load to
         stage_index: The index of the stage to add the load to
@@ -147,13 +142,19 @@ def add_uniform_load(
     Returns:
         The modified DStabilityModel
     """
+    traffic_load_char_points = [
+        char_point_profile.get_point_by_type(CharPointType.TRAFFIC_LOAD_LAND_SIDE).l,
+        char_point_profile.get_point_by_type(CharPointType.TRAFFIC_LOAD_WATER_SIDE).l
+    ]
 
+    # Depending on the profile orientation, the land side can be left or right
+    # Hence the start and end are determined using min/max to ensure they are in the right order
     uniform_load = UniformLoad(
-        label=label,
-        magnitude=magnitude,
-        angle_of_distribution=angle,
-        start=x_start,
-        end=x_end
+        label=load.name,
+        magnitude=load.magnitude,
+        angle_of_distribution=load.angle,
+        start=min(traffic_load_char_points),
+        end=max(traffic_load_char_points)
     )
 
     # Add consolidation percentages. When added, each layer must have a consolidation percentage
@@ -174,6 +175,7 @@ def add_uniform_load(
         scenario_index=scenario_index,
         stage_index=stage_index
     )
+
 
 def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, stage_index: int):
     pass
@@ -221,6 +223,16 @@ def create_d_stability_model(model: Model):
             if stage.state_points is not None:
                 set_state_points(
                     state_points=stage.state_points,
+                    dm=dm,
+                    scenario_index=dm.current_scenario,
+                    stage_index=dm.current_stage
+                )
+
+            if stage.load is not None:
+                add_uniform_load(
+                    load=stage.load,
+                    soil_collection=model.soil_collection,
+                    char_point_profile=stage.geometry.char_point_profile,
                     dm=dm,
                     scenario_index=dm.current_scenario,
                     stage_index=dm.current_stage

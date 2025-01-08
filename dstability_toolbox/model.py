@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 from typing_extensions import List
 
+from .loads import Load
 from .soils import SoilCollection
 from .water import Waternet
 from .geometry import Geometry
@@ -16,6 +17,7 @@ class Stage(BaseModel):
     geometry: Geometry
     subsoil: Subsoil
     state_points: Optional[list[StatePoint]] = None
+    load: Optional[Load] = None
     # waternet: Waternet
 
 
