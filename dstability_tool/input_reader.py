@@ -9,6 +9,7 @@ import openpyxl
 
 from dstability_tool.excel_utils import parse_row_instance, parse_key_row
 from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection
+from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
 from utils.dict_utils import remove_key, group_dicts_by_key
@@ -19,10 +20,11 @@ INPUT_SHEETS = {
     "char_points": "Kar. punten",
     "soil_params": "Sterkteparameters",
     "soil_profiles": "Bodemopbouw",
+    "loads": "Belasting"
 }
 
 CHAR_POINT_COLS = {
-    'name': 'Naam',
+    'name': 'LOCATIONID',
     'x_surface_level_water_side': 'X_Maaiveld buitenwaarts',
     'y_surface_level_water_side': 'Y_Maaiveld buitenwaarts',
     'z_surface_level_water_side': 'Z_Maaiveld buitenwaarts',
@@ -87,6 +89,7 @@ SOIL_COLS = {
     "shear_stress_ratio_s": "Schuifspanningsratio S",
     "strength_exponent_m": "Sterkte-exponent m",
     "pop": "POP",
+    "consolidation_traffic_load": "Consolidatie belasting",
     "color": "Kleur (hex, zonder #)",
 }
 
@@ -96,6 +99,12 @@ SOIL_PROFILE_COLS = {
     "top": "Bovenkant",
 }
 
+LOAD_COLS = {
+    "name": "Naam belasting",
+    "magnitude": "Grootte",
+    "angle": "Spreiding",
+}
+
 
 class RawUserInput(BaseModel):
     """Represents the Input Excel file"""
@@ -103,6 +112,7 @@ class RawUserInput(BaseModel):
     char_points: dict[str, dict]
     soil_params: list[dict]
     soil_profiles: dict
+    loads: list
 
     @classmethod
     def read_from_file(cls, file_path: str | Path):
@@ -134,11 +144,19 @@ class RawUserInput(BaseModel):
         )
         soil_profiles = group_dicts_by_key(soil_profiles, "name")
 
+        loads = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["loads"]],
+            header_row=1,
+            skip_rows=2,
+            col_dict=LOAD_COLS
+        )
+
         return cls(
             surface_lines=surface_lines,
             char_points=char_points,
             soil_params=soil_params,
-            soil_profiles=soil_profiles
+            soil_profiles=soil_profiles,
+            loads=loads
         )
 
 
@@ -147,6 +165,7 @@ class UserInputStructure(BaseModel):
     char_points: CharPointsProfileCollection
     soil_collection: SoilCollection
     soil_profiles: SoilProfileCollection
+    loads: LoadCollection
 
     @classmethod
     def from_raw_input(cls, raw_input: RawUserInput):
@@ -154,12 +173,14 @@ class UserInputStructure(BaseModel):
         char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
         soil_collection = SoilCollection.from_list(raw_input.soil_params)
         soil_profiles = SoilProfileCollection.from_dict(raw_input.soil_profiles)
+        loads = LoadCollection.from_dict(raw_input.loads)
 
         return cls(
             surface_lines=surface_lines,
             char_points=char_points,
             soil_collection=soil_collection,
-            soil_profiles=soil_profiles
+            soil_profiles=soil_profiles,
+            loads=loads
         )
 
 # REMINDER: Houdt de invoerstructuur zo algemeen mogelijk. list met dicts is algemeen als tabel handig

@@ -25,7 +25,7 @@ class Soil(BaseModel):
     gl_soil: GLSoil
     pop: Optional[float] = None
     ocr: Optional[float] = None
-    consolidation_traffic_load: int = 80  # TODO: o.b.v. invoer en default verwijderen
+    consolidation_traffic_load: int
 
 
 class SoilCollection(BaseModel):
@@ -64,7 +64,7 @@ class SoilCollection(BaseModel):
          """
         req_keys = ["name", "unsaturated_weight", "saturated_weight", "strength_model_above",
                     "strength_model_below", "c", "phi", "shear_stress_ratio_s", "strength_exponent_m",
-                    "color", "pop"]
+                    "color", "pop", "consolidation_traffic_load"]
 
         strength_model = {
             "Shansep": ShearStrengthModelTypePhreaticLevel.SHANSEP,
@@ -96,7 +96,11 @@ class SoilCollection(BaseModel):
             if soil_dict["color"] is not None:
                 gl_soil.color = soil_dict["color"]
 
-            soil = Soil(gl_soil=gl_soil, pop=soil_dict["pop"])
+            soil = Soil(
+                gl_soil=gl_soil,
+                pop=soil_dict["pop"],
+                consolidation_traffic_load=soil_dict["consolidation_traffic_load"]
+            )
             soils.append(soil)
 
         return cls(soils=soils)

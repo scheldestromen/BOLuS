@@ -4,7 +4,6 @@ Creates State objects
 from typing import Literal
 
 
-from geolib.geometry.one import Point as GLPoint
 from pydantic import BaseModel
 
 from dstability_toolbox.soils import SoilCollection
@@ -44,6 +43,3 @@ def create_state_points_from_subsoil(
         state_points.append(state_point)
 
     return state_points
-
-# Optie 1: LayerId toevoegen in Subsoil
-# Optie 2: Functie maken voor bepalen van Layer a.d.h.v. x, z
