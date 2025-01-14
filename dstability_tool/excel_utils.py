@@ -53,7 +53,7 @@ def parse_row_instance(sheet: Any, header_row: int, skip_rows: int, col_dict: di
     return rows
 
 
-def parse_row_instance_remainder(sheet: Any, header_row: int, skip_rows: int, col_dict: dict) -> list:
+def parse_row_instance_remainder(sheet: Any, header_row: int, skip_rows: int, col_dict: dict, key_remainder: str) -> list:
     """
     Reads an Excelsheet. Every row becomes a dictionary with the keys from the col_dict based on the header_row.
     The columns for which the column name is not present in col_dict are parsed to the dictionary with key 'other'.
@@ -76,12 +76,12 @@ def parse_row_instance_remainder(sheet: Any, header_row: int, skip_rows: int, co
         other = []
 
         # Loop through the values until an empty cell is found
-        for cell in row[max_index:]:
+        for cell in row[max_index + 1:]:
             if cell.value is None:
                 break
             other.append(cell.value)
 
-        row_dict['other'] = other
+        row_dict[key_remainder] = other
 
         first_header = next(
             header_alias

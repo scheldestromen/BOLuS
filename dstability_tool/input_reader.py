@@ -12,8 +12,10 @@ from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfile
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
-from utils.dict_utils import remove_key, group_dicts_by_key
+from dstability_toolbox.water import WaterLineType, WaternetCollection
+from utils.dict_utils import remove_key, group_dicts_by_key, list_to_nested_dict
 from utils.list_utils import check_list_of_dicts_for_duplicate_values
+
 
 INPUT_SHEETS = {
     "surface_lines": "Dwarsprofielen",
@@ -110,17 +112,26 @@ HYDRAULIC_PRESSURE_COLS = {
     "calc_name": "Berekening",
     "scenario": "Scenario",
     "stage": "Stage",
-    "head_line": "Stijghoogte",
-    "values_apply_to": "Waardes",
+    "type": "Type",
+    "line_name": "Naam",
+    "head_line_top": "PL-lijn bovenzijde",
+    "head_line_bottom": "PL-lijn onderzijde",
 }
+
+INPUT_TO_WATER_LINE_TYPE = {
+    "Stijghoogtelijn": WaterLineType.HEADLINE,
+    "Referentielijn": WaterLineType.REFERENCE_LINE
+}
+
+NAME_PHREATIC_LINE = "Freatisch"
 
 
 class RawUserInput(BaseModel):
     """Represents the Input Excel file"""
-    surface_lines: dict
+    surface_lines: dict[str, list]
     char_points: dict[str, dict]
     soil_params: list[dict]
-    soil_profiles: dict[dict]
+    soil_profiles: dict[str, list]
     loads: list[dict]
     hydraulic_pressure: list[dict]
 
@@ -164,22 +175,18 @@ class RawUserInput(BaseModel):
         hydraulic_pressure = parse_row_instance_remainder(
             sheet=workbook[INPUT_SHEETS["hydraulic_pressure"]],
             header_row=1,
-            skip_rows=2,
-            col_dict=HYDRAULIC_PRESSURE_COLS
+            skip_rows=3,
+            col_dict=HYDRAULIC_PRESSURE_COLS,
+            key_remainder="values"
         )
-        hydraulic_pressure = group_dicts_by_key(hydraulic_pressure, group_by_key="calc_name")
-        hydraulic_pressure = {
-            calc_name: group_dicts_by_key(calc_dict, group_by_key="scenario")
-            for calc_name, calc_dict in hydraulic_pressure.items()
-        }
-        # TODO: afmaken zodat stage ook gegroupeerd owrdt!
 
         return cls(
             surface_lines=surface_lines,
             char_points=char_points,
             soil_params=soil_params,
             soil_profiles=soil_profiles,
-            loads=loads
+            loads=loads,
+            hydraulic_pressure=hydraulic_pressure
         )
 
 
@@ -198,12 +205,25 @@ class UserInputStructure(BaseModel):
         soil_profiles = SoilProfileCollection.from_dict(raw_input.soil_profiles)
         loads = LoadCollection.from_list(raw_input.loads)
 
+        hydraulic_pressure = raw_input.hydraulic_pressure
+
+        for line_dict in hydraulic_pressure:
+            line_dict["type"] = INPUT_TO_WATER_LINE_TYPE[line_dict["type"]]
+
+        hydraulic_pressure = list_to_nested_dict(
+            hydraulic_pressure,
+            keys=["calc_name", "scenario", "stage"],
+            remove_group_key=True
+        )
+        waternet_collection = WaternetCollection.from_dict(hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE)
+
         return cls(
             surface_lines=surface_lines,
             char_points=char_points,
             soil_collection=soil_collection,
             soil_profiles=soil_profiles,
-            loads=loads
+            loads=loads,
+            hydraulic_pressure=waternet_collection
         )
 
 # REMINDER: Houdt de invoerstructuur zo algemeen mogelijk. list met dicts is algemeen als tabel handig

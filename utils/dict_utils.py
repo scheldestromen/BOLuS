@@ -55,3 +55,32 @@ def group_dicts_by_key(
                 group_item.pop(group_by_key)
 
     return grouped_dict
+
+
+def list_to_nested_dict(list_of_dicts: list[dict], keys: list[str], remove_group_key=True) -> dict:
+    """
+    Converts a list of dictionaries into a nested dictionary. All the dictionaries in the list
+    must have the keys as specified in keys.
+
+    Args:
+        list_of_dicts: A list of dictionaries.
+        keys: A list of keys to nest the dictionaries by.
+        remove_group_key: Default=True. If True, the keys are removed from the dictionaries.
+
+    Returns:
+        A nested dictionary.
+    """
+    if not keys:
+        return list_of_dicts
+
+    key = keys[0]
+    remaining_keys = keys[1:]
+
+    grouped_dict = group_dicts_by_key(list_of_dicts, key, remove_group_key=remove_group_key)
+
+    nested_dict = {}
+
+    for k, v in grouped_dict.items():
+        nested_dict[k] = list_to_nested_dict(v, remaining_keys)
+
+    return nested_dict
