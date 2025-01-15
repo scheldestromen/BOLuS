@@ -56,7 +56,6 @@ class SoilCollection(BaseModel):
           phi: float
           shear_stress_ratio_s: float
           strength_exponent_m: float
-          color: str (hex, without #)
           pop: float
 
         Args:
@@ -64,7 +63,7 @@ class SoilCollection(BaseModel):
          """
         req_keys = ["name", "unsaturated_weight", "saturated_weight", "strength_model_above",
                     "strength_model_below", "c", "phi", "shear_stress_ratio_s", "strength_exponent_m",
-                    "color", "pop", "consolidation_traffic_load"]
+                    "pop", "consolidation_traffic_load"]
 
         strength_model = {
             "Shansep": ShearStrengthModelTypePhreaticLevel.SHANSEP,
@@ -92,9 +91,6 @@ class SoilCollection(BaseModel):
             gl_soil.mohr_coulomb_parameters.friction_angle.mean = soil_dict["phi"]
             gl_soil.undrained_parameters.shear_strength_ratio.mean = soil_dict["shear_stress_ratio_s"]
             gl_soil.undrained_parameters.strength_increase_exponent.mean = soil_dict["strength_exponent_m"]
-
-            if soil_dict["color"] is not None:
-                gl_soil.color = soil_dict["color"]
 
             soil = Soil(
                 gl_soil=gl_soil,

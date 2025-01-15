@@ -21,7 +21,7 @@ INPUT_SHEETS = {
     "surface_lines": "Dwarsprofielen",
     "char_points": "Kar. punten",
     "soil_params": "Sterkteparameters",
-    "soil_profiles": "Bodemopbouw",
+    "soil_profiles": "Bodemprofielen",
     "loads": "Belasting",
     "hydraulic_pressure": "Waterspanningsschematisatie"
 }
@@ -93,7 +93,6 @@ SOIL_COLS = {
     "strength_exponent_m": "Sterkte-exponent m",
     "pop": "POP",
     "consolidation_traffic_load": "Consolidatie belasting",
-    "color": "Kleur (hex, zonder #)",
 }
 
 SOIL_PROFILE_COLS = {
@@ -193,9 +192,10 @@ class RawUserInput(BaseModel):
 class UserInputStructure(BaseModel):
     surface_lines: SurfaceLineCollection
     char_points: CharPointsProfileCollection
-    soil_collection: SoilCollection
+    soils: SoilCollection
     soil_profiles: SoilProfileCollection
     loads: LoadCollection
+    waternets: WaternetCollection
 
     @classmethod
     def from_raw_input(cls, raw_input: RawUserInput):
@@ -220,12 +220,13 @@ class UserInputStructure(BaseModel):
         return cls(
             surface_lines=surface_lines,
             char_points=char_points,
-            soil_collection=soil_collection,
+            soils=soil_collection,
             soil_profiles=soil_profiles,
             loads=loads,
-            hydraulic_pressure=waternet_collection
+            waternets=waternet_collection
         )
 
 # REMINDER: Houdt de invoerstructuur zo algemeen mogelijk. list met dicts is algemeen als tabel handig
-# Behalve dingen die obvious een invoerbestand zijn (zoals surfacelines en charpoints)
+# Behalve dingen die duidelijk een invoerbestand zijn (zoals surfacelines en charpoints)
 # En als een dict logischer is, bv met soil profiles, waarbij de naam bovenliggend is en per regel een workaround is
+# t.b.v. invoer in Excel

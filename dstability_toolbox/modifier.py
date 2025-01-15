@@ -19,6 +19,7 @@ from dstability_toolbox.water import Waternet
 
 
 # TODO: Naam, misschien builder noemen?
+# TODO: consistent toepassen van set_ en add_
 
 
 def get_scenario_and_stage_index_by_label(dm: DStabilityModel, scenario: str, stage: str):
@@ -178,7 +179,44 @@ def add_uniform_load(
 
 
 def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, stage_index: int):
-    pass
+    """Adds the waternet to the DStabilityModel
+
+    Args:
+        waternet: The waternet to add to the DStabilityModel
+        dm: The DStabilityModel to add the waternet to
+        scenario_index: The index of the scenario to add the waternet to
+        stage_index: The index of the stage to add the waternet to
+
+    Returns:
+        The modified DStabilityModel"""
+
+    # Dict to store the id's in - for adding the ref. lines later
+    head_line_id_dict = {}
+
+    # Add the headlines
+    for head_line in waternet.head_lines:
+        head_line_id = dm.add_head_line(
+            label=head_line.name,
+            points=[GLPoint(x=l, z=z) for l, z in zip(head_line.l, head_line.z)],
+            is_phreatic_line=head_line.is_phreatic,
+            scenario_index=scenario_index,
+            stage_index=stage_index
+        )
+        # Store the id
+        head_line_id_dict[head_line.name] = head_line_id
+
+    # Add the reference lines
+    for ref_line in waternet.ref_lines:
+        dm.add_reference_line(
+            label=ref_line.name,
+            points=[GLPoint(x=l, z=z) for l, z in zip(ref_line.l, ref_line.z)],
+            scenario_index=scenario_index,
+            stage_index=stage_index,
+            top_head_line_id=head_line_id_dict[ref_line.head_line_top],
+            bottom_headline_id=head_line_id_dict[ref_line.head_line_bottom]
+        )
+
+    return dm
 
 
 def add_stage(stage: Stage):
@@ -237,5 +275,12 @@ def create_d_stability_model(model: Model):
                     scenario_index=dm.current_scenario,
                     stage_index=dm.current_stage
                 )
+
+            set_waternet(
+                waternet=stage.waternet,
+                dm=dm,
+                scenario_index=dm.current_scenario,
+                stage_index=dm.current_stage
+            )
 
     return dm

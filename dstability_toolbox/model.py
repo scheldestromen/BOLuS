@@ -18,7 +18,7 @@ class Stage(BaseModel):
     subsoil: Subsoil
     state_points: Optional[list[StatePoint]] = None
     load: Optional[Load] = None
-    # waternet: Waternet
+    waternet: Waternet
 
 
 class Scenario(BaseModel):

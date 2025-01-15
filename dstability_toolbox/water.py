@@ -20,8 +20,8 @@ class ReferenceLine(BaseModel):
     name: str
     l: list[float]
     z: list[float]
-    head_line_top: Optional[str]
-    head_line_bottom: Optional[str]
+    head_line_top: str
+    head_line_bottom: str
 
 
 class Waternet(BaseModel):
@@ -37,6 +37,7 @@ class WaternetCollection(BaseModel):
 
     @classmethod
     def from_dict(cls, waternets_dict: dict, name_phreatic_line: str):
+        """Parse from dict."""
         def parse_head_lines(lines: list[dict], name_phreatic_line: str):
             head_lines = []
 
@@ -56,6 +57,14 @@ class WaternetCollection(BaseModel):
 
             for line in lines:
                 if line['type'] == WaterLineType.REFERENCE_LINE:
+                    if line['head_line_top'] is None:
+                        raise ValueError(
+                            f"Head line top is not set for reference line {line['line_name']}"
+                        )
+
+                    if line['head_line_bottom'] is None:
+                        line['head_line_bottom'] = line['head_line_top']
+
                     ref_lines.append(ReferenceLine(
                         name=line['line_name'],
                         l=line['values'][0::2],

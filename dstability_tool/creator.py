@@ -40,13 +40,13 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
 
     state_points = create_state_points_from_subsoil(
         subsoil=subsoil,
-        soil_collection=input_structure.soil_collection,
+        soil_collection=input_structure.soils,
         state_type='POP'
     )
 
     model = Model(
         name="test_2.stix",
-        soil_collection=input_structure.soil_collection,
+        soil_collection=input_structure.soils,
         scenarios=[
             Scenario(
                 name="Basis",
@@ -56,7 +56,8 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
                         notes="Stage voor dagelijkse omstandigheden",
                         geometry=geometry,
                         subsoil=subsoil,
-                        state_points=state_points
+                        state_points=state_points,
+                        waternet=input_structure.waternets.waternets[0]
                     ),
                     Stage(
                         name="Hoogwater",
@@ -64,6 +65,7 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
                         geometry=geometry,
                         subsoil=subsoil,
                         load=input_structure.loads.get_by_name("Verkeerslast zwaar"),
+                        waternet=input_structure.waternets.waternets[1]
                     )
                 ]
             )
