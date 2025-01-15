@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # Export the DStabilityModels to .stix
     for name, dm in dm_dict.items():
-        dm.serialize(f"{name}")
+        dm.serialize(f"{name}.stix")
 
     # Run the calculations
 

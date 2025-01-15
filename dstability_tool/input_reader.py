@@ -1,10 +1,10 @@
 """
 Parses the input file
 """
+import numpy as np
 from pydantic import BaseModel
 
 from pathlib import Path
-from typing import List
 import openpyxl
 
 from dstability_tool.excel_utils import parse_row_instance, parse_key_row, parse_row_instance_remainder
@@ -14,16 +14,17 @@ from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
 from dstability_toolbox.water import WaterLineType, WaternetCollection
 from utils.dict_utils import remove_key, group_dicts_by_key, list_to_nested_dict
-from utils.list_utils import check_list_of_dicts_for_duplicate_values
-
+from utils.list_utils import check_list_of_dicts_for_duplicate_values, unique_in_order
 
 INPUT_SHEETS = {
     "surface_lines": "Dwarsprofielen",
     "char_points": "Kar. punten",
     "soil_params": "Sterkteparameters",
     "soil_profiles": "Bodemprofielen",
+    "soil_profile_positions": "Bodemopbouw",
     "loads": "Belasting",
-    "hydraulic_pressure": "Waterspanningsschematisatie"
+    "hydraulic_pressure": "Waterspanningsschematisatie",
+    "calc_configs": "Berekeningen"
 }
 
 CHAR_POINT_COLS = {
@@ -117,6 +118,21 @@ HYDRAULIC_PRESSURE_COLS = {
     "head_line_bottom": "PL-lijn onderzijde",
 }
 
+CALCULATION_COLS = {
+    "calc_name": "Naam",
+    "scenario_name": "Scenario",
+    "stage_name": "Stage",
+    "geometry": "Geometrie",
+    "profile_position_name": "Bodemopbouw",
+    "apply_state_points": "State points toepassen",
+    "load_name": "Belasting",
+}
+
+INPUT_TO_BOOL = {
+    "Ja": True,
+    "Nee": False
+}
+
 INPUT_TO_WATER_LINE_TYPE = {
     "Stijghoogtelijn": WaterLineType.HEADLINE,
     "Referentielijn": WaterLineType.REFERENCE_LINE
@@ -127,12 +143,15 @@ NAME_PHREATIC_LINE = "Freatisch"
 
 class RawUserInput(BaseModel):
     """Represents the Input Excel file"""
+    # TODO: Zou theoretisch ook vanuit JSON moeten kunnen komen, dus denk aan hoe je dit in JSON zou opgeven
     surface_lines: dict[str, list]
     char_points: dict[str, dict]
     soil_params: list[dict]
     soil_profiles: dict[str, list]
+    soil_profile_positions: dict[str, dict[str, float | None]]
     loads: list[dict]
-    hydraulic_pressure: list[dict]
+    hydraulic_pressure: dict
+    calc_configs: list[dict]
 
     @classmethod
     def read_from_file(cls, file_path: str | Path):
@@ -164,6 +183,22 @@ class RawUserInput(BaseModel):
         )
         soil_profiles = group_dicts_by_key(soil_profiles, group_by_key="name")
 
+        soil_profile_positions_raw = parse_key_row(
+            sheet=workbook[INPUT_SHEETS["soil_profile_positions"]],
+            skip_rows=2,
+        )
+        # Process soil profile positions
+        soil_profile_positions = {}
+
+        for name, value_list in soil_profile_positions_raw.items():
+            # The first does not have a coordinate
+            positions = {value_list.pop(0): None}
+
+            for profile_name, l in zip(value_list[::2], value_list[1::2]):
+                positions[profile_name] = l
+
+            soil_profile_positions[name] = positions
+
         loads = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["loads"]],
             header_row=1,
@@ -179,13 +214,55 @@ class RawUserInput(BaseModel):
             key_remainder="values"
         )
 
+        # Preprocess hydraulic_pressure
+        for line_dict in hydraulic_pressure:
+            line_dict["type"] = INPUT_TO_WATER_LINE_TYPE[line_dict["type"]]
+
+        # Create structured dict {calc_name: {scenario: {stage: {...}}}}
+        hydraulic_pressure = list_to_nested_dict(
+            hydraulic_pressure,
+            keys=["calc_name", "scenario", "stage"],
+            remove_group_key=True
+        )
+
+        calc_config_rows = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["calc_configs"]],
+            header_row=2,
+            skip_rows=4,
+            col_dict=CALCULATION_COLS
+        )
+
+        # Preprocess calc_configs
+        for calc_dict in calc_config_rows:
+            calc_dict["apply_state_points"] = INPUT_TO_BOOL[calc_dict["apply_state_points"]]
+
+        calc_names = unique_in_order([calc_row["calc_name"] for calc_row in calc_config_rows])
+        calc_configs = []
+
+        # Create structured list [{calc_name: "name", "scenarios": [{"scenario_name": "name", "stages": {"stage_name":..
+        for calc_name in calc_names:
+            # Get all row of calculation calc_name
+            calc_rows = [calc_row for calc_row in calc_config_rows if calc_row["calc_name"] == calc_name]
+            scenario_names = unique_in_order([row["scenario_name"] for row in calc_rows])
+            scenarios = []
+
+            for scenario_name in scenario_names:
+                # Get al rows belonging to the scenario
+                scenario_rows = [row for row in calc_rows if row["scenario_name"] == scenario_name]
+                scenario = {"scenario_name": scenario_name, "stages": scenario_rows}
+                scenarios.append(scenario)
+
+            calc_configs.append({"calc_name": calc_name, "scenarios": scenarios})
+
         return cls(
             surface_lines=surface_lines,
             char_points=char_points,
             soil_params=soil_params,
             soil_profiles=soil_profiles,
+            soil_profile_positions=soil_profile_positions,
             loads=loads,
-            hydraulic_pressure=hydraulic_pressure
+            hydraulic_pressure=hydraulic_pressure,
+            calc_configs=calc_configs
         )
 
 
@@ -194,8 +271,10 @@ class UserInputStructure(BaseModel):
     char_points: CharPointsProfileCollection
     soils: SoilCollection
     soil_profiles: SoilProfileCollection
+    soil_profile_positions: dict[str, dict[str, float | None]]  # TODO: Dit nog herzien?
     loads: LoadCollection
     waternets: WaternetCollection
+    calc_configs: list[dict]
 
     @classmethod
     def from_raw_input(cls, raw_input: RawUserInput):
@@ -204,26 +283,19 @@ class UserInputStructure(BaseModel):
         soil_collection = SoilCollection.from_list(raw_input.soil_params)
         soil_profiles = SoilProfileCollection.from_dict(raw_input.soil_profiles)
         loads = LoadCollection.from_list(raw_input.loads)
-
-        hydraulic_pressure = raw_input.hydraulic_pressure
-
-        for line_dict in hydraulic_pressure:
-            line_dict["type"] = INPUT_TO_WATER_LINE_TYPE[line_dict["type"]]
-
-        hydraulic_pressure = list_to_nested_dict(
-            hydraulic_pressure,
-            keys=["calc_name", "scenario", "stage"],
-            remove_group_key=True
+        waternet_collection = WaternetCollection.from_dict(
+            raw_input.hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE
         )
-        waternet_collection = WaternetCollection.from_dict(hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE)
 
         return cls(
             surface_lines=surface_lines,
             char_points=char_points,
             soils=soil_collection,
             soil_profiles=soil_profiles,
+            soil_profile_positions=raw_input.soil_profile_positions,
             loads=loads,
-            waternets=waternet_collection
+            waternets=waternet_collection,
+            calc_configs=raw_input.calc_configs
         )
 
 # REMINDER: Houdt de invoerstructuur zo algemeen mogelijk. list met dicts is algemeen als tabel handig

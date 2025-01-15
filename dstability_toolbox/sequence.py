@@ -62,3 +62,6 @@ class NewTwoStagesModel(BaseModel):
 
 
 # TODO: JSON input? Dan onafhankelijk van platform/UI
+
+# TODO: Ander idee voor de sequence - Dit zou wellicht meer onderdeel afhankelijk moeten zijn
+#  Bijvoorbeeld voor de plaatsing van ondergrondprofielen, standaard op de binnenteen met twee profielen

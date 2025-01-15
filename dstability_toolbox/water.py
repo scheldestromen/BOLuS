@@ -92,5 +92,33 @@ class WaternetCollection(BaseModel):
 
         return cls(waternets=waternets)
 
+    def get_waternet(self, calc_name: str, scenario_name: str, stage_name: str) -> Waternet:
+        """Returns the waternet with the given calc_name, scenario_name and stage_name
+
+        Args:
+            calc_name: The name of the calculation
+            scenario_name: The name of the scenario
+            stage_name: The name of the stage
+
+        Returns:
+            The waternet with the given calc_name, scenario_name and stage_name"""
+
+        waternet = next(
+            (waternet for waternet in self.waternets
+             if waternet.calc_name == calc_name
+             and waternet.scenario_name == scenario_name
+             and waternet.stage_name == stage_name
+             ),
+            None
+        )
+        if waternet:
+            return waternet
+
+        raise ValueError(
+            f"Could not find waternet with calc_name {calc_name}, scenario_name {scenario_name} "
+            f"and stage_name {stage_name}"
+        )
+
+
 # TODO: Hier moeten de methode/algoritme/sequences aan toegevoegd worden. Of apart, kan ook.
 #  - Basis offset method raamwerk maken en daarom verder bouwen

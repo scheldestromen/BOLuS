@@ -154,7 +154,8 @@ def subsoil_from_soil_profiles(
     bounds = [l_min] + transitions + [l_max]
 
     if bounds != sorted(bounds):
-        raise ValueError("One or more soil profile transitions lie beyond the surface line geometry")
+        raise ValueError("One or more soil profile transitions lie beyond the surface line geometry."
+                         f"The bounds are {l_min, l_max} and the transitions are {transitions}")
 
     geometry_points = ([(surface_line.points[0].l, -100)]
                        + [(p.l, p.z) for p in surface_line.points]

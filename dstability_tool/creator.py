@@ -15,61 +15,87 @@ from input_reader import UserInputStructure
 
 def input_to_models(input_structure: UserInputStructure) -> List[Model]:
     """Creates Model objects from the user input"""
+    models: List[Model] = []
 
-    # In input hoor te zitten of het om een STBI/STBU berekening gaat en bijbehorende waterspanningen
-    #   Mogelijkheid is om op basis hiervan een sequence te kiezen, maar nu eerst gewoon hier.
-    # Stel de benodigde invoer op voor de sequence
-    # - bv. SoilCollection,
-    # Niet iedere sequence gebruikt de zelfde invoer.
-
+    # Create Geometry objects from the input
     geometries = create_geometries(
         surface_line_collection=input_structure.surface_lines,
         char_point_collection=input_structure.char_points,
         char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE
     )
 
-    # Proefberekening
-    geometry = geometries[1]
-    surface_line = geometry.surface_line
+    # Create a Model for each calculation dictionary
+    for calc_config in input_structure.calc_configs:
+        scenarios = []
 
-    subsoil = subsoil_from_soil_profiles(
-        surface_line=surface_line,
-        soil_profiles=input_structure.soil_profiles.profiles,  # dit zijn er 2
-        transitions=[80],
-    )
+        for scenario in calc_config["scenarios"]:
+            stages = []
 
-    state_points = create_state_points_from_subsoil(
-        subsoil=subsoil,
-        soil_collection=input_structure.soils,
-        state_type='POP'
-    )
+            for stage in scenario["stages"]:
+                geometry = next((geom for geom in geometries if geom.name == stage["geometry"]), None)
 
-    model = Model(
-        name="test_2.stix",
-        soil_collection=input_structure.soils,
-        scenarios=[
-            Scenario(
-                name="Basis",
-                stages=[
+                if geometry is None:
+                    raise ValueError(f"Could not find geometry with name {stage['geometry']}")
+
+                surface_line = geometry.surface_line
+                profile_positions = input_structure.soil_profile_positions[stage["profile_position_name"]]
+
+                soil_profiles_and_coords = [
+                    (sp, coord) for name, coord in profile_positions.items()
+                    for sp in input_structure.soil_profiles.profiles
+                    if sp.name == name
+                ]
+
+                # Create the subsoil from the surfaceline, soil_profiles and the positions
+                # TODO: Dit kan efficienter want sommige stages hebben dezelfde subsoil. Geen prio
+                subsoil = subsoil_from_soil_profiles(
+                    surface_line=surface_line,
+                    soil_profiles=[sp[0] for sp in soil_profiles_and_coords],
+                    transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
+                )
+                if stage["load_name"] is not None:
+                    load = input_structure.loads.get_by_name(stage["load_name"])
+
+                else:
+                    load = None
+
+                # Create the state points
+                if stage["apply_state_points"]:
+                    state_points = create_state_points_from_subsoil(
+                        subsoil=subsoil,
+                        soil_collection=input_structure.soils,
+                        state_type='POP'
+                    )
+                else:
+                    state_points = None
+
+                # Create the stage
+                stages.append(
                     Stage(
-                        name="Dagelijks",
-                        notes="Stage voor dagelijkse omstandigheden",
+                        name=stage["stage_name"],
+                        notes="",
                         geometry=geometry,
                         subsoil=subsoil,
                         state_points=state_points,
-                        waternet=input_structure.waternets.waternets[0]
-                    ),
-                    Stage(
-                        name="Hoogwater",
-                        notes="Stage voor hoogwater",
-                        geometry=geometry,
-                        subsoil=subsoil,
-                        load=input_structure.loads.get_by_name("Verkeerslast zwaar"),
-                        waternet=input_structure.waternets.waternets[1]
-                    )
-                ]
-            )
-        ],
-    )
+                        load=load,
+                        waternet=input_structure.waternets.get_waternet(
+                            calc_config["calc_name"],
+                            scenario['scenario_name'],
+                            stage['stage_name'])
+                    ))
 
-    return [model]
+            scenarios.append(Scenario(
+                name=scenario["scenario_name"],
+                notes="",
+                stages=stages
+            ))
+
+        models.append(
+            Model(
+                name=calc_config["calc_name"],
+                soil_collection=input_structure.soils,
+                scenarios=scenarios
+            )
+        )
+
+    return models
