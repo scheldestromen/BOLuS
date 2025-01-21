@@ -8,7 +8,7 @@ from pathlib import Path
 import openpyxl
 
 from dstability_tool.excel_utils import parse_row_instance, parse_key_row, parse_row_instance_remainder
-from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection
+from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection, CharPointType
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
@@ -32,9 +32,12 @@ CHAR_POINT_COLS = {
     'x_surface_level_water_side': 'X_Maaiveld buitenwaarts',
     'y_surface_level_water_side': 'Y_Maaiveld buitenwaarts',
     'z_surface_level_water_side': 'Z_Maaiveld buitenwaarts',
-    'x_toe_canal': 'X_Teen geul', 'y_toe_canal': 'Y_Teen geul',
-    'z_toe_canal': 'Z_Teen geul', 'x_start_canal': 'X_Insteek geul',
-    'y_start_canal': 'Y_Insteek geul', 'z_start_canal': 'Z_Insteek geul',
+    'x_toe_canal': 'X_Teen geul',
+    'y_toe_canal': 'Y_Teen geul',
+    'z_toe_canal': 'Z_Teen geul',
+    'x_start_canal': 'X_Insteek geul',
+    'y_start_canal': 'Y_Insteek geul',
+    'z_start_canal': 'Z_Insteek geul',
     'x_dike_toe_water_side': 'X_Teen dijk buitenwaarts',
     'y_dike_toe_water_side': 'Y_Teen dijk buitenwaarts',
     'z_dike_toe_water_side': 'Z_Teen dijk buitenwaarts',
@@ -106,6 +109,9 @@ LOAD_COLS = {
     "name": "Naam belasting",
     "magnitude": "Grootte",
     "angle": "Spreiding",
+    'width': 'Breedte',
+    'position': 'Positie',
+    'direction': 'Richting',
 }
 
 HYDRAULIC_PRESSURE_COLS = {
@@ -131,6 +137,32 @@ CALCULATION_COLS = {
 INPUT_TO_BOOL = {
     "Ja": True,
     "Nee": False
+}
+
+INPUT_TO_CHAR_POINTS = data = {
+    "Maaiveld buitenwaarts": CharPointType.SURFACE_LEVEL_WATER_SIDE,
+    "Teen geul": CharPointType.TOE_CANAL,
+    "Insteek geul": CharPointType.START_CANAL,
+    "Teen dijk buitenwaarts": CharPointType.DIKE_TOE_WATER_SIDE,
+    "Kruin buitenberm": CharPointType.BERM_CREST_WATER_SIDE,
+    "Insteek buitenberm": CharPointType.BERM_START_WATER_SIDE,
+    "Kruin buitentalud": CharPointType.DIKE_CREST_WATER_SIDE,
+    "Verkeersbelasting kant buitenwaarts": CharPointType.TRAFFIC_LOAD_WATER_SIDE,
+    "Verkeersbelasting kant binnenwaarts": CharPointType.TRAFFIC_LOAD_LAND_SIDE,
+    "Kruin binnentalud": CharPointType.DIKE_CREST_LAND_SIDE,
+    "Insteek binnenberm": CharPointType.BERM_START_LAND_SIDE,
+    "Kruin binnenberm": CharPointType.BERM_CREST_LAND_SIDE,
+    "Teen dijk binnenwaarts": CharPointType.DIKE_TOE_LAND_SIDE,
+    "Insteek sloot dijkzijde": CharPointType.DITCH_START_WATER_SIDE,
+    "Slootbodem dijkzijde": CharPointType.DITCH_BOTTOM_WATER_SIDE,
+    "Slootbodem polderzijde": CharPointType.DITCH_BOTTOM_LAND_SIDE,
+    "Insteek sloot polderzijde": CharPointType.DITCH_START_LAND_SIDE,
+    "Maaiveld binnenwaarts": CharPointType.SURFACE_LEVEL_LAND_SIDE,
+}
+
+INPUT_TO_IN_OR_OUTWARD = {
+    "Binnenwaarts": 'inward',
+    "Buitenwaarts": 'outward'
 }
 
 INPUT_TO_WATER_LINE_TYPE = {
@@ -205,6 +237,10 @@ class RawUserInput(BaseModel):
             skip_rows=2,
             col_dict=LOAD_COLS
         )
+
+        for line_dict in loads:
+            line_dict["direction"] = INPUT_TO_IN_OR_OUTWARD[line_dict["direction"]]
+            line_dict["position"] = INPUT_TO_CHAR_POINTS[line_dict["position"]]
 
         hydraulic_pressure = parse_row_instance_remainder(
             sheet=workbook[INPUT_SHEETS["hydraulic_pressure"]],

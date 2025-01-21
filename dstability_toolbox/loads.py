@@ -1,5 +1,9 @@
 # Maken van loads o.b.v. bepaalde instellingen bv. karakteristieke punten
+from typing import Literal
+
 from pydantic import BaseModel
+
+from dstability_toolbox.geometry import CharPointType
 
 
 class Load(BaseModel):
@@ -7,6 +11,9 @@ class Load(BaseModel):
     name: str
     magnitude: float
     angle: float
+    width: float
+    position: CharPointType
+    direction: Literal['inward', 'outward']
 
 
 class LoadCollection(BaseModel):

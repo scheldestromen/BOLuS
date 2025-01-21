@@ -143,10 +143,16 @@ def add_uniform_load(
     Returns:
         The modified DStabilityModel
     """
-    traffic_load_char_points = [
-        char_point_profile.get_point_by_type(CharPointType.TRAFFIC_LOAD_LAND_SIDE).l,
-        char_point_profile.get_point_by_type(CharPointType.TRAFFIC_LOAD_WATER_SIDE).l
-    ]
+    l_inward = char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_LAND_SIDE).l
+    l_outward = char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
+    load_edge_1 = char_point_profile.get_point_by_type(load.position).l
+    inward_positive = l_inward > l_outward
+
+    # Determine the start and end of the load
+    if load.direction == 'inward' and inward_positive or load.direction == 'outward' and not inward_positive:
+        load_edge_2 = load_edge_1 + load.width
+    else:
+        load_edge_2 = load_edge_1 - load.width
 
     # Depending on the profile orientation, the land side can be left or right
     # Hence the start and end are determined using min/max to ensure they are in the right order
@@ -154,8 +160,8 @@ def add_uniform_load(
         label=load.name,
         magnitude=load.magnitude,
         angle_of_distribution=load.angle,
-        start=min(traffic_load_char_points),
-        end=max(traffic_load_char_points)
+        start=min(load_edge_1, load_edge_2),
+        end=max(load_edge_1, load_edge_2)
     )
 
     # Add consolidation percentages. When added, each layer must have a consolidation percentage
