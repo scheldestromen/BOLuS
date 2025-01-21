@@ -45,7 +45,7 @@ def create_stage(
         if sp.name == name
     ]
 
-    # Create subsoil from the surfaceline, soil_profiles and the transitions
+    # Create subsoil from the surface line, soil_profiles and the transitions
     subsoil = subsoil_from_soil_profiles(
         surface_line=surface_line,
         soil_profiles=[sp[0] for sp in soil_profiles_and_coords],

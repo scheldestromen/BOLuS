@@ -5,8 +5,6 @@ from typing import Optional, Literal
 from pydantic import BaseModel
 from typing_extensions import List
 
-from geolib.geometry.one import Point as GLPoint
-
 
 class CharPointType(StrEnum):
     SURFACE_LEVEL_WATER_SIDE = auto()
@@ -43,7 +41,7 @@ class Point(BaseModel):
         x: The x-coordinate
         y: The y-coordinate
         z: Height coordinate
-        l: Length
+        l: Length coordinate (relative to a chosen reference point)
     """
     x: float
     y: float
@@ -72,6 +70,7 @@ class CharPoint(Point):
 
 class ProfileLine(BaseModel):
     """Base class for SurfaceLine and CharPointProfile"""
+
     def check_l_coordinates_present(self):
         """Checks if the l-coordinates are present"""
         if not all(point.l is not None for point in self.points):
@@ -97,10 +96,10 @@ class ProfileLine(BaseModel):
 
         The l-axis is defined in the direction of the surface line
         in the x-y plane such that the surface line is defined in
-        the l-z plane.
+        the l-z plane. The l- and z-axis give a 2D representation
+        of the 3D-cross-sectional line.
 
         Args:
-            profile: The profile to calculate the l-coordinates for.
             left_point: The left point of the surface line. Should be
               on of the two outer points.
             ref_point: The reference point. Defines the origin of the
@@ -118,7 +117,12 @@ class ProfileLine(BaseModel):
 
 
 class CharPointsProfile(ProfileLine):
-    """Represents the characteristic points of a profile"""
+    """Represents the characteristic points of a profile
+
+    Attributes:
+        name: The name of the profile
+        points: A list CharPoint instances representing the characteristic points"""
+
     name: str
     points: List[CharPoint]
 
@@ -159,7 +163,12 @@ class CharPointsProfile(ProfileLine):
 
 
 class SurfaceLine(ProfileLine):
-    # Verzameling van punten behorende bij één berekening
+    """Representation of a cross-sectional profile of a dike.
+
+    Attributes:
+        name: The name of the profile
+        points: A list of Point instances representing the profile"""
+
     name: str
     points: List[Point]
 
@@ -252,7 +261,14 @@ class CharPointsProfileCollection(BaseModel):
 
 class Geometry(BaseModel):
     """Represents the geometry elements belonging to a cross-section
-    of a dike."""
+    of a dike.
+
+    Attributes:
+        name: The name of the geometry
+        surface_line: SurfaceLine instance representing the cross-sectional profile
+        char_point_profile: CharPointProfile representing the characteristic points
+    """
+
     name: str
     surface_line: SurfaceLine
     char_point_profile: CharPointsProfile
@@ -316,7 +332,3 @@ def create_geometries(
         )
 
     return geometries
-
-
-def get_geometry_by_name(name: str, geometries: List[Geometry]) -> Geometry:
-    pass

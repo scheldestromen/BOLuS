@@ -1,16 +1,14 @@
-from pydantic import BaseModel
 from shapely import Point
 
 from geolib import DStabilityModel
-from geolib.models.dstability.loads import UniformLoad
-from geolib.models.dstability.states import DStabilityStatePoint
 from geolib.geometry.one import Point as GLPoint
 from geolib.models.dstability.internal import SoilCollection as GLSoilCollection
 from geolib.models.dstability.states import DStabilityStatePoint, DStabilityStress
 from geolib.models.dstability.loads import UniformLoad, Consolidation
 
+from dstability_toolbox.dm_getter import get_stage_by_indices, get_waternet_by_id
 from dstability_toolbox.loads import Load
-from dstability_toolbox.model import Stage, Model
+from dstability_toolbox.model import Model
 from dstability_toolbox.geometry import Geometry, CharPointsProfile, CharPointType
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.state import StatePoint
@@ -19,7 +17,6 @@ from dstability_toolbox.water import Waternet
 
 
 # TODO: Naam, misschien builder noemen?
-# TODO: consistent toepassen van set_ en add_
 
 
 def get_scenario_and_stage_index_by_label(dm: DStabilityModel, scenario: str, stage: str):
@@ -32,7 +29,7 @@ def set_geometry(geometry: Geometry, dm: DStabilityModel, scenario_index: int, s
     pass
 
 
-def set_soil_collection(soil_collection: SoilCollection, dm: DStabilityModel) -> DStabilityModel:
+def add_soil_collection(soil_collection: SoilCollection, dm: DStabilityModel) -> DStabilityModel:
     """Adds the soils in the soil_collection to the DStabilityModel.
     Soils already present are kept.
 
@@ -81,7 +78,7 @@ def set_subsoil(subsoil: Subsoil, dm: DStabilityModel, scenario_index: int, stag
     return dm
 
 
-def set_state_points(
+def add_state_points(
         state_points: list[StatePoint],
         dm: DStabilityModel,
         scenario_index: int,
@@ -187,6 +184,8 @@ def add_uniform_load(
 def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, stage_index: int):
     """Adds the waternet to the DStabilityModel
 
+    If a waternet is already defined, an error is raised.
+
     Args:
         waternet: The waternet to add to the DStabilityModel
         dm: The DStabilityModel to add the waternet to
@@ -195,6 +194,13 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
 
     Returns:
         The modified DStabilityModel"""
+
+    gl_stage = get_stage_by_indices(dm=dm, scenario_index=scenario_index, stage_index=stage_index)
+    gl_waternet = get_waternet_by_id(waternet_id=gl_stage.WaternetId, dm=dm)
+
+    if gl_waternet.HeadLines or gl_waternet.ReferenceLines:
+        raise ValueError(f'Waternet of scenario {scenario_index} and stage {stage_index} '
+                         f'already has head lines and/or reference lines')
 
     # Dict to store the id's in - for adding the ref. lines later
     head_line_id_dict = {}
@@ -225,10 +231,6 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
     return dm
 
 
-def add_stage(stage: Stage):
-    pass
-
-
 def create_d_stability_model(model: Model):
     """Creates new calculations with the given models"""
     dm = DStabilityModel()
@@ -237,7 +239,7 @@ def create_d_stability_model(model: Model):
     dm.datastructure.soils = GLSoilCollection(Soils=[])
 
     # Add the soil types
-    dm = set_soil_collection(model.soil_collection, dm)
+    dm = add_soil_collection(model.soil_collection, dm)
 
     # Add the scenarios
     for i, scenario in enumerate(model.scenarios):
@@ -265,12 +267,8 @@ def create_d_stability_model(model: Model):
 
             # Add state points
             if stage.state_points is not None:
-                set_state_points(
-                    state_points=stage.state_points,
-                    dm=dm,
-                    scenario_index=dm.current_scenario,
-                    stage_index=dm.current_stage
-                )
+                add_state_points(state_points=stage.state_points, dm=dm, scenario_index=dm.current_scenario,
+                                 stage_index=dm.current_stage)
 
             if stage.load is not None:
                 add_uniform_load(

@@ -14,7 +14,7 @@ from dstability_toolbox.subsoil import Subsoil
 from dstability_toolbox.water import Waternet
 
 
-# TODO: Deze nog even laten zitten? Nut afwegen na aan de gang te zijn gegaan met dstability_tool
+# TODO: Deze nog even laten zitten? Nut afwegen na aan de gang te zijn gegaan met input_handler
 
 class BaseSequence(ABC):
     # TODO: is dit nodig? Of met protocol? Er moet wellicht geborgd worden dat er bepaalde methods zijn

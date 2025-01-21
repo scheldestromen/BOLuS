@@ -1,9 +1,5 @@
 """Reads and writes data from and to an Excel file"""
 from typing import Any
-import shutil
-from pathlib import Path
-
-from pydantic import BaseModel
 
 
 def get_list_item_indices(li: list, di: dict) -> dict:
@@ -53,7 +49,13 @@ def parse_row_instance(sheet: Any, header_row: int, skip_rows: int, col_dict: di
     return rows
 
 
-def parse_row_instance_remainder(sheet: Any, header_row: int, skip_rows: int, col_dict: dict, key_remainder: str) -> list:
+def parse_row_instance_remainder(
+        sheet: Any,
+        header_row: int,
+        skip_rows: int,
+        col_dict: dict,
+        key_remainder: str
+) -> list:
     """
     Reads an Excelsheet. Every row becomes a dictionary with the keys from the col_dict based on the header_row.
     The columns for which the column name is not present in col_dict are parsed to the dictionary with key 'other'.

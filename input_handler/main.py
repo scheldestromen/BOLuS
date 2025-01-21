@@ -1,5 +1,5 @@
 """
-Main module for dstability_tool
+Main module for input_handler
 """
 from input_reader import RawUserInput, UserInputStructure
 from creator import input_to_models

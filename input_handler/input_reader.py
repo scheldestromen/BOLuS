@@ -1,13 +1,12 @@
 """
 Parses the input file
 """
-import numpy as np
 from pydantic import BaseModel
 
 from pathlib import Path
 import openpyxl
 
-from dstability_tool.excel_utils import parse_row_instance, parse_key_row, parse_row_instance_remainder
+from input_handler.excel_utils import parse_row_instance, parse_key_row, parse_row_instance_remainder
 from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection, CharPointType
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
@@ -175,7 +174,6 @@ NAME_PHREATIC_LINE = "Freatisch"
 
 class RawUserInput(BaseModel):
     """Represents the Input Excel file"""
-    # TODO: Zou theoretisch ook vanuit JSON moeten kunnen komen, dus denk aan hoe je dit in JSON zou opgeven
     surface_lines: dict[str, list]
     char_points: dict[str, dict]
     soil_params: list[dict]
@@ -307,7 +305,7 @@ class UserInputStructure(BaseModel):
     char_points: CharPointsProfileCollection
     soils: SoilCollection
     soil_profiles: SoilProfileCollection
-    soil_profile_positions: dict[str, dict[str, float | None]]  # TODO: Dit nog herzien?
+    soil_profile_positions: dict[str, dict[str, float | None]]
     loads: LoadCollection
     waternets: WaternetCollection
     calc_configs: list[dict]
