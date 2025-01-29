@@ -106,6 +106,11 @@ class ProfileLine(BaseModel):
               l-axis. This point should be aligned with the SurfaceLine.
               If not specified then the left_point is the origin.
         """
+        if left_point not in [self.points[0], self.points[-1]]:
+            raise ValueError(f'The given argument `left_point` is neither one '
+                             f'of the outer points of the profile with name {self.name}. '
+                             f'This should be the case.')
+
         if ref_point:
             shift = ref_point.distance(left_point)
         else:
@@ -114,6 +119,8 @@ class ProfileLine(BaseModel):
         for point in self.points:
             dist_from_left = point.distance(left_point)
             point.l = dist_from_left - shift
+
+        self.check_l_coordinates_increasing()
 
 
 class CharPointsProfile(ProfileLine):
@@ -173,7 +180,7 @@ class SurfaceLine(ProfileLine):
     points: List[Point]
 
     @classmethod
-    def from_list(cls, name, point_list):
+    def from_list(cls, name: str, point_list: list):
         """Instantiates a SurfaceLine from a flat list of points
 
         Args:
@@ -183,6 +190,11 @@ class SurfaceLine(ProfileLine):
         x = point_list[0::3]
         y = point_list[1::3]
         z = point_list[2::3]
+
+        if not len(x) == len(y) == len(z):
+            raise ValueError(f"An incorrect number of points is given for the surface line with"
+                             f"name {name}. The length of `point_list` should be dividable by "
+                             f"three so that every point has a x, y and z coordinate.")
 
         points = [Point(x=x, y=y, z=z) for x, y, z in zip(x, y, z)]
 
@@ -232,11 +244,12 @@ class CharPointsProfileCollection(BaseModel):
 
         Args:
             char_points_dict: The dictionary to parse. The keys should be the
-              profile names and the values dicts with the characteristic points,
+              profile names and the values dicts with the characteristic points,3
               for example {x_surface_level_water_side: 0, y_surface_level_water_side:
               0, z_surface_level_water_side: 0, ...}"""
 
         char_point_profiles = []
+        print(char_points_dict)
 
         for name, char_points in char_points_dict.items():
             char_points_profile = CharPointsProfile.from_dict(name=name, char_points_dict=char_points)
@@ -319,9 +332,6 @@ def create_geometries(
         # Set l-coordinates and check if they are increasing
         surface_line.set_l_coordinates(left_point=left_point, ref_point=ref_point)
         char_points_profile.set_l_coordinates(left_point=left_point, ref_point=ref_point)
-
-        surface_line.check_l_coordinates_increasing()
-        char_points_profile.check_l_coordinates_increasing()
 
         geometries.append(
             Geometry(

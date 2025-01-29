@@ -41,6 +41,7 @@ class NewTwoStagesModel(BaseModel):
             subsoil: Subsoil,
             waternet: Annotated[List[Waternet], Field(min_length=2, max_length=2)]
     ) -> Model:
+        # Nog niet geïmplementeerd
         pass
 
 # Eigenlijk heb je heel veel aftakkingen over hoe je een sequence kan maken. Ook betreft 1D of 2D ondergrond etc.
