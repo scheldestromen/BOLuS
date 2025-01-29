@@ -14,10 +14,10 @@ from dstability_toolbox.subsoil import Subsoil
 from dstability_toolbox.water import Waternet
 
 
-# TODO: Deze nog even laten zitten? Nut afwegen na aan de gang te zijn gegaan met input_handler
+# Deze nog even laten zitten. Nut afwegen na aan de gang te zijn gegaan met input_handler
 
 class BaseSequence(ABC):
-    # TODO: is dit nodig? Of met protocol? Er moet wellicht geborgd worden dat er bepaalde methods zijn
+    # Overwegen of dit nodig is. Of met protocol? Er moet wellicht geborgd worden dat er bepaalde methods zijn
 
     @abstractmethod
     def run(self) -> DStabilityModel:
@@ -57,11 +57,11 @@ class NewTwoStagesModel(BaseModel):
     # Stage dagelijks toevoegen
     # Stage hoogwater toevoegen
 
-# TODO: Ik zou ook een soort stage_sequence kunnen maken [Daily, HighWater]
-#       Of STBU -> [Daily, HighWater, SuddenDecrease]. Dit hangt eigenlijk alleen aan de waterspanningen.
+# Gedachtes
+# Ik zou ook een soort stage_sequence kunnen maken [Daily, HighWater]
+# Of STBU -> [Daily, HighWater, SuddenDecrease]. Dit hangt eigenlijk alleen aan de waterspanningen.
 
+# JSON input? Dan onafhankelijk van platform/UI
 
-# TODO: JSON input? Dan onafhankelijk van platform/UI
-
-# TODO: Ander idee voor de sequence - Dit zou wellicht meer onderdeel afhankelijk moeten zijn
-#  Bijvoorbeeld voor de plaatsing van ondergrondprofielen, standaard op de binnenteen met twee profielen
+# Ander idee voor de sequence - Dit zou wellicht meer onderdeel afhankelijk moeten zijn
+# Bijvoorbeeld voor de plaatsing van ondergrondprofielen, standaard op de binnenteen met twee profielen

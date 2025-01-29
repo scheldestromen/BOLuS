@@ -16,9 +16,6 @@ from dstability_toolbox.subsoil import Subsoil
 from dstability_toolbox.water import Waternet
 
 
-# TODO: Naam, misschien builder noemen?
-
-
 def get_scenario_and_stage_index_by_label(dm: DStabilityModel, scenario: str, stage: str):
     pass
 

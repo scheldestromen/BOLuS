@@ -25,12 +25,3 @@ if __name__ == "__main__":
     # Run the calculations
 
     # Read and export the calculation results
-
-    # Space to fiddle around
-    # print(input_structure.loads)
-    # print(input_structure.model_dump())
-    # print(input_structure.surface_lines)
-    # print(input_structure.char_points)
-    # print(input_structure.soils)
-    # print(input_structure.soil_profiles)
-    # print(input_structure)
