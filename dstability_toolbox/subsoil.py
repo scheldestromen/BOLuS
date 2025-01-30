@@ -1,4 +1,5 @@
 from geolib import DStabilityModel
+from geolib.models.dstability.internal import PersistableLayer
 from pydantic import BaseModel, model_validator
 from typing import Self, Optional
 
@@ -58,10 +59,10 @@ class SoilPolygon(BaseModel):
     dm_layer_id: Optional[str] = None
 
     @classmethod
-    def from_geolib_points(cls, soil_type: str, gl_points: list[GLPoint], dm_layer_id: Optional[str] = None) -> Self:
-        """Creates a SoilPolygon from a list of GEOLib points"""
-        points = [(point.X, point.Z) for point in gl_points]
-        return cls(soil_type=soil_type, points=points, dm_layer_id=dm_layer_id)
+    def from_geolib_layer(cls, soil_type: str, gl_layer: PersistableLayer) -> Self:
+        """Creates a SoilPolygon from a GEOLib PersistableLayer"""
+        points = [(point.X, point.Z) for point in gl_layer.Points]
+        return cls(soil_type=soil_type, points=points, dm_layer_id=gl_layer.Id)
 
     def to_geolib_points(self) -> list[GLPoint]:
         """Returns a list of GEOLib points"""
@@ -84,10 +85,13 @@ class SoilPolygon(BaseModel):
 
 class Subsoil(BaseModel):
     """Representation of a 2D subsoil schematization. This is a collection of (multiple)
-    SoilPolygon's belonging to the same cross-sectional schematization."""
+    SoilPolygon's belonging to the same cross-sectional schematization.
+
+    There is no check on whether soil polygons are overlapping.
+    This should be implemented Subsoil and Geometry modifications are implemented"""
+
     soil_polygons: list[SoilPolygon]
 
-    # TODO: Validate non-overlapping?
     @classmethod
     def from_geolib(cls, dm: DStabilityModel, scenario_index: int, stage_index: int) -> Self:
         soil_layers = dm._get_soil_layers(scenario_index=scenario_index, stage_index=stage_index)
@@ -96,18 +100,10 @@ class Subsoil(BaseModel):
         soil_polygons = []
 
         for soil_layer in soil_layers.SoilLayers:
-            soil_id = soil_layer.SoilId
-            soil = get_soil_by_id(soil_id=soil_id, dm=dm)
+            soil = get_soil_by_id(soil_id=soil_layer.SoilId, dm=dm)
+            layer = geometry.get_layer(id=soil_layer.LayerId)
 
-            layer_id = soil_layer.LayerId
-            layer = geometry.get_layer(id=layer_id)
-            gl_points = layer.Points
-
-            soil_polygon = SoilPolygon.from_geolib_points(
-                soil_type=soil.Code,
-                gl_points=gl_points,
-                dm_layer_id=layer_id
-            )
+            soil_polygon = SoilPolygon.from_geolib_layer(soil_type=soil.Code, gl_layer=layer)
             soil_polygons.append(soil_polygon)
 
         return cls(soil_polygons=soil_polygons)
@@ -117,7 +113,7 @@ def subsoil_from_soil_profiles(
         surface_line: SurfaceLine,
         soil_profiles: list[SoilProfile],
         transitions: Optional[list[float]] = None,
-        thickness_bottom_layer: float = 5
+        thickness_bottom_layer: float = 5  # TODO: aanpassen naar minimale diepte?
 ) -> Subsoil:
     """Creates an instance of Subsoil from one or more SoilProfile objects.
 
