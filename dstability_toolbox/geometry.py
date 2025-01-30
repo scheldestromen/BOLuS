@@ -173,8 +173,8 @@ class SurfaceLine(ProfileLine):
     """Representation of a cross-sectional profile of a dike.
 
     Attributes:
-        name: The name of the profile
-        points: A list of Point instances representing the profile"""
+        name (str): The name of the profile
+        points (list): A list of Point instances representing the profile"""
 
     name: str
     points: List[Point]
@@ -202,6 +202,11 @@ class SurfaceLine(ProfileLine):
 
 
 class SurfaceLineCollection(BaseModel):
+    """Representation a collection of SurfaceLines.
+
+    Attributes:
+        surface_lines (list): A list of SurfaceLine instances"""
+
     surface_lines: list[SurfaceLine]
 
     @classmethod
@@ -214,8 +219,8 @@ class SurfaceLineCollection(BaseModel):
 
         surface_lines = []
 
-        for name, points in surface_lines_dict.items():
-            surface_line = SurfaceLine.from_list(name=name, point_list=points)
+        for name, point_list in surface_lines_dict.items():
+            surface_line = SurfaceLine.from_list(name=name, point_list=point_list)
             surface_lines.append(surface_line)
 
         return cls(surface_lines=surface_lines)
@@ -223,7 +228,7 @@ class SurfaceLineCollection(BaseModel):
     def get_by_name(self, name: str) -> SurfaceLine:
         """Returns the SurfaceLine with the given name"""
         profile = next(
-            (prof for prof in self.char_points_profiles if prof.name == name), None
+            (prof for prof in self.surface_lines if prof.name == name), None
         )
         if profile:
             return profile
@@ -236,6 +241,11 @@ class SurfaceLineCollection(BaseModel):
 
 
 class CharPointsProfileCollection(BaseModel):
+    """Representation a collection of CharPointsProfiles.
+
+    Attributes:
+        char_points_profiles (list): A list of CharPointsProfile instances"""
+
     char_points_profiles: List[CharPointsProfile]
 
     @classmethod
@@ -249,7 +259,6 @@ class CharPointsProfileCollection(BaseModel):
               0, z_surface_level_water_side: 0, ...}"""
 
         char_point_profiles = []
-        print(char_points_dict)
 
         for name, char_points in char_points_dict.items():
             char_points_profile = CharPointsProfile.from_dict(name=name, char_points_dict=char_points)

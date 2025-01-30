@@ -3,10 +3,12 @@ from copy import deepcopy
 import json
 from unittest import TestCase
 from dstability_toolbox.geometry import Geometry, SurfaceLine, CharPointsProfile, CharPointType, Point, \
-    CharPointsProfileCollection
+    CharPointsProfileCollection, SurfaceLineCollection, CharPoint, create_geometries
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.getcwd()), 'fixtures')
 CHAR_POINT_JSON_PATH = os.path.join(FIXTURE_DIR, 'char_point_example.json')
+CHAR_COLLECTION_JSON_PATH = os.path.join(FIXTURE_DIR, 'char_points_profile_collection_example.json')
+SURF_COLLECTION_JSON_PATH = os.path.join(FIXTURE_DIR, 'surface_line_collection_example.json')
 
 
 class TestPoint(TestCase):
@@ -118,46 +120,100 @@ class TestSurfaceLine(TestCase):
             SurfaceLine.from_list(name='test', point_list=[0, 0, 0, 1, 1, 1, 2, 2, 2, 3])
 
 
-# class TestSurfaceLineCollection(TestCase):
-#     def test_from_dict(self):
-#         surface_line_collection = SurfaceLineCollection.from_dict({'name': 'test', 'surface_lines': [SurfaceLine([Point(1, 2), Point(3, 4)])]})
-#         self.assertEqual(surface_line_collection.name, 'test')
-#         self.assertEqual(surface_line_collection.surface_lines, [SurfaceLine([Point(1, 2), Point(3, 4)])])
-#
-#     def test_get_by_name(self):
-#         surface_line_collection = SurfaceLineCollection([SurfaceLine([Point(1, 2), Point(3, 4)])])
-#         surface_line = surface_line_collection.get_by_name('test')
-#         self.assertEqual(surface_line, SurfaceLine([Point(1, 2), Point(3, 4)]))
-#
-#     def test_get_by_name_not_available(self):
-#         surface_line_collection = SurfaceLineCollection([SurfaceLine([Point(1, 2), Point(3, 4)])])
-#         with self.assertRaises(ValueError):
-#             surface_line_collection.get_by_name('non_existent_name')
-#
-#
-# class TestCharPointsProfileCollection(TestCase):
-#     def test_from_dict(self):
-#         char_points_profile_collection = CharPointsProfileCollection.from_dict({'name': 'test', 'char_points_profiles': [{'name': 'profile1', 'points': [Point(1, 2), Point(3, 4)]}]})
-#         self.assertEqual(char_points_profile_collection.name, 'test')
-#         self.assertEqual(len(char_points_profile_collection.char_points_profiles), 1)
-#         self.assertEqual(char_points_profile_collection.char_points_profiles[0].name, 'profile1')
-#         self.assertEqual(char_points_profile_collection.char_points_profiles[0].points, [Point(1, 2), Point(3, 4)])
-#
-#     def test_get_by_name(self):
-#         char_points_profile_collection = CharPointsProfileCollection([CharPointsProfile([Point(1, 2), Point(3, 4)])])
-#         char_points_profile_collection.char_points_profiles[0].name = 'test'
-#         char_points_profile = char_points_profile_collection.get_by_name('test')
-#         self.assertEqual(char_points_profile, char_points_profile_collection.char_points_profiles[0])
-#
-#     def test_get_by_name_not_available(self):
-#         char_points_profile_collection = CharPointsProfileCollection([CharPointsProfile([Point(1, 2), Point(3, 4)])])
-#         with self.assertRaises(ValueError):
-#             char_points_profile_collection.get_by_name('non_existent_name')
-#
-#
-# class TestGeometry(TestCase):
-#     def test_create_geometries(self):
-#         pass
-#
-#     def test_create_geometries_non_matching_names(self):
-#         pass
+class TestSurfaceLineCollection(TestCase):
+    def setUp(self):
+        with open(SURF_COLLECTION_JSON_PATH) as f:
+            self.surface_line_collection_dict = json.load(f)
+
+        self.surface_line_collection = SurfaceLineCollection(
+            surface_lines=[
+                SurfaceLine(name='Profile 1', points=[Point(x=0, y=1, z=2), Point(x=4, y=5, z=6)]),
+                SurfaceLine(name='Profile 2', points=[Point(x=4, y=0, z=2), Point(x=6, y=7, z=8)]),
+            ]
+        )
+
+    def test_from_dict(self):
+        surface_line_collection = SurfaceLineCollection.from_dict(self.surface_line_collection_dict)
+        names = [surface_line.name for surface_line in surface_line_collection.surface_lines]
+        x = [p.x for p in surface_line_collection.surface_lines[0].points]
+
+        self.assertEqual(len(surface_line_collection.surface_lines), 3)
+        self.assertEqual(names, ['Dwarsprofiel 1', 'Dwarsprofiel 2', 'Dwarsprofiel 3'])
+        self.assertEqual(len(x), 54)
+
+    def test_get_by_name(self):
+        name = 'Profile 2'
+        surface_line = self.surface_line_collection.get_by_name(name)
+
+        self.assertEqual(surface_line.name, name)
+        self.assertEqual(surface_line.points[0], Point(x=4, y=0, z=2))
+
+    def test_get_by_name_not_available(self):
+        with self.assertRaises(ValueError):
+            self.surface_line_collection.get_by_name('non_existent_name')
+
+
+class TestCharPointsProfileCollection(TestCase):
+    def setUp(self):
+        with open(CHAR_COLLECTION_JSON_PATH) as f:
+            self.char_collection_dict = json.load(f)
+
+        self.char_collection = CharPointsProfileCollection(
+            char_points_profiles=[
+                CharPointsProfile(name='Profile 1', points=[
+                    CharPoint(x=1, y=2, z=3, type=CharPointType.DIKE_CREST_WATER_SIDE),
+                    CharPoint(x=4, y=5, z=6, type=CharPointType.DIKE_CREST_LAND_SIDE)]),
+                CharPointsProfile(name='Profile 2', points=[
+                    CharPoint(x=10, y=11, z=12, type=CharPointType.SURFACE_LEVEL_LAND_SIDE),
+                    CharPoint(x=13, y=14, z=15, type=CharPointType.SURFACE_LEVEL_WATER_SIDE),
+                ]),
+            ]
+        )
+
+    def test_from_dict(self):
+        char_points_profile_collection = CharPointsProfileCollection.from_dict(self.char_collection_dict)
+        names = [char_prof.name for char_prof in char_points_profile_collection.char_points_profiles]
+
+        self.assertEqual(len(char_points_profile_collection.char_points_profiles), 3)
+        self.assertEqual(names, ['Dwarsprofiel 1', 'Dwarsprofiel 2', 'Dwarsprofiel 3'])
+
+    def test_get_by_name(self):
+        name = 'Profile 2'
+        char_points_profile = self.char_collection.get_by_name(name)
+
+        self.assertEqual(char_points_profile.name, name)
+        self.assertEqual(char_points_profile.points[0],
+                         CharPoint(x=10, y=11, z=12, type=CharPointType.SURFACE_LEVEL_LAND_SIDE))
+
+    def test_get_by_name_not_available(self):
+        with self.assertRaises(ValueError):
+            self.char_collection.get_by_name('non_existent_name')
+
+
+class TestGeometry(TestCase):
+    def setUp(self):
+        with open(CHAR_COLLECTION_JSON_PATH) as f:
+            char_collection_dict = json.load(f)
+
+        with open(SURF_COLLECTION_JSON_PATH) as f:
+            surface_line_collection_dict = json.load(f)
+
+        self.surface_line_collection = SurfaceLineCollection.from_dict(surface_line_collection_dict)
+        self.char_line_collection = CharPointsProfileCollection.from_dict(char_collection_dict)
+
+    def test_create_geometries(self):
+        geometries = create_geometries(surface_line_collection=self.surface_line_collection,
+                                       char_point_collection=self.char_line_collection,
+                                       char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE)
+        names = [geom.name for geom in geometries]
+
+        self.assertEqual(len(geometries), 3)
+        self.assertEqual(names, ['Dwarsprofiel 1', 'Dwarsprofiel 2', 'Dwarsprofiel 3'])
+
+    def test_create_geometries_non_matching_names(self):
+        self.surface_line_collection.surface_lines[0].name = 'Non-matching name'
+
+        with self.assertRaises(ValueError):
+            create_geometries(surface_line_collection=self.surface_line_collection,
+                              char_point_collection=self.char_line_collection,
+                              char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE)
