@@ -53,7 +53,13 @@ class SoilProfileCollection(BaseModel):
 
 
 class SoilPolygon(BaseModel):
-    """Representation of a 2D soil layer"""
+    """Representation of a 2D soil layer
+
+    Attributes:
+        soil_type (str): Type of the soil
+        points (list): List of tuples each representing 2D-coordinates
+        dm_layer_id (str): Optional. The id of the layer in de DStabilityModel it belongs to
+    """
     soil_type: str
     points: list[tuple[float, float]]
     dm_layer_id: Optional[str] = None
@@ -88,7 +94,10 @@ class Subsoil(BaseModel):
     SoilPolygon's belonging to the same cross-sectional schematization.
 
     There is no check on whether soil polygons are overlapping.
-    This should be implemented Subsoil and Geometry modifications are implemented"""
+    This should be implemented Subsoil and Geometry modifications are implemented
+
+    Attributes:
+        soil_polygons (list): List of SoilPolygon instances"""
 
     soil_polygons: list[SoilPolygon]
 

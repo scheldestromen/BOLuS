@@ -18,15 +18,24 @@ class Soil(BaseModel):
 
     Attributes:
         gl_soil: The GEOLib soil object
-        pop: The Pre-overburden pressure value for the soil"""
+        pop (float): The Pre-overburden pressure value for the soil
+        ocr (float): The over-consolidation ratio (not implemented)
+        consolidation_traffic_load (int): Degree of consolidation traffic load"""
+
     gl_soil: GLSoil
     pop: Optional[float] = None
     ocr: Optional[float] = None
-    consolidation_traffic_load: int
+    consolidation_traffic_load: Optional[int] = None
 
 
 class SoilCollection(BaseModel):
-    """Represents a collection of soil types."""
+    """Represents a collection of soil types.
+
+    Attributes:
+        name (str): Optional. The name of the soil collection
+        soils (list): List of Soil instances
+    """
+
     name: Optional[str] = None
     soils: List[Soil]
 

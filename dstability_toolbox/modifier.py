@@ -165,7 +165,7 @@ def add_uniform_load(
     for soil_polygon in subsoil.soil_polygons:
         soil = soil_collection.get_by_name(soil_polygon.soil_type)
         consolidation = Consolidation(
-            degree=soil.consolidation_traffic_load,
+            degree=soil.consolidation_traffic_load or 100,
             layer_id=soil_polygon.dm_layer_id
         )
         consolidations.append(consolidation)
