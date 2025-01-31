@@ -20,7 +20,7 @@ class Soil(BaseModel):
         gl_soil: The GEOLib soil object
         pop (float): The Pre-overburden pressure value for the soil
         ocr (float): The over-consolidation ratio (not implemented)
-        consolidation_traffic_load (int): Degree of consolidation traffic load"""
+        consolidation_traffic_load (int): Percentage [0 - 100%] of consolidation traffic load"""
 
     gl_soil: GLSoil
     pop: Optional[float] = None

@@ -10,6 +10,14 @@ class WaterLineType(StrEnum):
 
 
 class HeadLine(BaseModel):
+    """Represents a headline
+
+    Attributes:
+        name (str): Name (label) of the headline
+        is_phreatic (bool): Indicates if the headline is the phreatic line
+        l (list): list of floats for the l-coordinates
+        z (list): list of floats for the z-coordinates"""
+
     name: str
     is_phreatic: bool
     l: list[float]
@@ -17,6 +25,15 @@ class HeadLine(BaseModel):
 
 
 class ReferenceLine(BaseModel):
+    """Represents a reference line. Headline can be assigned to it.
+
+    Attributes:
+        name (str): Name (label) of the reference line
+        l (list): list of floats for the l-coordinates
+        z (list): list of floats for the z-coordinates
+        head_line_top (str): Head at top of reference line is based on the headline with this name
+        head_line_bottom (str): Head at bottom of reference line is based on the headline with this name"""
+
     name: str
     l: list[float]
     z: list[float]
@@ -25,6 +42,16 @@ class ReferenceLine(BaseModel):
 
 
 class Waternet(BaseModel):
+    """Represents the waternet for a stage in a D-Stability calculation
+
+    Attributes:
+        calc_name (str): Name of the calculation it belongs to
+        scenario_name (str): Name of the scenario it belongs to
+        stage_name (str): Name of the stage it belongs to
+        head_lines (list[HeadLine]): List of HeadLine
+        ref_lines (list[ReferenceLine]): List of ReferenceLine
+        """
+
     calc_name: str
     scenario_name: str
     stage_name: str

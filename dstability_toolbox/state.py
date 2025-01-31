@@ -12,7 +12,13 @@ from utils.geometry_utils import determine_point_in_polygon
 
 
 class StatePoint(BaseModel):
-    """Representation of a state point"""
+    """Representation of a state point in 2D
+
+    Attributes:
+        x (float): The x-coordinate of the state point
+        z (float): The z-coordinate of the state point
+        pop (float): The pre-overburden pressure of the state point
+    """
     x: float
     z: float
     pop: float

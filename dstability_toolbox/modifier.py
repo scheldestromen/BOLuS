@@ -140,7 +140,7 @@ def add_uniform_load(
     l_inward = char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_LAND_SIDE).l
     l_outward = char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
     load_edge_1 = char_point_profile.get_point_by_type(load.position).l
-    inward_positive = l_inward > l_outward
+    inward_positive = l_inward > l_outward  # Determine the direction of the l-axis
 
     # Determine the start and end of the load
     if load.direction == 'inward' and inward_positive or load.direction == 'outward' and not inward_positive:
