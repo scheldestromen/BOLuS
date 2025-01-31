@@ -6,7 +6,7 @@ from geolib.models import DStabilityModel
 from geolib.soils import Soil as GLSoil
 from geolib.models.dstability.internal import SoilCollection as GLSoilCollection
 
-from dstability_toolbox.geometry import Point, SurfaceLine, CharPoint, CharPointType, CharPointsProfile
+from dstability_toolbox.geometry import CharPoint, CharPointType, CharPointsProfile
 from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Model
 from dstability_toolbox.modifier import (add_soil_collection, set_subsoil, add_state_points,

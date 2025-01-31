@@ -2,7 +2,7 @@ import os
 from copy import deepcopy
 import json
 from unittest import TestCase
-from dstability_toolbox.geometry import Geometry, SurfaceLine, CharPointsProfile, CharPointType, Point, \
+from dstability_toolbox.geometry import SurfaceLine, CharPointsProfile, CharPointType, Point, \
     CharPointsProfileCollection, SurfaceLineCollection, CharPoint, create_geometries
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.getcwd()), 'fixtures')
