@@ -6,9 +6,10 @@ from pydantic import BaseModel
 from pathlib import Path
 import openpyxl
 
+from dstability_toolbox.calculation_settings import GridSettingsCollection, SlipPlaneModel, UpliftVanSearchMode
 from input_handler.excel_utils import (parse_row_instance, parse_key_row, parse_row_instance_remainder,
                                        parse_key_value_cols)
-from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection, CharPointType
+from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection, CharPointType, Side
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
@@ -25,6 +26,7 @@ INPUT_SHEETS = {
     "soil_profile_positions": "Bodemopbouw",
     "loads": "Belasting",
     "hydraulic_pressure": "Waterspanningsschematisatie",
+    "grid_settings": "Gridinstellingen",
     "calc_configs": "Berekeningen"
 }
 
@@ -134,6 +136,49 @@ HYDRAULIC_PRESSURE_COLS = {
     "head_line_bottom": "PL-lijn onderzijde",
 }
 
+GRID_SETTINGS_COLS = {
+    "name_set": "Naam set",
+    "grid_setting_name": "Naam gridinstelling",
+    "slip_plane_model": "Model",
+    "grid_position": "Positie grid",
+    "grid_direction": "Richting grid",
+    "grid_offset_horizontal": "Offset grid horizontaal",
+    "grid_offset_vertical": "Offset grid verticaal",
+    "grid_points_horizontal": "Aantal gridpunten horizontaal",
+    "grid_points_vertical": "Aantal gridpunten verticaal",
+    "grid_points_per_m": "Dichtheid gridpunten",
+    "bottom_tangent_line": "Onderste tangentlijn",
+    "tangent_line_count": "Aantal tangentlijnen",
+    "tangent_lines_per_m": "Dichtheid tangentlijnen",
+    "move_grid": "Grid verplaatsen",
+    "grid_1_position": "Positie grid 1",
+    "grid_1_direction": "Richting grid 1",
+    "grid_1_offset_horizontal": "Offset horizontaal grid 1",
+    "grid_1_offset_vertical": "Offset verticaal grid 1",
+    "grid_1_width": "Breedte grid 1",
+    "grid_1_height": "Hoogte grid 1",
+    "grid_2_position": "Positie grid 2",
+    "grid_2_direction": "Richting grid 2",
+    "grid_2_offset_horizontal": "Offset horizontaal grid 2",
+    "grid_2_offset_vertical": "Offset verticaal grid 2",
+    "grid_2_height": "Hoogte grid 2",
+    "grid_2_width": "Breedte grid 2",
+    "top_tangent_area": "Bovenzijde tangentvlak",
+    "height_tangent_area": "Hoogte tangentvlak",
+    "search_mode": "Zoekmodus",
+    "apply_minimum_slip_plane_dimensions": "Minimale glijvlakdimensies toepassen",
+    "minimum_slip_plane_depth": "Minimale glijvlakdiepte",
+    "minimum_slip_plane_length": "Minimale glijvlaklengte",
+    "apply_constraint_zone_a": "In-/uittredezone A toepassen",
+    "zone_a_position": "Positie zone A",
+    "zone_a_direction": "Richting zone A",
+    "zone_a_width": "Breedte zone A",
+    "apply_constraint_zone_b": "In-/uittredezone B toepassen",
+    "zone_b_position": "Positie zone B",
+    "zone_b_direction": "Richting zone B",
+    "zone_b_width": "Breedte zone B",
+}
+
 CALCULATION_COLS = {
     "calc_name": "Naam",
     "scenario_name": "Scenario",
@@ -146,10 +191,11 @@ CALCULATION_COLS = {
 
 INPUT_TO_BOOL = {
     "Ja": True,
-    "Nee": False
+    "Nee": False,
+    None: None
 }
 
-INPUT_TO_CHAR_POINTS = data = {
+INPUT_TO_CHAR_POINTS = {
     "Maaiveld buitenwaarts": CharPointType.SURFACE_LEVEL_WATER_SIDE,
     "Teen geul": CharPointType.TOE_CANAL,
     "Insteek geul": CharPointType.START_CANAL,
@@ -168,16 +214,29 @@ INPUT_TO_CHAR_POINTS = data = {
     "Slootbodem polderzijde": CharPointType.DITCH_BOTTOM_LAND_SIDE,
     "Insteek sloot polderzijde": CharPointType.DITCH_START_LAND_SIDE,
     "Maaiveld binnenwaarts": CharPointType.SURFACE_LEVEL_LAND_SIDE,
+    None: None
 }
 
-INPUT_TO_IN_OR_OUTWARD = {
-    "Binnenwaarts": 'inward',
-    "Buitenwaarts": 'outward'
+INPUT_TO_SIDE = {
+    "Binnenwaarts": Side.LAND_SIDE,
+    "Buitenwaarts": Side.WATER_SIDE,
+    None: None
 }
 
 INPUT_TO_WATER_LINE_TYPE = {
     "Stijghoogtelijn": WaterLineType.HEADLINE,
     "Referentielijn": WaterLineType.REFERENCE_LINE
+}
+
+INPUT_TO_SLIP_PLANE_MODEL = {
+    "Uplift Van": SlipPlaneModel.UPLIFT_VAN_PARTICLE_SWARM,
+    "Bishop": SlipPlaneModel.BISHOP_BRUTE_FORCE
+}
+
+INPUT_TO_SEARCH_MODE = {
+    "Normal": UpliftVanSearchMode.NORMAL,
+    "Thorough": UpliftVanSearchMode.THOROUGH,
+    None: None
 }
 
 NAME_PHREATIC_LINE = "Freatisch"
@@ -193,6 +252,7 @@ class RawUserInput(BaseModel):
     soil_profile_positions: dict[str, dict[str, float | None]]
     loads: list[dict]
     hydraulic_pressure: dict
+    grid_settings: dict[str, list]
     calc_configs: list[dict]
 
     @classmethod
@@ -210,7 +270,6 @@ class RawUserInput(BaseModel):
             col_dict=SETTINGS_COLS,
             key_dict=SETTINGS_NAMES
         )
-        print(settings)
 
         surface_lines = parse_key_row(sheet=workbook[INPUT_SHEETS["surface_lines"]], skip_rows=1)
         char_points = parse_row_instance(
@@ -260,7 +319,7 @@ class RawUserInput(BaseModel):
         )
 
         for line_dict in loads:
-            line_dict["direction"] = INPUT_TO_IN_OR_OUTWARD[line_dict["direction"]]
+            line_dict["direction"] = INPUT_TO_SIDE[line_dict["direction"]]
             line_dict["position"] = INPUT_TO_CHAR_POINTS[line_dict["position"]]
 
         hydraulic_pressure = parse_row_instance_remainder(
@@ -281,6 +340,31 @@ class RawUserInput(BaseModel):
             keys=["calc_name", "scenario", "stage"],
             remove_group_key=True
         )
+
+        # Read and preprocess the grid settings
+        grid_settings = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["grid_settings"]],
+            header_row=2,
+            skip_rows=4,
+            col_dict=GRID_SETTINGS_COLS
+        )
+        for line_dict in grid_settings:
+            line_dict['slip_plane_model'] = INPUT_TO_SLIP_PLANE_MODEL[line_dict['slip_plane_model']]
+            line_dict['search_mode'] = INPUT_TO_SEARCH_MODE[line_dict['search_mode']]
+
+            for key in ["grid_direction", "grid_1_direction", "grid_2_direction",
+                        "zone_a_direction", "zone_b_direction"]:
+                line_dict[key] = INPUT_TO_SIDE[line_dict[key]]
+
+            for key in ["grid_position", "grid_1_position", "grid_2_position",
+                        "zone_a_position", "zone_b_position"]:
+                line_dict[key] = INPUT_TO_CHAR_POINTS[line_dict[key]]
+
+            for key in ["move_grid", "apply_minimum_slip_plane_dimensions", "apply_constraint_zone_a",
+                        "apply_constraint_zone_b"]:
+                line_dict[key] = INPUT_TO_BOOL[line_dict[key]]
+
+        grid_settings = group_dicts_by_key(grid_settings, group_by_key="name_set")
 
         calc_config_rows = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["calc_configs"]],
@@ -320,6 +404,7 @@ class RawUserInput(BaseModel):
             soil_profile_positions=soil_profile_positions,
             loads=loads,
             hydraulic_pressure=hydraulic_pressure,
+            grid_settings=grid_settings,
             calc_configs=calc_configs
         )
 
@@ -333,6 +418,7 @@ class UserInputStructure(BaseModel):
     soil_profile_positions: dict[str, dict[str, float | None]]
     loads: LoadCollection
     waternets: WaternetCollection
+    grid_settings: GridSettingsCollection
     calc_configs: list[dict]
 
     @classmethod
@@ -345,6 +431,7 @@ class UserInputStructure(BaseModel):
         waternet_collection = WaternetCollection.from_dict(
             raw_input.hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE
         )
+        grid_settings = GridSettingsCollection.from_dict(raw_input.grid_settings)
 
         return cls(
             settings=raw_input.settings,
@@ -355,6 +442,7 @@ class UserInputStructure(BaseModel):
             soil_profile_positions=raw_input.soil_profile_positions,
             loads=loads,
             waternets=waternet_collection,
+            grid_settings=grid_settings,
             calc_configs=raw_input.calc_configs
         )
 
@@ -362,3 +450,5 @@ class UserInputStructure(BaseModel):
 # Behalve dingen die duidelijk een invoerbestand zijn (zoals surfacelines en charpoints)
 # En als een dict logischer is, bv met soil profiles, waarbij de naam bovenliggend is en per regel een workaround is
 # t.b.v. invoer in Excel
+
+# Twijfel over beste locatie voor omzetten van invoervariabele. Nu bij RawInput,

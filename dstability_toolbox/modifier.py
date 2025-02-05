@@ -9,7 +9,7 @@ from geolib.models.dstability.loads import UniformLoad, Consolidation
 from dstability_toolbox.dm_getter import get_stage_by_indices, get_waternet_by_id
 from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Model
-from dstability_toolbox.geometry import Geometry, CharPointsProfile, CharPointType
+from dstability_toolbox.geometry import Geometry, CharPointsProfile, CharPointType, Side
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.state import StatePoint
 from dstability_toolbox.subsoil import Subsoil
@@ -143,7 +143,8 @@ def add_uniform_load(
     inward_positive = l_inward > l_outward  # Determine the direction of the l-axis
 
     # Determine the start and end of the load
-    if load.direction == 'inward' and inward_positive or load.direction == 'outward' and not inward_positive:
+    if (load.direction == Side.LAND_SIDE and inward_positive
+            or load.direction == Side.WATER_SIDE and not inward_positive):
         load_edge_2 = load_edge_1 + load.width
     else:
         load_edge_2 = load_edge_1 - load.width

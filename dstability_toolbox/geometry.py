@@ -1,4 +1,4 @@
-from enum import StrEnum, auto
+from enum import StrEnum, auto, Enum
 from math import isclose
 from typing import Optional, Literal
 
@@ -25,6 +25,11 @@ class CharPointType(StrEnum):
     DITCH_BOTTOM_LAND_SIDE = auto()
     DITCH_START_LAND_SIDE = auto()
     SURFACE_LEVEL_LAND_SIDE = auto()
+
+
+class Side(StrEnum):
+    LAND_SIDE = auto()
+    WATER_SIDE = auto()
 
 
 class Point(BaseModel):

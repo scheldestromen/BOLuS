@@ -6,7 +6,7 @@ from geolib.models import DStabilityModel
 from geolib.soils import Soil as GLSoil
 from geolib.models.dstability.internal import SoilCollection as GLSoilCollection
 
-from dstability_toolbox.geometry import CharPoint, CharPointType, CharPointsProfile
+from dstability_toolbox.geometry import CharPoint, CharPointType, CharPointsProfile, Side
 from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Model
 from dstability_toolbox.modifier import (add_soil_collection, set_subsoil, add_state_points,
@@ -141,7 +141,7 @@ class TestModifierAddUniformLoad(TestCase):
             angle=20,
             width=5,
             position=CharPointType.DIKE_CREST_LAND_SIDE,
-            direction='outward'
+            direction=Side.WATER_SIDE
         )
         add_uniform_load(
             load=load,
@@ -180,7 +180,7 @@ class TestModifierAddUniformLoad(TestCase):
             angle=20,
             width=5,
             position=CharPointType.DIKE_CREST_WATER_SIDE,
-            direction='inward'
+            direction=Side.LAND_SIDE
         )
         add_uniform_load(
             load=load,
@@ -216,7 +216,7 @@ class TestModifierAddUniformLoad(TestCase):
             angle=20,
             width=5,
             position=CharPointType.DIKE_CREST_LAND_SIDE,
-            direction='outward'
+            direction=Side.WATER_SIDE
         )
         add_uniform_load(
             load=load,
@@ -252,7 +252,7 @@ class TestModifierAddUniformLoad(TestCase):
             angle=20,
             width=5,
             position=CharPointType.DIKE_CREST_WATER_SIDE,
-            direction='inward'
+            direction=Side.LAND_SIDE
         )
         add_uniform_load(
             load=load,
@@ -342,8 +342,8 @@ class TestCreateDStabilityModel(TestCase):
                          len(self.model.scenarios[0].stages[0].state_points))
         self.assertEqual(len(dm.datastructure.geometries[0].Layers),
                          len(self.model.scenarios[0].stages[0].subsoil.soil_polygons))
-        self.assertEqual(len(dm.datastructure.loads[0].UniformLoads), 0)
-        self.assertEqual(len(dm.datastructure.loads[1].UniformLoads), 1)
+        self.assertEqual(len(dm.datastructure.loads[0].UniformLoads), 0)  # Hard coded test value
+        self.assertEqual(len(dm.datastructure.loads[1].UniformLoads), 1)  # Hard coded test value
         self.assertEqual(len(dm.datastructure.waternets[0].HeadLines),
                          len(self.model.scenarios[0].stages[0].waternet.head_lines))
         self.assertEqual(len(dm.datastructure.waternets[0].ReferenceLines),

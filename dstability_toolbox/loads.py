@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from dstability_toolbox.geometry import CharPointType
+from dstability_toolbox.geometry import CharPointType, Side
 
 
 class Load(BaseModel):
@@ -22,7 +22,7 @@ class Load(BaseModel):
     angle: float
     width: float
     position: CharPointType
-    direction: Literal['inward', 'outward']
+    direction: Side
 
 
 class LoadCollection(BaseModel):
