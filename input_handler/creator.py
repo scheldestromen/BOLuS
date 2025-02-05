@@ -50,6 +50,7 @@ def create_stage(
         surface_line=surface_line,
         soil_profiles=[sp[0] for sp in soil_profiles_and_coords],
         transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
+        min_soil_profile_depth=input_structure.settings["min_soil_profile_depth"]
     )
 
     load = input_structure.loads.get_by_name(stage["load_name"]) if stage["load_name"] is not None else None

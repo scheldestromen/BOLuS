@@ -130,3 +130,49 @@ def parse_key_row(sheet: Any, skip_rows: int) -> dict:
         row_dict[name] = values
 
     return row_dict
+
+
+def parse_key_value_cols(
+        sheet: Any,
+        header_row: int,
+        skip_rows: int,
+        key_col: str,
+        value_col: str,
+        col_dict: dict,
+        key_dict: dict
+) -> dict:
+    """Parses an Excel worksheet in which a column contains the keys and another column contains
+    the values. The key value pairs are assumed to be on the same row, but don't have to
+    be adjacent.
+
+    Args:
+        sheet: Excel worksheet
+        header_row: number of the header row
+        skip_rows: number of rows to skip
+        key_col: name (alias) of the column containing the keys
+        value_col: name (alias) of the column containing the values
+        col_dict: dictionary with the column alias as key and the actual column name
+          as value
+        key_dict: dictionary with the key alias as key and the actual key as value"""
+
+    header_list = [cell.value for cell in sheet[header_row]]
+    indices = get_list_item_indices(header_list, col_dict)
+
+    sheet_dict = {}
+
+    for i, row in enumerate(sheet):
+        # Skip header
+        if i in list(range(skip_rows)):
+            continue
+
+        key = row[indices[key_col]].value
+        value = row[indices[value_col]].value
+
+        if key in sheet_dict.keys():
+            raise ValueError(f"A duplicate key was found: `{key}` in sheet {sheet.name}")
+
+        # If the key is not None then it is assigned
+        if key is not None:
+            sheet_dict[key_dict[key]] = value
+
+    return sheet_dict

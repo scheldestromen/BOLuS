@@ -161,3 +161,31 @@ class TestSubsoilFromSoilProfiles(TestCase):
                 soil_profiles=self.soil_profiles,
                 transitions=[-20, 50]
             )
+
+    def test_bottom_no_minimum_depth(self):
+        min_layer_thickness = 1
+
+        subsoil = subsoil_from_soil_profiles(
+            surface_line=self.surface_line,
+            soil_profiles=[self.soil_profiles[0]],
+            thickness_bottom_layer=min_layer_thickness,
+            min_soil_profile_depth=None
+        )
+        bottom_layer_top = self.soil_profiles[0].layers[-1].top
+
+        z_min = min([point[1] for soil_poly in subsoil.soil_polygons for point in soil_poly.points])
+        self.assertAlmostEqual(z_min, bottom_layer_top - min_layer_thickness)
+
+    def test_bottom_with_minimum_depth(self):
+        min_layer_thickness = 1
+        minimum_depth = -20
+
+        subsoil = subsoil_from_soil_profiles(
+            surface_line=self.surface_line,
+            soil_profiles=[self.soil_profiles[0]],
+            thickness_bottom_layer=min_layer_thickness,
+            min_soil_profile_depth=minimum_depth
+        )
+
+        z_min = min([point[1] for soil_poly in subsoil.soil_polygons for point in soil_poly.points])
+        self.assertAlmostEqual(z_min, minimum_depth)

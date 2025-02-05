@@ -6,7 +6,8 @@ from pydantic import BaseModel
 from pathlib import Path
 import openpyxl
 
-from input_handler.excel_utils import parse_row_instance, parse_key_row, parse_row_instance_remainder
+from input_handler.excel_utils import (parse_row_instance, parse_key_row, parse_row_instance_remainder,
+                                       parse_key_value_cols)
 from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection, CharPointType
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
@@ -16,6 +17,7 @@ from utils.dict_utils import remove_key, group_dicts_by_key, list_to_nested_dict
 from utils.list_utils import check_list_of_dicts_for_duplicate_values, unique_in_order
 
 INPUT_SHEETS = {
+    "settings": "Instellingen",
     "surface_lines": "Dwarsprofielen",
     "char_points": "Kar. punten",
     "soil_params": "Sterkteparameters",
@@ -24,6 +26,15 @@ INPUT_SHEETS = {
     "loads": "Belasting",
     "hydraulic_pressure": "Waterspanningsschematisatie",
     "calc_configs": "Berekeningen"
+}
+
+SETTINGS_COLS = {
+    "setting": "Instelling",
+    "value": "Waarde"
+}
+
+SETTINGS_NAMES = {
+    "Minimale diepte ondergrond": "min_soil_profile_depth",
 }
 
 CHAR_POINT_COLS = {
@@ -174,6 +185,7 @@ NAME_PHREATIC_LINE = "Freatisch"
 
 class RawUserInput(BaseModel):
     """Represents the Input Excel file"""
+    settings: dict[str, str | float]
     surface_lines: dict[str, list]
     char_points: dict[str, dict]
     soil_params: list[dict]
@@ -189,6 +201,17 @@ class RawUserInput(BaseModel):
         workbook = openpyxl.load_workbook(
             file_path, data_only=True, read_only=True
         )
+        settings = parse_key_value_cols(
+            sheet=workbook[INPUT_SHEETS["settings"]],
+            header_row=1,
+            skip_rows=1,
+            key_col='setting',
+            value_col='value',
+            col_dict=SETTINGS_COLS,
+            key_dict=SETTINGS_NAMES
+        )
+        print(settings)
+
         surface_lines = parse_key_row(sheet=workbook[INPUT_SHEETS["surface_lines"]], skip_rows=1)
         char_points = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["char_points"]],
@@ -289,6 +312,7 @@ class RawUserInput(BaseModel):
             calc_configs.append({"calc_name": calc_name, "scenarios": scenarios})
 
         return cls(
+            settings=settings,
             surface_lines=surface_lines,
             char_points=char_points,
             soil_params=soil_params,
@@ -301,6 +325,7 @@ class RawUserInput(BaseModel):
 
 
 class UserInputStructure(BaseModel):
+    settings: dict[str, str | float]
     surface_lines: SurfaceLineCollection
     char_points: CharPointsProfileCollection
     soils: SoilCollection
@@ -322,6 +347,7 @@ class UserInputStructure(BaseModel):
         )
 
         return cls(
+            settings=raw_input.settings,
             surface_lines=surface_lines,
             char_points=char_points,
             soils=soil_collection,

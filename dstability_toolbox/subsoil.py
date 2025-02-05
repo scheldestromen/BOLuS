@@ -122,7 +122,9 @@ def subsoil_from_soil_profiles(
         surface_line: SurfaceLine,
         soil_profiles: list[SoilProfile],
         transitions: Optional[list[float]] = None,
-        thickness_bottom_layer: float = 5  # TODO: aanpassen naar minimale diepte?
+        thickness_bottom_layer: float = 1,
+        min_soil_profile_depth: Optional[float] = None
+
 ) -> Subsoil:
     """Creates an instance of Subsoil from one or more SoilProfile objects.
 
@@ -134,6 +136,8 @@ def subsoil_from_soil_profiles(
         thickness_bottom_layer: The layer thickness of the bottom layer. Defaults to 5 m.
           The layer bottoms are determined by the layer underneath, but the bottom layer
           of a SoilProfile does not have that.
+        min_soil_profile_depth: (Optional) The minimum depth of a SoilProfile. If the SoilProfile
+          is shallower than this value, the SoilProfile is extended to this depth.
 
     """
     if transitions is None:
@@ -175,9 +179,12 @@ def subsoil_from_soil_profiles(
         for j, layer in enumerate(soil_profile.layers):
             top = layer.top
 
-            # If the current layer is the bottom layer then use bottom layer thickness
+            # If layer is the bottom layer then use thickness_bottom_layer and min_soil_profile_depth
             if j + 1 == len(soil_profile.layers):
-                bottom = top - thickness_bottom_layer
+                if min_soil_profile_depth is not None:
+                    bottom = min(top - thickness_bottom_layer, min_soil_profile_depth)
+                else:
+                    bottom = top - thickness_bottom_layer
             else:
                 bottom = soil_profile.layers[j + 1].top
 
