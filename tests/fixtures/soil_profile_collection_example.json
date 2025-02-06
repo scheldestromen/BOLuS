@@ -1,0 +1,64 @@
+{
+    "Bodemprofiel 1": [
+        {
+            "soil_type": "Klei",
+            "top": 10
+        },
+        {
+            "soil_type": "Veen",
+            "top": -4
+        },
+        {
+            "soil_type": "Klei",
+            "top": -6
+        },
+        {
+            "soil_type": "Zand",
+            "top": -13
+        }
+    ],
+    "Bodemprofiel 2": [
+        {
+            "soil_type": "Klei",
+            "top": 10
+        },
+        {
+            "soil_type": "Veen",
+            "top": -4
+        },
+        {
+            "soil_type": "Klei",
+            "top": -5
+        },
+        {
+            "soil_type": "Zand",
+            "top": -6
+        },
+        {
+            "soil_type": "Klei",
+            "top": -8.5
+        },
+        {
+            "soil_type": "Zand",
+            "top": -10.5
+        }
+    ],
+    "Bodemprofiel 3": [
+        {
+            "soil_type": "Klei",
+            "top": 10
+        },
+        {
+            "soil_type": "Veen",
+            "top": -2
+        },
+        {
+            "soil_type": "Klei",
+            "top": -5
+        },
+        {
+            "soil_type": "Zand",
+            "top": -9.5
+        }
+    ]
+}
