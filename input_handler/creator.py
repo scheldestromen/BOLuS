@@ -8,11 +8,11 @@ from dstability_toolbox.model import Model, Scenario, Stage
 from dstability_toolbox.subsoil import subsoil_from_soil_profiles
 from dstability_toolbox.state import create_state_points_from_subsoil
 
-from input_reader import UserInputStructure
+from input_handler.user_input import UserInputStructure, ScenarioConfig, StageConfig
 
 
 def create_stage(
-    stage: dict,
+    stage_config: StageConfig,
     scenario_name: str,
     calc_name: str,
     geometries: List[Geometry],
@@ -22,7 +22,7 @@ def create_stage(
     Creates a Stage object from the provided input.
 
     Args:
-        stage: A dictionary containing stage details.
+        stage_config: Stage configuration.
         scenario_name: The name of the scenario.
         calc_name: The name of the calculation.
         geometries: A list of Geometry objects.
@@ -31,13 +31,13 @@ def create_stage(
     Returns:
         A Stage object.
     """
-    geometry = next((geom for geom in geometries if geom.name == stage["geometry"]), None)
+    geometry = next((geom for geom in geometries if geom.name == stage_config.geometry_name), None)
 
     if geometry is None:
-        raise ValueError(f"Could not find geometry with name {stage['geometry']}")
+        raise ValueError(f"Could not find geometry with name {stage_config.geometry_name}")
 
     surface_line = geometry.surface_line
-    profile_positions = input_structure.soil_profile_positions[stage["profile_position_name"]]
+    profile_positions = input_structure.soil_profile_positions[stage_config.soil_profile_position_name]
 
     soil_profiles_and_coords = [
         (sp, coord) for name, coord in profile_positions.items()
@@ -53,18 +53,18 @@ def create_stage(
         min_soil_profile_depth=input_structure.settings["min_soil_profile_depth"]
     )
 
-    load = input_structure.loads.get_by_name(stage["load_name"]) if stage["load_name"] is not None else None
+    load = input_structure.loads.get_by_name(stage_config.load_name) if stage_config.load_name is not None else None
 
     # Create the state points
     state_points = create_state_points_from_subsoil(
         subsoil=subsoil,
         soil_collection=input_structure.soils,
         state_type='POP'
-    ) if stage["apply_state_points"] else None
+    ) if stage_config.apply_state_points else None
 
     # Create the stage
     return Stage(
-        name=stage["stage_name"],
+        name=stage_config.stage_name,
         notes="",
         geometry=geometry,
         subsoil=subsoil,
@@ -73,12 +73,12 @@ def create_stage(
         waternet=input_structure.waternets.get_waternet(
             calc_name,
             scenario_name,
-            stage['stage_name'])
+            stage_config.stage_name)
     )
 
 
 def create_scenario(
-    scenario: dict,
+    scenario_config: ScenarioConfig,
     calc_name: str,
     geometries: List[Geometry],
     input_structure: UserInputStructure
@@ -87,7 +87,7 @@ def create_scenario(
     Creates a Scenario object from the provided input.
 
     Args:
-        scenario: A dictionary containing scenario details.
+        scenario_config: Scenario configuration.
         calc_name: The name of the calculation.
         geometries: A list of Geometry objects.
         input_structure: The user-provided input structure.
@@ -95,18 +95,19 @@ def create_scenario(
     Returns:
         A Scenario object.
     """
-    stages = [create_stage(
-        stage=stage,
-        scenario_name=scenario["scenario_name"],
-        calc_name=calc_name,
-        geometries=geometries,
-        input_structure=input_structure
-    ) for stage in scenario["stages"]]
+    stages = [create_stage(stage_config=stage, scenario_name=scenario_config.scenario_name, calc_name=calc_name,
+                           geometries=geometries, input_structure=input_structure) for stage in scenario_config.stages]
+
+    if scenario_config.grid_settings_set_name is not None:
+        grid_settings_set = input_structure.grid_settings.get_by_name(scenario_config.grid_settings_set_name)
+    else:
+        grid_settings_set = None
 
     return Scenario(
-        name=scenario["scenario_name"],
+        name=scenario_config.scenario_name,
         notes="",
-        stages=stages
+        stages=stages,
+        grid_settings_set=grid_settings_set
     )
 
 
@@ -129,15 +130,15 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
     )
 
     # Create a Model for each calculation dictionary
-    for calc_config in input_structure.calc_configs:
+    for model_config in input_structure.model_configs:
         scenarios = [
-            create_scenario(scenario, calc_config["calc_name"], geometries, input_structure)
-            for scenario in calc_config["scenarios"]
+            create_scenario(scenario, model_config.calc_name, geometries, input_structure)
+            for scenario in model_config.scenarios
         ]
 
         models.append(
             Model(
-                name=calc_config["calc_name"],
+                name=model_config.calc_name,
                 soil_collection=input_structure.soils,
                 scenarios=scenarios
             )

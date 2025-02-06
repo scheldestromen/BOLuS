@@ -1,8 +1,8 @@
 from typing import Optional
 
 from pydantic import BaseModel
-from typing_extensions import List
 
+from .calculation_settings import GridSettingsSet
 from .loads import Load
 from .soils import SoilCollection
 from .water import Waternet
@@ -24,10 +24,11 @@ class Stage(BaseModel):
 class Scenario(BaseModel):
     name: str
     notes: str = ""
-    stages: List[Stage]
+    stages: list[Stage]
+    grid_settings_set: Optional[GridSettingsSet]
 
 
 class Model(BaseModel):
     name: str
     soil_collection: SoilCollection
-    scenarios: List[Scenario]
+    scenarios: list[Scenario]

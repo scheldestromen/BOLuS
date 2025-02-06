@@ -15,8 +15,8 @@ class Load(BaseModel):
         angle: The angle of the load distribution.
         width: The width of the load.
         position: The position of the load, characterised by a CharPointType.
-        direction: The direction of the load, either "inward" or "outward".
-    """
+        direction: The direction of the load, either "inward" or "outward"."""
+
     name: str
     magnitude: float
     angle: float

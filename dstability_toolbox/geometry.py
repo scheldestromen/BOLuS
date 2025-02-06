@@ -173,6 +173,41 @@ class CharPointsProfile(ProfileLine):
         raise ValueError(f"Characteristic point of type `{char_type.value}` "
                          f"was not found in profile {self.name}")
 
+    def determine_l_direction_sign(self, direction: Side) -> int:
+        """Determines in which way to move along the l-axis if a displacement
+        is desired in the given direction.
+
+        The l-axis of a profile can either be defined positive towards the landside (inward)
+        or towards the waterside (outward). This function determines if the absolute value of
+        a displacement (d) relative to a point along the l-axis with coordinate (l_ref) should
+        be added or subtracted depending on the desired direction of displacement. Such that:
+        l_new = l_ref + sign * d
+
+        Args:
+            direction: Side (Side.LAND_SIDE or Side.WATER_SIDE)
+
+        Returns:
+            sign: +1 or -1
+
+        Example:
+           The l-axis is defined positive towards the landside (inward) and a displacement
+           is desired towards the waterside (outward) then the absolute value of the displacement
+           should be subtracted. The result is therefore -1
+         """
+        self.check_l_coordinates_present()
+
+        l_inward = self.get_point_by_type(CharPointType.SURFACE_LEVEL_LAND_SIDE).l
+        l_outward = self.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
+        inward_positive = l_inward > l_outward  # Determine the direction of the l-axis
+
+        # Determine the start and end of the load
+        if direction == Side.LAND_SIDE and inward_positive or direction == Side.WATER_SIDE and not inward_positive:
+            sign = +1
+        else:
+            sign = -1
+
+        return sign
+
 
 class SurfaceLine(ProfileLine):
     """Representation of a cross-sectional profile of a dike.

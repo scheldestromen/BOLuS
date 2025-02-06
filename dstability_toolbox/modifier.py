@@ -137,17 +137,11 @@ def add_uniform_load(
     Returns:
         The modified DStabilityModel
     """
-    l_inward = char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_LAND_SIDE).l
-    l_outward = char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
-    load_edge_1 = char_point_profile.get_point_by_type(load.position).l
-    inward_positive = l_inward > l_outward  # Determine the direction of the l-axis
+    sign = char_point_profile.determine_l_direction_sign(load.direction)
 
     # Determine the start and end of the load
-    if (load.direction == Side.LAND_SIDE and inward_positive
-            or load.direction == Side.WATER_SIDE and not inward_positive):
-        load_edge_2 = load_edge_1 + load.width
-    else:
-        load_edge_2 = load_edge_1 - load.width
+    load_edge_1 = char_point_profile.get_point_by_type(load.position).l
+    load_edge_2 = load_edge_1 + sign * load.width
 
     # Depending on the profile orientation, the land side can be left or right
     # Hence the start and end are determined using min/max to ensure they are in the right order
@@ -229,6 +223,7 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
     return dm
 
 
+# TODO: refactor
 def create_d_stability_model(model: Model):
     """Creates new calculations with the given models"""
     dm = DStabilityModel()
@@ -248,6 +243,15 @@ def create_d_stability_model(model: Model):
 
         else:
             dm.add_scenario(label=scenario.name, notes=scenario.notes, set_current=True)
+
+        for i_grid, grid_settings in enumerate(scenario.grid_settings_set.grid_settings):
+            if i_grid == 0:
+                dm.scenarios[dm.current_scenario].Calculations[0].Label = grid_settings.grid_setting_name
+            else:
+                dm.add_calculation(label=grid_settings.grid_setting_name, set_current=True)
+
+            analysis_method = grid_settings.to_geolib(scenario.stages[-1].geometry.char_point_profile)
+            dm.set_model(analysis_method=analysis_method)
 
         for j, stage in enumerate(scenario.stages):
             if j == 0:

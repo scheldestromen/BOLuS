@@ -1,7 +1,8 @@
 """
 Main module for input_handler
 """
-from input_reader import RawUserInput, UserInputStructure
+from input_reader import RawUserInput, raw_input_to_user_input_structure
+from input_handler.user_input import UserInputStructure
 from creator import input_to_models
 from dstability_toolbox.modifier import create_d_stability_model
 
@@ -12,7 +13,7 @@ if __name__ == "__main__":
     raw_user_input = RawUserInput.read_from_file(INPUT_FILE_PATH)
 
     # Convert the input to models. input_to_models has all the logic
-    input_structure = UserInputStructure.from_raw_input(raw_user_input)
+    input_structure = raw_input_to_user_input_structure(raw_user_input)
     models = input_to_models(input_structure)
 
     # Create new DStability calculations from the DStability models

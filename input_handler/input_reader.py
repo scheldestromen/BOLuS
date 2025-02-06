@@ -6,14 +6,15 @@ from pydantic import BaseModel
 from pathlib import Path
 import openpyxl
 
-from dstability_toolbox.calculation_settings import GridSettingsCollection, SlipPlaneModel, UpliftVanSearchMode
-from input_handler.excel_utils import (parse_row_instance, parse_key_row, parse_row_instance_remainder,
-                                       parse_key_value_cols)
-from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection, CharPointType, Side
+from dstability_toolbox.calculation_settings import SlipPlaneModel, UpliftVanSearchMode, GridSettingsSetCollection
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
+from input_handler.excel_utils import (parse_row_instance, parse_key_row, parse_row_instance_remainder,
+                                       parse_key_value_cols)
+from dstability_toolbox.geometry import CharPointType, Side, SurfaceLineCollection, CharPointsProfileCollection
 from dstability_toolbox.water import WaterLineType, WaternetCollection
+from input_handler.user_input import UserInputStructure, model_configs_from_list
 from utils.dict_utils import remove_key, group_dicts_by_key, list_to_nested_dict
 from utils.list_utils import check_list_of_dicts_for_duplicate_values, unique_in_order
 
@@ -27,7 +28,7 @@ INPUT_SHEETS = {
     "loads": "Belasting",
     "hydraulic_pressure": "Waterspanningsschematisatie",
     "grid_settings": "Gridinstellingen",
-    "calc_configs": "Berekeningen"
+    "model_configs": "Berekeningen"
 }
 
 SETTINGS_COLS = {
@@ -183,10 +184,12 @@ CALCULATION_COLS = {
     "calc_name": "Naam",
     "scenario_name": "Scenario",
     "stage_name": "Stage",
-    "geometry": "Geometrie",
-    "profile_position_name": "Bodemopbouw",
+    "geometry_name": "Geometrie",
+    "soil_profile_position_name": "Bodemopbouw",
     "apply_state_points": "State points toepassen",
     "load_name": "Belasting",
+    "grid_settings_set_name": "Glijvlakinstellingen",
+    "evaluate": "Berekenen"
 }
 
 INPUT_TO_BOOL = {
@@ -253,7 +256,7 @@ class RawUserInput(BaseModel):
     loads: list[dict]
     hydraulic_pressure: dict
     grid_settings: dict[str, list]
-    calc_configs: list[dict]
+    model_configs: list[dict]
 
     @classmethod
     def read_from_file(cls, file_path: str | Path):
@@ -366,34 +369,52 @@ class RawUserInput(BaseModel):
 
         grid_settings = group_dicts_by_key(grid_settings, group_by_key="name_set")
 
-        calc_config_rows = parse_row_instance(
-            sheet=workbook[INPUT_SHEETS["calc_configs"]],
+        model_config_rows = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["model_configs"]],
             header_row=2,
             skip_rows=4,
             col_dict=CALCULATION_COLS
         )
 
-        # Preprocess calc_configs
-        for calc_dict in calc_config_rows:
-            calc_dict["apply_state_points"] = INPUT_TO_BOOL[calc_dict["apply_state_points"]]
+        # Preprocess model_configs
+        for model_dict in model_config_rows:
+            model_dict["apply_state_points"] = INPUT_TO_BOOL[model_dict["apply_state_points"]]
 
-        calc_names = unique_in_order([calc_row["calc_name"] for calc_row in calc_config_rows])
-        calc_configs = []
+        calc_names = unique_in_order([calc_row["calc_name"] for calc_row in model_config_rows])
+        model_configs = []
 
         # Create structured list [{calc_name: "name", "scenarios": [{"scenario_name": "name", "stages": {"stage_name":..
         for calc_name in calc_names:
             # Get all row of calculation calc_name
-            calc_rows = [calc_row for calc_row in calc_config_rows if calc_row["calc_name"] == calc_name]
+            calc_rows = [calc_row for calc_row in model_config_rows if calc_row["calc_name"] == calc_name]
             scenario_names = unique_in_order([row["scenario_name"] for row in calc_rows])
             scenarios = []
 
             for scenario_name in scenario_names:
                 # Get al rows belonging to the scenario
                 scenario_rows = [row for row in calc_rows if row["scenario_name"] == scenario_name]
-                scenario = {"scenario_name": scenario_name, "stages": scenario_rows}
+                grid_settings_set_name_list = [row["grid_settings_set_name"] for row in scenario_rows
+                                          if row["grid_settings_set_name"] is not None]
+
+                if len(grid_settings_set_name_list) > 1:
+                    raise ValueError(
+                        f"Calculation {calc_name} has more than one grid_settings_set_name for scenario {scenario_name}"
+                    )
+
+                elif len(grid_settings_set_name_list) == 1:
+                    grid_settings_set_name = grid_settings_set_name_list[0]
+
+                else:
+                    grid_settings_set_name = None
+
+                scenario = {
+                    "scenario_name": scenario_name,
+                    "stages": scenario_rows,
+                    "grid_settings_set_name": grid_settings_set_name
+                }
                 scenarios.append(scenario)
 
-            calc_configs.append({"calc_name": calc_name, "scenarios": scenarios})
+            model_configs.append({"calc_name": calc_name, "scenarios": scenarios})
 
         return cls(
             settings=settings,
@@ -405,50 +426,38 @@ class RawUserInput(BaseModel):
             loads=loads,
             hydraulic_pressure=hydraulic_pressure,
             grid_settings=grid_settings,
-            calc_configs=calc_configs
+            model_configs=model_configs
         )
 
 
-class UserInputStructure(BaseModel):
-    settings: dict[str, str | float]
-    surface_lines: SurfaceLineCollection
-    char_points: CharPointsProfileCollection
-    soils: SoilCollection
-    soil_profiles: SoilProfileCollection
-    soil_profile_positions: dict[str, dict[str, float | None]]
-    loads: LoadCollection
-    waternets: WaternetCollection
-    grid_settings: GridSettingsCollection
-    calc_configs: list[dict]
+def raw_input_to_user_input_structure(raw_input: RawUserInput) -> UserInputStructure:
+    surface_lines = SurfaceLineCollection.from_dict(raw_input.surface_lines)
+    char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
+    soil_collection = SoilCollection.from_list(raw_input.soil_params)
+    soil_profiles = SoilProfileCollection.from_dict(raw_input.soil_profiles)
+    loads = LoadCollection.from_list(raw_input.loads)
+    waternet_collection = WaternetCollection.from_dict(
+        raw_input.hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE
+    )
+    grid_settings = GridSettingsSetCollection.from_dict(raw_input.grid_settings)
+    model_configs = model_configs_from_list(raw_input.model_configs)
 
-    @classmethod
-    def from_raw_input(cls, raw_input: RawUserInput):
-        surface_lines = SurfaceLineCollection.from_dict(raw_input.surface_lines)
-        char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
-        soil_collection = SoilCollection.from_list(raw_input.soil_params)
-        soil_profiles = SoilProfileCollection.from_dict(raw_input.soil_profiles)
-        loads = LoadCollection.from_list(raw_input.loads)
-        waternet_collection = WaternetCollection.from_dict(
-            raw_input.hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE
-        )
-        grid_settings = GridSettingsCollection.from_dict(raw_input.grid_settings)
-
-        return cls(
-            settings=raw_input.settings,
-            surface_lines=surface_lines,
-            char_points=char_points,
-            soils=soil_collection,
-            soil_profiles=soil_profiles,
-            soil_profile_positions=raw_input.soil_profile_positions,
-            loads=loads,
-            waternets=waternet_collection,
-            grid_settings=grid_settings,
-            calc_configs=raw_input.calc_configs
-        )
+    return UserInputStructure(
+        settings=raw_input.settings,
+        surface_lines=surface_lines,
+        char_points=char_points,
+        soils=soil_collection,
+        soil_profiles=soil_profiles,
+        soil_profile_positions=raw_input.soil_profile_positions,
+        loads=loads,
+        waternets=waternet_collection,
+        grid_settings=grid_settings,
+        model_configs=model_configs
+    )
 
 # REMINDER: Houdt de invoerstructuur zo algemeen mogelijk. list met dicts is algemeen als tabel handig
 # Behalve dingen die duidelijk een invoerbestand zijn (zoals surfacelines en charpoints)
 # En als een dict logischer is, bv met soil profiles, waarbij de naam bovenliggend is en per regel een workaround is
 # t.b.v. invoer in Excel
 
-# Twijfel over beste locatie voor omzetten van invoervariabele. Nu bij RawInput,
+# Twijfel over beste locatie voor omzetten van invoervariabele (INPUT_TO_...). Nu bij RawInput,
