@@ -242,7 +242,6 @@ def add_calculation_with_grid_settings(
 
     Returns:
         The modified DStabilityModel"""
-    # TODO: check for existing calculations with the same name
 
     if dm.scenarios[scenario_index].Calculations:
         calculation_names = [calculation.Label for calculation in dm.scenarios[scenario_index].Calculations]
