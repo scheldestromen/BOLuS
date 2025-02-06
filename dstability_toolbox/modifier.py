@@ -6,6 +6,7 @@ from geolib.models.dstability.internal import SoilCollection as GLSoilCollection
 from geolib.models.dstability.states import DStabilityStatePoint, DStabilityStress
 from geolib.models.dstability.loads import UniformLoad, Consolidation
 
+from dstability_toolbox.calculation_settings import UpliftVanParticleSwarm, BishopBruteForce
 from dstability_toolbox.dm_getter import get_stage_by_indices, get_waternet_by_id
 from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Model
@@ -223,6 +224,40 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
     return dm
 
 
+def add_calculation_with_grid_settings(
+        grid_settings: BishopBruteForce | UpliftVanParticleSwarm,
+        dm: DStabilityModel,
+        char_points_profile: CharPointsProfile,
+        scenario_index: int
+):
+    """Adds an analysis method to the given scenario in the DStabilityModel
+    based on the given grid settings.
+
+
+    Args:
+        grid_settings: The grid settings to add to the DStabilityModel
+        dm: The DStabilityModel to add the grid settings to
+        char_points_profile: The CharPointsProfile to base the grid settings on
+        scenario_index: Index of the scenario to add the grid settings to
+
+    Returns:
+        The modified DStabilityModel"""
+    # TODO: check for existing calculations with the same name
+
+    if dm.scenarios[scenario_index].Calculations:
+        calculation_names = [calculation.Label for calculation in dm.scenarios[scenario_index].Calculations]
+        if grid_settings.grid_setting_name in calculation_names:
+            raise ValueError(f"There is already a calculation with name {grid_settings.grid_setting_name} in "
+                             f"scenario {scenario_index}. Calculations must have unique names.\n"
+                             f"The characteristic profile name is: {char_points_profile.name}")
+
+    dm.add_calculation(scenario_index=scenario_index, label=grid_settings.grid_setting_name, set_current=True)
+    analysis_method = grid_settings.to_geolib(char_points_profile=char_points_profile)
+    dm.set_model(analysis_method=analysis_method, scenario_index=scenario_index)
+
+    return dm
+
+
 # TODO: refactor
 def create_d_stability_model(model: Model):
     """Creates new calculations with the given models"""
@@ -245,13 +280,20 @@ def create_d_stability_model(model: Model):
             dm.add_scenario(label=scenario.name, notes=scenario.notes, set_current=True)
 
         for i_grid, grid_settings in enumerate(scenario.grid_settings_set.grid_settings):
-            if i_grid == 0:
-                dm.scenarios[dm.current_scenario].Calculations[0].Label = grid_settings.grid_setting_name
-            else:
-                dm.add_calculation(label=grid_settings.grid_setting_name, set_current=True)
+            char_point_profile = scenario.stages[-1].geometry.char_point_profile
 
-            analysis_method = grid_settings.to_geolib(scenario.stages[-1].geometry.char_point_profile)
-            dm.set_model(analysis_method=analysis_method)
+            if i_grid == 0:
+                # Overwrite existing default calculation
+                dm.scenarios[dm.current_scenario].Calculations[0].Label = grid_settings.grid_setting_name
+                analysis_method = grid_settings.to_geolib(char_points_profile=char_point_profile)
+                dm.set_model(analysis_method=analysis_method, scenario_index=dm.current_scenario)
+            else:
+                add_calculation_with_grid_settings(
+                    grid_settings=grid_settings,
+                    dm=dm,
+                    scenario_index=dm.current_scenario,
+                    char_points_profile=char_point_profile
+                )
 
         for j, stage in enumerate(scenario.stages):
             if j == 0:

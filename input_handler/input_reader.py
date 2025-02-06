@@ -1,12 +1,13 @@
 """
 Parses the input file
 """
+from geolib.models.dstability.internal import OptionsType
 from pydantic import BaseModel
 
 from pathlib import Path
 import openpyxl
 
-from dstability_toolbox.calculation_settings import SlipPlaneModel, UpliftVanSearchMode, GridSettingsSetCollection
+from dstability_toolbox.calculation_settings import SlipPlaneModel, GridSettingsSetCollection
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
@@ -237,8 +238,8 @@ INPUT_TO_SLIP_PLANE_MODEL = {
 }
 
 INPUT_TO_SEARCH_MODE = {
-    "Normal": UpliftVanSearchMode.NORMAL,
-    "Thorough": UpliftVanSearchMode.THOROUGH,
+    "Normal": OptionsType.DEFAULT,
+    "Thorough": OptionsType.THOROUGH,
     None: None
 }
 

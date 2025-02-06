@@ -1,6 +1,7 @@
 """
 Creating calculation settings and grids
 """
+from geolib.models.dstability.internal import OptionsType
 from pydantic import BaseModel, model_validator
 from abc import ABC, abstractmethod
 from enum import auto, StrEnum
@@ -16,11 +17,6 @@ from dstability_toolbox.geometry import CharPointsProfile, CharPointType, Side
 class SlipPlaneModel(StrEnum):
     UPLIFT_VAN_PARTICLE_SWARM = auto()
     BISHOP_BRUTE_FORCE = auto()
-
-
-class UpliftVanSearchMode(StrEnum):
-    NORMAL = auto()
-    THOROUGH = auto()
 
 
 class GridSettings(ABC, BaseModel):
@@ -82,7 +78,7 @@ class GridSettings(ABC, BaseModel):
     def to_geolib(self, char_points_profile: CharPointsProfile):
         """Exports the grid settings to a GEOLib class"""
 
-    def slip_plain_constraints_to_geolib(self, char_points_profile: CharPointsProfile):
+    def slip_plane_constraints_to_geolib(self, char_points_profile: CharPointsProfile):
         slip_plane_constraints = DStabilitySlipPlaneConstraints()
 
         if self.apply_constraint_zone_a is True:
@@ -132,19 +128,48 @@ class UpliftVanParticleSwarm(GridSettings):
     grid_2_width: float
     top_tangent_area: float
     height_tangent_area: float
-    search_mode: UpliftVanSearchMode
+    search_mode: OptionsType
 
     def to_geolib(self, char_points_profile: CharPointsProfile):
-        analysis_method = DStabilityUpliftVanParticleSwarmAnalysisMethod(
-            search_area_a=DStabilitySearchArea(
-                height=5.0, top_left=GLPoint(x=0.0, z=10.0), width=5.0
-            ),
-            search_area_b=DStabilitySearchArea(
-                height=5.0, top_left=GLPoint(x=35.0, z=5.0), width=5.0
-            ),
-            tangent_area_height=2.0,
-            tangent_area_top_z=-4.5,
+        # Create the first search area
+        grid_1_ref_point = char_points_profile.get_point_by_type(self.grid_1_position)
+        grid_1_sign = char_points_profile.determine_l_direction_sign(self.grid_1_direction)
+
+        grid_1_l1 = grid_1_ref_point.l + grid_1_sign * self.grid_1_offset_horizontal
+        grid_1_l2 = grid_1_l1 + grid_1_sign * self.grid_1_width
+        grid_1_top = grid_1_ref_point.z + self.grid_1_offset_vertical + self.grid_1_height
+
+        search_area_a = DStabilitySearchArea(
+            height=self.grid_1_height,
+            width=self.grid_1_width,
+            top_left=GLPoint(x=min(grid_1_l1, grid_1_l2), z=grid_1_top),
         )
+
+        # Create the second search area
+        grid_2_ref_point = char_points_profile.get_point_by_type(self.grid_2_position)
+        grid_2_sign = char_points_profile.determine_l_direction_sign(self.grid_2_direction)
+
+        grid_2_l1 = grid_2_ref_point.l + grid_2_sign * self.grid_2_offset_horizontal
+        grid_2_l2 = grid_2_l1 + grid_2_sign * self.grid_2_width
+        grid_2_top = grid_2_ref_point.z + self.grid_2_offset_vertical + self.grid_2_height
+
+        search_area_b = DStabilitySearchArea(
+            height=self.grid_2_height,
+            width=self.grid_2_width,
+            top_left=GLPoint(x=min(grid_2_l1, grid_2_l2), z=grid_2_top),
+        )
+
+        # Create the analysis method
+        analysis_method = DStabilityUpliftVanParticleSwarmAnalysisMethod(
+            options_type=self.search_mode,
+            search_area_a=search_area_a,
+            search_area_b=search_area_b,
+            tangent_area_height=self.height_tangent_area,
+            tangent_area_top_z=self.top_tangent_area,
+            slip_plane_constraints=self.slip_plane_constraints_to_geolib(char_points_profile),
+        )
+
+        return analysis_method
 
 
 class BishopBruteForce(GridSettings):
@@ -162,10 +187,9 @@ class BishopBruteForce(GridSettings):
     move_grid: bool
 
     def to_geolib(self, char_points_profile: CharPointsProfile) -> DStabilityBishopBruteForceAnalysisMethod:
-        sign = char_points_profile.determine_l_direction_sign(self.grid_direction)
-        grid_width = self.grid_points_horizontal / self.grid_points_per_m
-
         grid_ref_point = char_points_profile.get_point_by_type(self.grid_position)
+        sign = char_points_profile.determine_l_direction_sign(self.grid_direction)
+        grid_width = (self.grid_points_horizontal - 1) / self.grid_points_per_m  # n points means n - 1 gaps
 
         grid_l1 = grid_ref_point.l + sign * self.grid_offset_horizontal
         grid_l2 = grid_l1 + sign * grid_width
@@ -178,7 +202,7 @@ class BishopBruteForce(GridSettings):
                 space=1 / self.grid_points_per_m,
             )
 
-        slip_plane_constraints = self.slip_plain_constraints_to_geolib(char_points_profile)
+        slip_plane_constraints = self.slip_plane_constraints_to_geolib(char_points_profile)
 
         analysis_method = DStabilityBishopBruteForceAnalysisMethod(
             extrapolate_search_space=self.move_grid,
@@ -203,7 +227,17 @@ class GridSettingsSet(BaseModel):
 
     name: str
     grid_settings: list[BishopBruteForce | UpliftVanParticleSwarm]
-    # TODO: Check for duplicate grid_settings_name
+
+    @model_validator(mode='after')
+    def check_duplicate_grid_settings_name(self):
+        grid_settings_names = [grid_setting.grid_setting_name for grid_setting in self.grid_settings]
+
+        if len(grid_settings_names) != len(set(grid_settings_names)):
+            raise ValueError(f"Duplicate grid settings names are not allowed.\n"
+                             f"Grid settings set name: {self.name}\n"
+                             f"Grid settings names: {grid_settings_names}\n")
+
+        return self
 
 
 class GridSettingsSetCollection(BaseModel):
