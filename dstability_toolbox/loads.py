@@ -1,6 +1,3 @@
-# Maken van loads o.b.v. bepaalde instellingen bv. karakteristieke punten
-from typing import Literal
-
 from pydantic import BaseModel
 
 from dstability_toolbox.geometry import CharPointType, Side

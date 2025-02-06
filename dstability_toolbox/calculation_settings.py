@@ -113,7 +113,7 @@ class GridSettings(ABC, BaseModel):
 
 
 class UpliftVanParticleSwarm(GridSettings):
-    """Defines the grid settings needed for creating a Uplift Van particle swarm grid"""
+    """Defines the grid settings needed for creating an Uplift Van particle swarm grid"""
     grid_1_position: CharPointType
     grid_1_direction: Side
     grid_1_offset_horizontal: float
@@ -250,7 +250,7 @@ class GridSettingsSetCollection(BaseModel):
 
     @classmethod
     def from_dict(cls, input_dict: dict):
-        """Parses the dictionary into a" GridSettingsSetCollection
+        """Parses the dictionary into a GridSettingsSetCollection
 
         Args:
             input_dict (dict): The dictionary to parse
@@ -270,5 +270,3 @@ class GridSettingsSetCollection(BaseModel):
                 return grid_settings_set
 
         raise ValueError(f"Could not find grid settings set with name {name}")
-
-

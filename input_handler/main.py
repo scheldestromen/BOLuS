@@ -2,7 +2,6 @@
 Main module for input_handler
 """
 from input_reader import RawUserInput, raw_input_to_user_input_structure
-from input_handler.user_input import UserInputStructure
 from creator import input_to_models
 from dstability_toolbox.modifier import create_d_stability_model
 

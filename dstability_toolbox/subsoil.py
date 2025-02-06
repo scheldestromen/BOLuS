@@ -5,8 +5,6 @@ from typing import Self, Optional
 
 from geolib.geometry.one import Point as GLPoint
 from shapely.geometry import Polygon
-from shapely.ops import polygonize
-from shapely import unary_union, LineString
 
 from dstability_toolbox.geometry import SurfaceLine
 from dstability_toolbox.dm_getter import get_soil_by_id

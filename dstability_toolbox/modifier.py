@@ -10,7 +10,7 @@ from dstability_toolbox.calculation_settings import UpliftVanParticleSwarm, Bish
 from dstability_toolbox.dm_getter import get_stage_by_indices, get_waternet_by_id
 from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Model
-from dstability_toolbox.geometry import Geometry, CharPointsProfile, CharPointType, Side
+from dstability_toolbox.geometry import Geometry, CharPointsProfile
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.state import StatePoint
 from dstability_toolbox.subsoil import Subsoil
@@ -18,6 +18,7 @@ from dstability_toolbox.water import Waternet
 
 
 def get_scenario_and_stage_index_by_label(dm: DStabilityModel, scenario: str, stage: str):
+    # To be implemented when needed
     pass
 
 

@@ -1,4 +1,4 @@
-from enum import StrEnum, auto, Enum
+from enum import StrEnum, auto
 from math import isclose
 from typing import Optional, Literal
 
