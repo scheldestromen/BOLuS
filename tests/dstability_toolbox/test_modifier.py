@@ -1,6 +1,5 @@
 import os
 from unittest import TestCase
-import json
 
 from geolib.models import DStabilityModel
 from geolib.soils import Soil as GLSoil
@@ -325,9 +324,7 @@ class TestSetWaternet(TestCase):
 class TestCreateDStabilityModel(TestCase):
     def setUp(self):
         with open(MODEL_JSON_PATH, 'r') as f:
-            model_json = json.load(f)
-
-        self.model = Model.model_validate_json(model_json)
+            self.model = Model.model_validate_json(f.read())
 
     def test_create_d_stability_model(self):
         """Simple integral test"""

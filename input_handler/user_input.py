@@ -34,8 +34,7 @@ class ScenarioConfig(BaseModel):
     Attributes:
         scenario_name (str): The name of the scenario.
         stages (list[StageConfig]): A list of stage configurations for the scenario.
-        grid_settings_set_name (Optional[str]): The name of the grid settings set associated with the scenario.
-    """
+        grid_settings_set_name (Optional[str]): The name of the grid settings set associated with the scenario."""
 
     scenario_name: str
     stages: list[StageConfig]
@@ -48,13 +47,22 @@ class ModelConfig(BaseModel):
 
     Attributes:
         calc_name (str): The name of the model.
-        scenarios (list[ScenarioConfig]): A list of scenario configurations for the model.
-    """
+        scenarios (list[ScenarioConfig]): A list of scenario configurations for the model."""
+
     calc_name: str
     scenarios: list[ScenarioConfig]
 
 
 class UserInputStructure(BaseModel):
+    """Represents the user-inputted data.
+
+    It contains collections of different types of input such as surface lines
+    and soils. The attribute model_configs is a list of ModelConfig objects,
+    which contain references to the other collections. For example, a
+    ModelConfig object specifies which surface line to use for a certain
+    calculation. This makes it possible to create a D-Stability calculation
+    model with all the necessary information from the user input."""
+
     settings: dict[str, str | float]  # TODO: Later ook omkatten naar object ('GeneralSettings'?)
     surface_lines: SurfaceLineCollection
     char_points: CharPointsProfileCollection

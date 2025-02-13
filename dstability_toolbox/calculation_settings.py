@@ -37,7 +37,7 @@ class GridSettings(ABC, BaseModel):
     zone_b_width: Optional[float] = None
 
     @model_validator(mode="after")
-    def check_constraints_input(self):
+    def check_required_constraints_input(self):
         """Checks the required input depending on which constraints are used."""
 
         required_fields = {
@@ -64,15 +64,18 @@ class GridSettings(ABC, BaseModel):
               keys and values for the attributes needed for the specific
               slip plane model.
         """
+        slip_plane_model_to_class = {
+            SlipPlaneModel.UPLIFT_VAN_PARTICLE_SWARM: UpliftVanParticleSwarm,
+            SlipPlaneModel.BISHOP_BRUTE_FORCE: BishopBruteForce,
+        }
+
         slip_plane_model = input_dict['slip_plane_model']
+        class_ = slip_plane_model_to_class.get(slip_plane_model)
 
-        if slip_plane_model == SlipPlaneModel.UPLIFT_VAN_PARTICLE_SWARM:
-            return UpliftVanParticleSwarm.model_validate(input_dict)
+        if class_ is None:
+            raise ValueError(f"Unknown slip plane model {slip_plane_model}")
 
-        if slip_plane_model == SlipPlaneModel.BISHOP_BRUTE_FORCE:
-            return BishopBruteForce.model_validate(input_dict)
-
-        raise ValueError(f"Unknown slip plane model {slip_plane_model}")
+        return class_.model_validate(input_dict)
 
     @abstractmethod
     def to_geolib(self, char_points_profile: CharPointsProfile):
@@ -82,6 +85,7 @@ class GridSettings(ABC, BaseModel):
         slip_plane_constraints = DStabilitySlipPlaneConstraints()
 
         if self.apply_constraint_zone_a is True:
+            # Determine zone edges based on settings
             sign = char_points_profile.determine_l_direction_sign(self.zone_a_direction)
             ref_point_zone_a = char_points_profile.get_point_by_type(self.zone_a_position)
             zone_a_l1 = ref_point_zone_a.l
@@ -93,6 +97,7 @@ class GridSettings(ABC, BaseModel):
             slip_plane_constraints.width_zone_a = self.zone_a_width
 
         if self.apply_constraint_zone_b is True:
+            # Determine zone edges based on settings
             sign = char_points_profile.determine_l_direction_sign(self.zone_b_direction)
             ref_point_zone_b = char_points_profile.get_point_by_type(self.zone_b_position)
             zone_b_l1 = ref_point_zone_b.l
