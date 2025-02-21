@@ -10,6 +10,12 @@ from dstability_toolbox.subsoil import SoilProfileCollection
 from dstability_toolbox.water import WaternetCollection
 
 
+class GeneralSettings(BaseModel):
+    """Set of general settings"""
+    min_soil_profile_depth: float
+    execute_calculations: bool
+
+
 class StageConfig(BaseModel):
     """Represents a user-inputted configuration of a stage.
 
@@ -63,12 +69,12 @@ class UserInputStructure(BaseModel):
     calculation. This makes it possible to create a D-Stability calculation
     model with all the necessary information from the user input."""
 
-    settings: dict[str, str | float]  # TODO: Later ook omkatten naar object ('GeneralSettings'?)
+    settings: GeneralSettings
     surface_lines: SurfaceLineCollection
     char_points: CharPointsProfileCollection
     soils: SoilCollection
     soil_profiles: SoilProfileCollection
-    soil_profile_positions: dict[str, dict[str, float | None]]  # En deze?
+    soil_profile_positions: dict[str, dict[str, float | None]]  # TODO: omzetten naar class
     loads: LoadCollection
     waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection

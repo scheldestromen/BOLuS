@@ -15,7 +15,7 @@ from input_handler.excel_utils import (parse_row_instance, parse_key_row, parse_
                                        parse_key_value_cols)
 from dstability_toolbox.geometry import CharPointType, Side, SurfaceLineCollection, CharPointsProfileCollection
 from dstability_toolbox.water import WaterLineType, WaternetCollection
-from input_handler.user_input import UserInputStructure, model_configs_from_list
+from input_handler.user_input import UserInputStructure, model_configs_from_list, GeneralSettings
 from utils.dict_utils import remove_key, group_dicts_by_key, list_to_nested_dict
 from utils.list_utils import check_list_of_dicts_for_duplicate_values, unique_in_order
 
@@ -39,6 +39,7 @@ SETTINGS_COLS = {
 
 SETTINGS_NAMES = {
     "Minimale diepte ondergrond": "min_soil_profile_depth",
+    "Rekenen": "execute_calculations"
 }
 
 CHAR_POINT_COLS = {
@@ -196,7 +197,6 @@ CALCULATION_COLS = {
 INPUT_TO_BOOL = {
     "Ja": True,
     "Nee": False,
-    None: None
 }
 
 INPUT_TO_CHAR_POINTS = {
@@ -274,6 +274,7 @@ class RawUserInput(BaseModel):
             col_dict=SETTINGS_COLS,
             key_dict=SETTINGS_NAMES
         )
+        settings['execute_calculations'] = INPUT_TO_BOOL[settings['execute_calculations']]
 
         surface_lines = parse_key_row(sheet=workbook[INPUT_SHEETS["surface_lines"]], skip_rows=1)
         char_points = parse_row_instance(
@@ -366,7 +367,7 @@ class RawUserInput(BaseModel):
 
             for key in ["move_grid", "apply_minimum_slip_plane_dimensions", "apply_constraint_zone_a",
                         "apply_constraint_zone_b"]:
-                line_dict[key] = INPUT_TO_BOOL[line_dict[key]]
+                line_dict[key] = INPUT_TO_BOOL.get(line_dict[key])
 
         grid_settings = group_dicts_by_key(grid_settings, group_by_key="name_set")
 
@@ -379,7 +380,7 @@ class RawUserInput(BaseModel):
 
         # Preprocess model_configs
         for model_dict in model_config_rows:
-            model_dict["apply_state_points"] = INPUT_TO_BOOL[model_dict["apply_state_points"]]
+            model_dict["apply_state_points"] = INPUT_TO_BOOL.get(model_dict["apply_state_points"])
 
         calc_names = unique_in_order([calc_row["calc_name"] for calc_row in model_config_rows])
         model_configs = []
@@ -432,6 +433,7 @@ class RawUserInput(BaseModel):
 
 
 def raw_input_to_user_input_structure(raw_input: RawUserInput) -> UserInputStructure:
+    settings = GeneralSettings.model_validate(raw_input.settings)
     surface_lines = SurfaceLineCollection.from_dict(raw_input.surface_lines)
     char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
     soil_collection = SoilCollection.from_list(raw_input.soil_params)
@@ -444,7 +446,7 @@ def raw_input_to_user_input_structure(raw_input: RawUserInput) -> UserInputStruc
     model_configs = model_configs_from_list(raw_input.model_configs)
 
     return UserInputStructure(
-        settings=raw_input.settings,
+        settings=settings,
         surface_lines=surface_lines,
         char_points=char_points,
         soils=soil_collection,
