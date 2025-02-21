@@ -5,7 +5,8 @@ from unittest import TestCase
 from dstability_toolbox.geometry import SurfaceLine, CharPointsProfile, CharPointType, Point, \
     CharPointsProfileCollection, SurfaceLineCollection, CharPoint, create_geometries
 
-FIXTURE_DIR = os.path.join(os.path.dirname(os.getcwd()), 'fixtures')
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), 'fixtures')
 CHAR_POINT_JSON_PATH = os.path.join(FIXTURE_DIR, 'char_point_example.json')
 CHAR_COLLECTION_JSON_PATH = os.path.join(FIXTURE_DIR, 'char_points_profile_collection_example.json')
 SURF_COLLECTION_JSON_PATH = os.path.join(FIXTURE_DIR, 'surface_line_collection_example.json')

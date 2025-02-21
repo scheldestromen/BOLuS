@@ -11,7 +11,8 @@ from dstability_toolbox.subsoil import Subsoil, SoilPolygon, SoilProfileCollecti
     subsoil_from_soil_profiles
 from geolib.models.dstability.internal import PersistablePoint, PersistableLayer
 
-FIXTURE_DIR = os.path.join(os.path.dirname(os.getcwd()), 'fixtures')
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), 'fixtures')
 SOIL_PROFILE_COLLECTION_JSON_PATH = os.path.join(FIXTURE_DIR, 'soil_profile_collection_example.json')
 DSTABILITY_DIR = os.path.join(FIXTURE_DIR, 'dstability')
 

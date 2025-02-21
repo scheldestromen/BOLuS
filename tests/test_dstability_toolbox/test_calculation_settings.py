@@ -10,8 +10,8 @@ from dstability_toolbox.calculation_settings import GridSettings, UpliftVanParti
     SlipPlaneModel, GridSettingsSetCollection, GridSettingsSet
 from dstability_toolbox.geometry import CharPointType, Side, CharPointsProfile, CharPoint
 
-
-FIXTURE_DIR = os.path.join(os.path.dirname(os.getcwd()), 'fixtures')
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), 'fixtures')
 GRID_SETTINGS_SET_COLLECTION_JSON_PATH = os.path.join(FIXTURE_DIR, 'grid_settings_set_collection_example.json')
 
 

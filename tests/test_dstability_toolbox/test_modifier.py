@@ -15,7 +15,8 @@ from dstability_toolbox.state import StatePoint
 from dstability_toolbox.subsoil import Subsoil, SoilPolygon
 from dstability_toolbox.water import Waternet, HeadLine, ReferenceLine
 
-FIXTURE_DIR = os.path.join(os.path.dirname(os.getcwd()), 'fixtures')
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), 'fixtures')
 MODEL_JSON_PATH = os.path.join(FIXTURE_DIR, 'model_example.json')
 
 

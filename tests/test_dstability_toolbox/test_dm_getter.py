@@ -4,7 +4,8 @@ from unittest import TestCase
 from dstability_toolbox.dm_getter import get_waternet_by_id, get_stage_by_indices, get_soil_by_id
 from geolib.models import DStabilityModel
 
-FIXTURE_DIR = os.path.join(os.path.dirname(os.getcwd()), 'fixtures')
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), 'fixtures')
 DSTABILITY_DIR = os.path.join(FIXTURE_DIR, 'dstability')
 
 
