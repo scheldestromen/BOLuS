@@ -330,3 +330,9 @@ class TestGridSettingsSetCollection(TestCase):
         self.assertIsInstance(grid_settings_set, GridSettingsSet)
         self.assertEqual(len(grid_settings_set.grid_settings), 3)
         self.assertEqual(grid_settings_set.name, name)
+
+    def test_get_by_name_not_found(self):
+        collection_from_json = GridSettingsSetCollection.model_validate(self.grid_settings_set_collection)
+        name = "non-existent-name"
+        with self.assertRaises(ValueError):
+            collection_from_json.get_by_name(name=name)
