@@ -1,14 +1,18 @@
 """
 Main module for input_handler
 """
+import os
 from pathlib import Path
 
 from input_reader import RawUserInput, raw_input_to_user_input_structure
 from creator import input_to_models
 from dstability_toolbox.modifier import create_d_stability_model
-from dstability_toolbox.execute import batch_execute
+from dstability_toolbox.execute import dm_batch_execute
 
+# Werkmap dient niet gesynchroniseerd met OneDrive te zijn indien er gerekend wordt
+OUTPUT_DIR = r"C:\Users\danie\Documents\Rekenmap"
 INPUT_FILE_PATH = "Invoer D-Stability tool.xlsx"
+
 
 if __name__ == "__main__":
     # Reading the input sheet
@@ -23,12 +27,11 @@ if __name__ == "__main__":
 
     # Export the DStabilityModels to .stix
     for name, dm in dm_dict.items():
-        dm.serialize(Path(f"{name}.stix"))
+        dm.serialize(Path(os.path.join(OUTPUT_DIR, f"{name}.stix")))
 
     # Run the calculations
-    # if input_structure.settings.execute_calculations:
-    #     dm_list = [dm for dm in dm_dict.values()]
-        # batch_execute(dm_list)
+    if input_structure.settings.execute_calculations:
+        dm_list = dm_batch_execute([dm for dm in dm_dict.values()])
 
     # Read and export the calculation results
-
+    # ...
