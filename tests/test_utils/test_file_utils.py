@@ -1,0 +1,45 @@
+from unittest import TestCase
+from pathlib import Path
+from utils.file_utils import get_files_by_extension
+
+
+class TestGetFilesByExtension(TestCase):
+    def setUp(self):
+        self.test_dir = Path('test_dir')
+        self.test_dir.mkdir()
+        self.test_file1 = self.test_dir / 'test1.txt'
+        self.test_file1.touch()
+        self.test_file2 = self.test_dir / 'test2.txt'
+        self.test_file2.touch()
+        self.test_subdir = self.test_dir / 'subdir'
+        self.test_subdir.mkdir()
+        self.test_file3 = self.test_subdir / 'test3.txt'
+        self.test_file3.touch()
+
+    def tearDown(self):
+        self.test_file1.unlink()
+        self.test_file2.unlink()
+        self.test_file3.unlink()
+        self.test_subdir.rmdir()
+        self.test_dir.rmdir()
+
+    def test_get_files_by_extension(self):
+        files = get_files_by_extension(str(self.test_dir), 'txt')
+        self.assertEqual(len(files), 2)
+        self.assertIn({"name": self.test_file1.name, "path": str(self.test_file1)}, files)
+        self.assertIn({"name": self.test_file2.name, "path": str(self.test_file2)}, files)
+
+    def test_get_files_by_extension_with_subdir(self):
+        files = get_files_by_extension(str(self.test_dir), 'txt', search_sub_dir=True)
+        self.assertEqual(len(files), 3)
+        self.assertIn({"name": self.test_file1.name, "path": str(self.test_file1)}, files)
+        self.assertIn({"name": self.test_file2.name, "path": str(self.test_file2)}, files)
+        self.assertIn({"name": self.test_file3.name, "path": str(self.test_file3)}, files)
+
+    def test_get_files_by_extension_invalid_dir(self):
+        with self.assertRaises(ValueError):
+            get_files_by_extension('invalid_dir', 'txt')
+
+    def test_get_files_by_extension_empty_extension(self):
+        with self.assertRaises(ValueError):
+            get_files_by_extension(str(self.test_dir), '')
