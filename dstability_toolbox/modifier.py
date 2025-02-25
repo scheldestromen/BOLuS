@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from shapely import Point
 
 from geolib import DStabilityModel
@@ -332,3 +334,32 @@ def create_d_stability_model(model: Model):
             )
 
     return dm
+
+
+def parse_d_stability_model_from_path(path: str):
+    dm = DStabilityModel()
+
+    return dm.parse(path)
+
+
+def parse_d_stability_models(path_list: list[str]) -> list[DStabilityModel]:
+    """Reads a list of DStabilityModel .stix files and returns a list of DStabilityModel objects.
+
+    Args:
+        path_list: A list of paths to .stix files.
+
+    Returns:
+        list[DStabilityModel]: A list of DStabilityModel objects.
+    """
+
+    if not all(isinstance(item, str) for item in path_list):
+        raise ValueError('All elements of the list must be strings')
+
+    dm_list = []
+
+    for path in path_list:
+        dm = DStabilityModel()
+        dm.parse(Path(path))
+        dm_list.append(dm)
+
+    return dm_list
