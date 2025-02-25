@@ -1,7 +1,11 @@
 import os
 from pathlib import Path
 from unittest import TestCase
-from dstability_toolbox.dm_getter import get_waternet_by_id, get_stage_by_indices, get_soil_by_id
+
+from geolib.models.dstability.internal import CalculationSettings
+
+from dstability_toolbox.dm_getter import get_waternet_by_id, get_stage_by_indices, get_soil_by_id, \
+    get_calculation_settings_by_id
 from geolib.models import DStabilityModel
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -50,3 +54,11 @@ class TestDmGetter(TestCase):
 
         with self.assertRaises(ValueError):
             get_soil_by_id(soil_id, self.dm)
+
+    def test_get_calculation_settings_by_id(self):
+        calc_setting = get_calculation_settings_by_id(dm=self.dm, calc_settings_id='73')
+        self.assertIsInstance(calc_setting, CalculationSettings)
+
+    def test_get_calculation_settings_by_id_not_found(self):
+        with self.assertRaises(ValueError):
+            get_calculation_settings_by_id(dm=self.dm, calc_settings_id='666')
