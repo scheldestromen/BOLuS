@@ -5,7 +5,7 @@ from unittest import TestCase
 from geolib.models.dstability.internal import CalculationSettings
 
 from dstability_toolbox.dm_getter import get_waternet_by_id, get_stage_by_indices, get_soil_by_id, \
-    get_calculation_settings_by_id, get_calculation_settings_by_result_id
+    get_calculation_settings_by_id, get_calculation_settings_by_result_id, get_all_calculations
 from geolib.models import DStabilityModel
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -67,3 +67,7 @@ class TestDmGetter(TestCase):
         calc_settings = get_calculation_settings_by_result_id(dm=self.dm, result_id='79')
         self.assertIsInstance(calc_settings, CalculationSettings)
         self.assertEqual(calc_settings.Id, '76')
+
+    def test_get_all_calculations(self):
+        calcs = get_all_calculations(self.dm)
+        self.assertEqual(len(calcs), 3)
