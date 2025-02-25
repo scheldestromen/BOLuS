@@ -1,6 +1,7 @@
 from geolib.soils import Soil as GLSoil
 from geolib.models.dstability.internal import Waternet as GLWaternet
 from geolib.models.dstability.internal import Stage as GLStage
+from geolib.models.dstability.internal import CalculationSettings
 from geolib.models import DStabilityModel
 
 
@@ -13,9 +14,8 @@ def get_soil_by_id(soil_id: str, dm: DStabilityModel) -> GLSoil:
         dm: DStabilityModel
 
     Returns:
-       The GEOLib soil object
-    """
-    # TODO: Opnemen in geolib
+       The matching GEOLib Soil instance"""
+
     soil_collection = dm.soils
 
     for soil in soil_collection.Soils:
@@ -34,13 +34,39 @@ def get_waternet_by_id(waternet_id: str, dm: DStabilityModel) -> GLWaternet:
         dm: DStabilityModel
 
     Returns:
-       The GEOLib Waternet object
+       The matching GEOLib Waternet instance
     """
-    for waternet in dm.datastructure.waternets:
-        if waternet.Id == waternet_id:
-            return waternet
+    waternet = next(
+        (wn for wn in dm.datastructure.waternets if wn.Id == waternet_id),
+        None,
+    )
 
-    raise ValueError(f"Waternet with id '{waternet_id}' not found")
+    if waternet is not None:
+        return waternet
+
+    raise ValueError(f"Waternet with ID '{waternet_id}' not found.")
+
+
+def get_calculation_settings_by_id(dm: DStabilityModel, calc_settings_id: str) -> CalculationSettings:
+    """Retrieve a calculation setting by its ID from the DStabilityModel.
+
+    Args:
+        dm: The model containing calculation settings.
+        calc_settings_id: The ID of the calculation setting to retrieve.
+
+    Returns:
+        The matching GEOLib CalculationSettings instance.
+    """
+    calculation_settings = dm.datastructure.calculationsettings
+    calc_setting = next(
+        (setting for setting in calculation_settings if calc_settings_id == setting.Id),
+        None
+    )
+
+    if calc_setting is not None:
+        return calc_setting
+
+    raise ValueError(f"CalculationSetting with id '{calc_settings_id}' not found")
 
 
 def get_stage_by_indices(dm: DStabilityModel, stage_index: int, scenario_index: int) -> GLStage:

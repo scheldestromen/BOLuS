@@ -7,7 +7,7 @@ def get_files_by_extension(directory: str, file_ext: str, search_sub_dir: bool =
 
     Args:
       directory (str): Path to the folder (may contain subfolders).
-      file_ext (str): File extension (without dot, e.g. 'txt').
+      file_ext (str): File extension (without or without dot).
       search_sub_dir (bool): Whether to search subdirectories as well. Default is False.
 
     Returns:
