@@ -69,6 +69,22 @@ def get_calculation_settings_by_id(dm: DStabilityModel, calc_settings_id: str) -
     raise ValueError(f"CalculationSetting with id '{calc_settings_id}' not found")
 
 
+def get_calculation_settings_by_result_id(dm: DStabilityModel, result_id: str) -> CalculationSettings:
+    """Retrieve a calculation setting by its associated result ID from the DStabilityModel.
+
+    Args:
+        dm: The model containing calculation settings.
+        result_id: The ID of the result associated with the calculation setting to retrieve.
+
+    Returns:
+        The matching GEOLib CalculationSettings instance."""
+
+    calculations = [calc for scenario in dm.scenarios for calc in scenario.Calculations]
+    calculation = next(calc for calc in calculations if calc.ResultId == result_id)
+
+    return get_calculation_settings_by_id(dm=dm, calc_settings_id=calculation.CalculationSettingsId)
+
+
 def get_stage_by_indices(dm: DStabilityModel, stage_index: int, scenario_index: int) -> GLStage:
     """Get stage by the given scenario and stage indices"""
     try:

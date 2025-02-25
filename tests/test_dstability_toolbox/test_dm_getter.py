@@ -5,7 +5,7 @@ from unittest import TestCase
 from geolib.models.dstability.internal import CalculationSettings
 
 from dstability_toolbox.dm_getter import get_waternet_by_id, get_stage_by_indices, get_soil_by_id, \
-    get_calculation_settings_by_id
+    get_calculation_settings_by_id, get_calculation_settings_by_result_id
 from geolib.models import DStabilityModel
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,7 +19,7 @@ class TestDmGetter(TestCase):
         self.dm.parse(Path(os.path.join(DSTABILITY_DIR, 'test_1.stix')))
 
     def test_get_waternet_by_id(self):
-        waternet_id = '45'
+        waternet_id = '47'
         waternet = get_waternet_by_id(waternet_id, self.dm)
         self.assertEqual(waternet.Id, waternet_id)
 
@@ -45,7 +45,7 @@ class TestDmGetter(TestCase):
 
     def test_get_soil_by_id(self):
         expected_soil_name = 'Klei'
-        soil_id = '5'
+        soil_id = '7'
         soil = get_soil_by_id(soil_id, self.dm)
         self.assertEqual(soil.Name, expected_soil_name)
 
@@ -56,9 +56,14 @@ class TestDmGetter(TestCase):
             get_soil_by_id(soil_id, self.dm)
 
     def test_get_calculation_settings_by_id(self):
-        calc_setting = get_calculation_settings_by_id(dm=self.dm, calc_settings_id='73')
+        calc_setting = get_calculation_settings_by_id(dm=self.dm, calc_settings_id='75')
         self.assertIsInstance(calc_setting, CalculationSettings)
 
     def test_get_calculation_settings_by_id_not_found(self):
         with self.assertRaises(ValueError):
             get_calculation_settings_by_id(dm=self.dm, calc_settings_id='666')
+
+    def test_get_calculation_settings_by_result_id(self):
+        calc_settings = get_calculation_settings_by_result_id(dm=self.dm, result_id='79')
+        self.assertIsInstance(calc_settings, CalculationSettings)
+        self.assertEqual(calc_settings.Id, '76')
