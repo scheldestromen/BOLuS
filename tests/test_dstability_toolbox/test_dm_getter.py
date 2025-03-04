@@ -62,6 +62,14 @@ class TestDmGetter(TestCase):
         with self.assertRaises(ValueError):
             get_by_id(collection=self.dm.datastructure.calculationsettings, item_id='666')
 
+    def test_get_by_id_not_a_collection(self):
+        with self.assertRaises(ValueError):
+            get_by_id(collection=['item1', 'item2'], item_id='2')
+
+    def test_get_by_id_empty_collection(self):
+        with self.assertRaises(ValueError):
+            get_by_id(collection=[], item_id='2')
+
     def test_get_calculation_settings_by_result_id(self):
         calc_settings = get_calculation_settings_by_result_id(dm=self.dm, result_id='79')
         self.assertIsInstance(calc_settings, CalculationSettings)
@@ -70,3 +78,4 @@ class TestDmGetter(TestCase):
     def test_get_all_calculations(self):
         calcs = get_all_calculations(self.dm)
         self.assertEqual(len(calcs), 3)
+
