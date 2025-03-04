@@ -2,10 +2,8 @@ import os
 from pathlib import Path
 from unittest import TestCase
 from dstability_toolbox.results import ResultSummary, DStabilityResultExporter, results_from_dir
-from geolib.models.dstability.internal import UpliftVanResult, UpliftVanParticleSwarmResult, UpliftVanReliabilityResult, \
-    UpliftVanParticleSwarmReliabilityResult, SpencerGeneticAlgorithmResult, SpencerReliabilityResult, \
-    SpencerGeneticAlgorithmReliabilityResult, SpencerResult, BishopBruteForceResult, BishopReliabilityResult, \
-    BishopBruteForceReliabilityResult, BishopResult
+from geolib.models.dstability.internal import UpliftVanParticleSwarmResult, UpliftVanReliabilityResult, \
+    SpencerGeneticAlgorithmResult, SpencerReliabilityResult, BishopBruteForceResult, BishopReliabilityResult
 from geolib.models import DStabilityModel
 
 
@@ -17,7 +15,7 @@ DSTABILITY_DIR = os.path.join(FIXTURE_DIR, 'dstability')
 class TestResultSummary(TestCase):
     def setUp(self):
         self.dm = DStabilityModel()
-        self.dm.parse(Path(os.path.join(DSTABILITY_DIR, 'test_1.stix')))
+        self.dm.parse(Path(os.path.join(DSTABILITY_DIR, 'test_2.stix')))
 
     def test_from_result_bishop(self):
         result = self.dm.get_result(0, 0)  # 0, 0 is BishopBruteForceResult
@@ -103,10 +101,10 @@ class TestDStabilityResultExporter(TestCase):
 
     def setUp(self):
         self.dm = DStabilityModel()
-        self.dm.parse(Path(os.path.join(DSTABILITY_DIR, 'test_1.stix')))
+        self.dm.parse(Path(os.path.join(DSTABILITY_DIR, 'test_2.stix')))
 
         # Temporary file
-        self.temp_file = Path(os.path.join(DSTABILITY_DIR, 'test_1_results.xlsx'))
+        self.temp_file = Path(os.path.join(DSTABILITY_DIR, 'test_2_results.xlsx'))
     
     def tearDown(self):
         if self.temp_file.exists():

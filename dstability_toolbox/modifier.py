@@ -9,7 +9,7 @@ from geolib.models.dstability.states import DStabilityStatePoint, DStabilityStre
 from geolib.models.dstability.loads import UniformLoad, Consolidation
 
 from dstability_toolbox.calculation_settings import UpliftVanParticleSwarm, BishopBruteForce
-from dstability_toolbox.dm_getter import get_stage_by_indices, get_waternet_by_id
+from dstability_toolbox.dm_getter import get_stage_by_indices, get_by_id
 from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Model
 from dstability_toolbox.geometry import Geometry, CharPointsProfile
@@ -192,7 +192,7 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
         The modified DStabilityModel"""
 
     gl_stage = get_stage_by_indices(dm=dm, scenario_index=scenario_index, stage_index=stage_index)
-    gl_waternet = get_waternet_by_id(waternet_id=gl_stage.WaternetId, dm=dm)
+    gl_waternet = get_by_id(collection=dm.waternets, item_id=gl_stage.WaternetId)
 
     if gl_waternet.HeadLines or gl_waternet.ReferenceLines:
         raise ValueError(f'Waternet of scenario {scenario_index} and stage {stage_index} '

@@ -4,8 +4,7 @@ from unittest import TestCase
 
 from geolib.models.dstability.internal import CalculationSettings
 
-from dstability_toolbox.dm_getter import get_waternet_by_id, get_stage_by_indices, get_soil_by_id, \
-    get_calculation_settings_by_id, get_calculation_settings_by_result_id, get_all_calculations
+from dstability_toolbox.dm_getter import get_stage_by_indices, get_calculation_settings_by_result_id, get_all_calculations, get_by_id
 from geolib.models import DStabilityModel
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -20,14 +19,14 @@ class TestDmGetter(TestCase):
 
     def test_get_waternet_by_id(self):
         waternet_id = '47'
-        waternet = get_waternet_by_id(waternet_id=waternet_id, dm=self.dm)
+        waternet = get_by_id(collection=self.dm.waternets, item_id=waternet_id)
         self.assertEqual(waternet.Id, waternet_id)
 
     def test_get_waternet_by_id_non_existent_id(self):
         waternet_id = 'non_existent_id'
 
         with self.assertRaises(ValueError):
-            get_waternet_by_id(waternet_id=waternet_id, dm=self.dm)
+            get_by_id(collection=self.dm.waternets, item_id=waternet_id)
 
     def test_get_stage_by_indices(self):
         expected_stage_label = 'Norm'
@@ -46,22 +45,22 @@ class TestDmGetter(TestCase):
     def test_get_soil_by_id(self):
         expected_soil_name = 'Klei'
         soil_id = '7'
-        soil = get_soil_by_id(soil_id=soil_id, dm=self.dm)
+        soil = get_by_id(collection=self.dm.soils.Soils, item_id=soil_id)
         self.assertEqual(soil.Name, expected_soil_name)
 
     def test_get_soil_by_id_non_existent_soil_id(self):
         soil_id = 'non_existent_soil_id'
 
         with self.assertRaises(ValueError):
-            get_soil_by_id(soil_id=soil_id, dm=self.dm)
+            get_by_id(collection=self.dm.soils.Soils, item_id=soil_id)
 
     def test_get_calculation_settings_by_id(self):
-        calc_setting = get_calculation_settings_by_id(dm=self.dm, calc_settings_id='75')
+        calc_setting = get_by_id(collection=self.dm.datastructure.calculationsettings, item_id='75')
         self.assertIsInstance(calc_setting, CalculationSettings)
 
     def test_get_calculation_settings_by_id_not_found(self):
         with self.assertRaises(ValueError):
-            get_calculation_settings_by_id(dm=self.dm, calc_settings_id='666')
+            get_by_id(collection=self.dm.datastructure.calculationsettings, item_id='666')
 
     def test_get_calculation_settings_by_result_id(self):
         calc_settings = get_calculation_settings_by_result_id(dm=self.dm, result_id='79')

@@ -7,7 +7,7 @@ from geolib.geometry.one import Point as GLPoint
 from shapely.geometry import Polygon
 
 from dstability_toolbox.geometry import SurfaceLine
-from dstability_toolbox.dm_getter import get_soil_by_id
+from dstability_toolbox.dm_getter import get_by_id
 from utils.geometry_utils import geometry_to_polygons
 
 
@@ -104,10 +104,10 @@ class Subsoil(BaseModel):
         soil_layers = dm._get_soil_layers(scenario_index=scenario_index, stage_index=stage_index)
         geometry = dm._get_geometry(scenario_index=scenario_index, stage_index=stage_index)
 
-        soil_polygons = []
+        soil_polygons: list[SoilPolygon] = []
 
         for soil_layer in soil_layers.SoilLayers:
-            soil = get_soil_by_id(soil_id=soil_layer.SoilId, dm=dm)
+            soil = get_by_id(collection=dm.soils.Soils, item_id=soil_layer.SoilId)
             layer = geometry.get_layer(id=soil_layer.LayerId)
 
             soil_polygon = SoilPolygon.from_geolib_layer(soil_type=soil.Code, gl_layer=layer)
