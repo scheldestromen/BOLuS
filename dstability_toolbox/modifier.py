@@ -199,7 +199,7 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
                          f'already has head lines and/or reference lines')
 
     # Dict to store the id's in - for adding the ref. lines later
-    head_line_id_dict = {}
+    head_line_id_dict: dict[str, str] = {}
 
     # Add the headlines
     for head_line in waternet.head_lines:
@@ -210,8 +210,8 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
             scenario_index=scenario_index,
             stage_index=stage_index
         )
-        # Store the id
-        head_line_id_dict[head_line.name] = head_line_id
+        # Store the id as a string (GEOLib uses strings for the ids)
+        head_line_id_dict[head_line.name] = str(head_line_id)
 
     # Add the reference lines
     for ref_line in waternet.ref_lines:

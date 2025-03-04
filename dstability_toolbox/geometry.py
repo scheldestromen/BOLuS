@@ -54,7 +54,7 @@ class Point(BaseModel):
     l: Optional[float] = None
     tolerance: float = 1e-4
 
-    def __eq__(self, other):
+    def __eq__(self, other: "Point") -> bool:
         if isinstance(other, Point):
             return (
                 isclose(self.x, other.x, abs_tol=self.tolerance)
@@ -139,7 +139,7 @@ class CharPointsProfile(ProfileLine):
     points: List[CharPoint]
 
     @classmethod
-    def from_dict(cls, name, char_points_dict):
+    def from_dict(cls, name: str, char_points_dict: dict[str, float]) -> "CharPointsProfile":
         """Instantiates a CharPointsProfile from a dictionary
 
         Points that have a value of -1 in x, y and z are not included in
@@ -149,7 +149,7 @@ class CharPointsProfile(ProfileLine):
             name: The name of the profile
             char_points_dict: The dictionary containing the characteristic points"""
 
-        char_points = []
+        char_points: list[CharPoint] = []
 
         for char_type in CharPointType:
             x = char_points_dict[f"x_{char_type}"]
@@ -166,6 +166,7 @@ class CharPointsProfile(ProfileLine):
 
     def get_point_by_type(self, char_type: CharPointType) -> CharPoint:
         """Returns the characteristic point of the given type"""
+        
         for char_point in self.points:
             if char_point.type == char_type:
                 return char_point
@@ -220,7 +221,7 @@ class SurfaceLine(ProfileLine):
     points: List[Point]
 
     @classmethod
-    def from_list(cls, name: str, point_list: list):
+    def from_list(cls, name: str, point_list: list[float]) -> "SurfaceLine":
         """Instantiates a SurfaceLine from a flat list of points
 
         Args:
@@ -250,14 +251,14 @@ class SurfaceLineCollection(BaseModel):
     surface_lines: list[SurfaceLine]
 
     @classmethod
-    def from_dict(cls, surface_lines_dict):
+    def from_dict(cls, surface_lines_dict: dict[str, list[float]]) -> "SurfaceLineCollection":
         """Parses the dictionary into a SurfaceLineCollection
 
         Args:
             surface_lines_dict (dict): The dictionary to parse. The keys should be the profile names
               and the values a flat list of points of that profile [x1, y1, z1, x2, y2, z2, ...]"""
 
-        surface_lines = []
+        surface_lines: list[SurfaceLine] = []
 
         for name, point_list in surface_lines_dict.items():
             surface_line = SurfaceLine.from_list(name=name, point_list=point_list)
@@ -275,10 +276,6 @@ class SurfaceLineCollection(BaseModel):
         else:
             raise ValueError(f"Could not find profile with name {name}")
 
-    def to_csv(self, file_path):
-        """Exports the SurfaceLineCollection to a csv file"""
-        raise NotImplementedError
-
 
 class CharPointsProfileCollection(BaseModel):
     """Representation a collection of CharPointsProfiles.
@@ -289,7 +286,7 @@ class CharPointsProfileCollection(BaseModel):
     char_points_profiles: List[CharPointsProfile]
 
     @classmethod
-    def from_dict(cls, char_points_dict):
+    def from_dict(cls, char_points_dict: dict[str, dict[str, float]]) -> "CharPointsProfileCollection":
         """Parses the dictionary into a CharPointsProfileCollection
 
         Args:
@@ -298,7 +295,7 @@ class CharPointsProfileCollection(BaseModel):
               for example {x_surface_level_water_side: 0, y_surface_level_water_side:
               0, z_surface_level_water_side: 0, ...}"""
 
-        char_point_profiles = []
+        char_point_profiles: list[CharPointsProfile] = []
 
         for name, char_points in char_points_dict.items():
             char_points_profile = CharPointsProfile.from_dict(name=name, char_points_dict=char_points)
@@ -315,10 +312,6 @@ class CharPointsProfileCollection(BaseModel):
             return profile
         else:
             raise ValueError(f"Could not find profile with name {name}")
-
-    def to_csv(self, file_path):
-        """Exports the SurfaceLineCollection to a csv file"""
-        raise NotImplementedError
 
 
 class Geometry(BaseModel):
@@ -366,7 +359,7 @@ def create_geometries(
             f"Missing in surface lines: {set(char_names) - set(surf_names)} "
             f"Missing in characteristic points: {set(surf_names) - set(char_names)}")
 
-    geometries = []
+    geometries: list[Geometry] = []
 
     for surface_line in surface_line_collection.surface_lines:
         char_points_profile = char_point_collection.get_by_name(surface_line.name)

@@ -1,5 +1,5 @@
 # Grondsoorten
-from typing import Optional, List
+from typing import Optional, List, Any
 
 from pydantic import BaseModel
 
@@ -49,7 +49,7 @@ class SoilCollection(BaseModel):
         return soil
 
     @classmethod
-    def from_list(cls, soil_list: list[dict]):
+    def from_list(cls, soil_list: list[dict[str, Any]]) -> "SoilCollection":
         """Initiates a SoilCollection from a list of soil dictionaries.
 
         Each dict should have keys:
@@ -77,7 +77,7 @@ class SoilCollection(BaseModel):
             "Su Table": ShearStrengthModelTypePhreaticLevel.SUTABLE
         }
 
-        soils = []
+        soils: list[Soil] = []
 
         # Check that soil names are unique
         check_list_of_dicts_for_duplicate_values(soil_list, "name")

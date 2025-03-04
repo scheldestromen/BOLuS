@@ -35,6 +35,26 @@ class SoilProfile(BaseModel):
         return self
 
 
+class SoilProfilePosition(BaseModel):
+    """Represents the position of a soil profile in the subsoil
+    
+    Attributes:
+        profile_name (str): The name of the soil profile
+        l_coord (float): The l-coordinate of the soil profile"""
+    
+    profile_name: str
+    l_coord: float
+
+
+class SoilProfilePositionCollection(BaseModel):
+    """Collection of soil profile positions
+    
+    Attributes:
+        positions (list[SoilProfilePosition]): List of SoilProfilePosition instances"""
+
+    positions: list[SoilProfilePosition]
+
+
 class SoilProfileCollection(BaseModel):
     """Collection of 1D soil profiles of type SoilProfile"""
     profiles: list[SoilProfile]
