@@ -10,7 +10,7 @@ from .geometry import Geometry
 from .subsoil import Subsoil
 from .state import StatePoint
 
-# TODO: Alle model componenten samenvoegen. Er zijn te veel .py-files
+# TODO: Alle model componenten samenvoegen
 
 
 class Stage(BaseModel):

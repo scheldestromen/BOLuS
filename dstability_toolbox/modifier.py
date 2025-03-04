@@ -336,13 +336,26 @@ def create_d_stability_model(model: Model):
     return dm
 
 
-def parse_d_stability_model_from_path(path: str):
-    dm = DStabilityModel()
+def parse_d_stability_model_from_path(path: Path | str) -> DStabilityModel:
+    """Reads a DStabilityModel .stix file and returns a DStabilityModel object.
+    
+    Args:
+        path: The path to the .stix file.
 
-    return dm.parse(path)
+    Returns:
+        A DStabilityModel object."""
+    
+    dm: DStabilityModel = DStabilityModel()
+
+    if isinstance(path, str):
+        path = Path(path)
+
+    dm.parse(path)
+    
+    return dm
 
 
-def parse_d_stability_models(path_list: list[str]) -> list[DStabilityModel]:
+def parse_d_stability_models(path_list: list[Path | str]) -> list[DStabilityModel]:
     """Reads a list of DStabilityModel .stix files and returns a list of DStabilityModel objects.
 
     Args:
@@ -352,14 +365,10 @@ def parse_d_stability_models(path_list: list[str]) -> list[DStabilityModel]:
         list[DStabilityModel]: A list of DStabilityModel objects.
     """
 
-    if not all(isinstance(item, str) for item in path_list):
-        raise ValueError('All elements of the list must be strings')
-
-    dm_list = []
+    dm_list: list[DStabilityModel] = []
 
     for path in path_list:
-        dm = DStabilityModel()
-        dm.parse(Path(path))
+        dm = parse_d_stability_model_from_path(path)
         dm_list.append(dm)
 
     return dm_list

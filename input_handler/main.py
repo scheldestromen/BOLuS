@@ -8,6 +8,7 @@ from input_reader import RawUserInput, raw_input_to_user_input_structure
 from creator import input_to_models
 from dstability_toolbox.modifier import create_d_stability_model
 from dstability_toolbox.execute import dm_batch_execute
+from dstability_toolbox.results import DStabilityResultExporter
 
 # Werkmap dient niet gesynchroniseerd met OneDrive te zijn indien er gerekend wordt
 OUTPUT_DIR = r"C:\Users\danie\Documents\Rekenmap"
@@ -33,5 +34,8 @@ if __name__ == "__main__":
     if input_structure.settings.execute_calculations:
         dm_list = dm_batch_execute([dm for dm in dm_dict.values()])
 
-    # Read and export the calculation results
-    # ...
+        # Read and export the calculation results
+        exporter = DStabilityResultExporter(dm_list=dm_list)
+        exporter.export_results(
+            output_path=os.path.join(OUTPUT_DIR, "D-Stability Rekenresultaten.xlsx")
+            )

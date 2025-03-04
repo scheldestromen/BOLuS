@@ -35,3 +35,22 @@ def unique_in_order(lst: list) -> list:
             seen.add(item)
 
     return unique
+
+
+def get_list_item_indices(li: list[str], di: dict[str, str]) -> dict[str, int]:
+    """
+    Functie neemt een list met strings en een dictionary. De list bevat de values uit dictionary. De functie geeft een
+    dictionary met als keys de keys uit opgegeven dictionary 'di' en als value de index waar deze key in de opgegeven
+    list 'li' gevonden kan worden.
+
+    Example:
+    >>> get_list_item_indices(['derde', 'tweede', 'eerste'], {'first': 'eerste', 'second': 'tweede', 'third': 'derde'})
+    {'first': 2, 'second': 1, 'third': 0}
+
+    """
+    indices: dict[str, int] = {}
+
+    for key in di:
+        indices[key] = li.index(di[key])
+
+    return indices

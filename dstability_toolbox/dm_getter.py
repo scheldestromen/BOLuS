@@ -136,6 +136,24 @@ def get_calculation_settings_by_result_id(dm: DStabilityModel, result_id: str) -
 
     return get_calculation_settings_by_id(dm=dm, calc_settings_id=calculation.CalculationSettingsId)
 
+# TODO: voor later
+# def get_soil_id_by_layer_id(dm, layer_id, scenario_index, stage_index):
+#     """Functie geeft collectie van grondlagen van een stage
+#
+#     Args:
+#         dm: DStabilityModel van d-geolib
+#         stage_id: stage ID van gewenste stage
+#         layer_id: layer ID van gewenste grondlaag
+#
+#     Returns:
+#         Soil ID van het grondtype in een grondlaag"""
+#
+#     soil_layers = dm._get_soil_layers(scenario_index=scenario_index, stage_index=stage_index)
+#
+#     for soil_layer in soil_layers.SoilLayers:
+#         if soil_layer.LayerId == layer_id:
+#             return soil_layer.SoilId
+
 
 def get_stage_by_indices(dm: DStabilityModel, stage_index: int, scenario_index: int) -> GLStage:
     """Get stage by the given scenario and stage indices
