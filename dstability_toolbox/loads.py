@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+from typing import Any
 from dstability_toolbox.geometry import CharPointType, Side
 
 
@@ -30,7 +30,7 @@ class LoadCollection(BaseModel):
     """
     loads: list[Load]
 
-    def get_by_name(self, name) -> Load:
+    def get_by_name(self, name: str) -> Load:
         """Returns the load with the given name"""
         for load in self.loads:
             if load.name == name:
@@ -39,7 +39,7 @@ class LoadCollection(BaseModel):
         raise NameError(f"Could not find load with name {name}")
 
     @classmethod
-    def from_list(cls, loads_dicts: list):
+    def from_list(cls, loads_dicts: list[dict[str, Any]]) -> "LoadCollection":
         """Parses the dictionary into a LoadCollection
 
         Args:
