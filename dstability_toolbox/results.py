@@ -74,17 +74,24 @@ class ResultSummary(BaseModel):
     stability calculation"""
 
     analysis_type: str
-    sf: Optional[float] = None
-    failure_probability: Optional[float] = None
-    reliability_index: Optional[float] = None
+    sf: Optional[float | str] = None
+    failure_probability: Optional[float | str] = None
+    reliability_index: Optional[float | str] = None
     convergence: Optional[bool] = None
-    distance_to_convergence: Optional[float] = None
+    distance_to_convergence: Optional[float | str] = None
     l_coord_1: Optional[float] = None
     z_coord_1: Optional[float] = None
     radius_1: Optional[float] = None
     l_coord_2: Optional[float] = None
     z_coord_2: Optional[float] = None
     radius_2: Optional[float] = None
+
+    @classmethod
+    def _nan_to_none(cls, v: Any) -> Optional[Any]:
+        """Convert "NaN" to None for any value"""
+        if isinstance(v, str) and v.lower() == "nan":
+            return None
+        return v
 
     @classmethod
     def from_result(cls, result: DStabilityResult):
@@ -118,11 +125,11 @@ class ResultSummary(BaseModel):
 
         return cls(
             analysis_type=type(result).__name__[:-6],  # Use the class name and remove the "Result" suffix
-            sf=getattr(result, 'FactorOfSafety', None),
-            failure_probability=getattr(result, 'FailureProbability', None),
-            reliability_index=getattr(result, 'ReliabilityIndex', None),
+            sf=cls._nan_to_none(getattr(result, 'FactorOfSafety', None)),
+            failure_probability=cls._nan_to_none(getattr(result, 'FailureProbability', None)),
+            reliability_index=cls._nan_to_none(getattr(result, 'ReliabilityIndex', None)),
             convergence=getattr(result, 'Converged', None),
-            distance_to_convergence=getattr(result, 'DistanceToConvergence', None),
+            distance_to_convergence=cls._nan_to_none(getattr(result, 'DistanceToConvergence', None)),
             l_coord_1=l_coord,
             z_coord_1=z_coord,
             radius_1=radius,
@@ -153,11 +160,11 @@ class ResultSummary(BaseModel):
 
         return cls(
             analysis_type=type(result).__name__[:-6],  # Use the class name and remove the "Result" suffix
-            sf=getattr(result, 'FactorOfSafety', None),
-            failure_probability=getattr(result, 'FailureProbability', None),
-            reliability_index=getattr(result, 'ReliabilityIndex', None),
+            sf=cls._nan_to_none(getattr(result, 'FactorOfSafety', None)),
+            failure_probability=cls._nan_to_none(getattr(result, 'FailureProbability', None)),
+            reliability_index=cls._nan_to_none(getattr(result, 'ReliabilityIndex', None)),
             convergence=getattr(result, 'Converged', None),
-            distance_to_convergence=getattr(result, 'DistanceToConvergence', None),
+            distance_to_convergence=cls._nan_to_none(getattr(result, 'DistanceToConvergence', None)),
             l_coord_1=l_coord_1,
             z_coord_1=z_coord_1,
             radius_1=radius_1,
@@ -171,13 +178,12 @@ class ResultSummary(BaseModel):
         """Internal method for converting a SpencerResultType object to a ResultSummary object"""
         return cls(
             analysis_type=type(result).__name__[:-6],  # Use the class name and remove the "Result" suffix
-            sf=getattr(result, 'FactorOfSafety', None),
-            failure_probability=getattr(result, 'FailureProbability', None),
-            reliability_index=getattr(result, 'ReliabilityIndex', None),
+            sf=cls._nan_to_none(getattr(result, 'FactorOfSafety', None)),
+            failure_probability=cls._nan_to_none(getattr(result, 'FailureProbability', None)),
+            reliability_index=cls._nan_to_none(getattr(result, 'ReliabilityIndex', None)),
             convergence=getattr(result, 'Converged', None),
-            distance_to_convergence=getattr(result, 'DistanceToConvergence', None),
+            distance_to_convergence=cls._nan_to_none(getattr(result, 'DistanceToConvergence', None)),
         )
-
 
 
 @dataclass
@@ -303,12 +309,5 @@ def results_from_dir(directory: str, output_path: str):
 
     exporter = DStabilityResultExporter(
         dm_list=dm_list,
-        template_path=Path(r"templates\export_template.xlsx")
     )
     exporter.export_results(output_path=output_path)
-
-
-if __name__ == "__main__":
-    directory = r"C:\Users\danie\Documents\Rekenmap"
-    output_path = os.path.join(directory, "D-Stability Rekenresultaten.xlsx")
-    results_from_dir(directory=directory, output_path=output_path)
