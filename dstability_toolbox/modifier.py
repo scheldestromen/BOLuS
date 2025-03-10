@@ -11,7 +11,7 @@ from shapely import Point
 
 from dstability_toolbox.calculation_settings import (BishopBruteForce,
                                                      UpliftVanParticleSwarm)
-from dstability_toolbox.dm_getter import get_by_id, get_stage_by_indices
+from dstability_toolbox.geolib_utils import get_by_id, get_stage_by_indices
 from dstability_toolbox.geometry import CharPointsProfile, Geometry
 from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Model

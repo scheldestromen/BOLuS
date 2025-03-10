@@ -1,5 +1,7 @@
+import concurrent.futures
 from typing import Any
 
+from geolib import DStabilityModel
 from geolib.models import DStabilityModel
 from geolib.models.dstability.internal import CalculationSettings
 from geolib.models.dstability.internal import Stage as GLStage
@@ -110,3 +112,17 @@ def get_stage_by_indices(
         )
 
     return stage
+
+
+def dm_batch_execute(dm_list: list[DStabilityModel]):
+    """Function for executing multiple DStabilityModels in parallel.
+    The function uses a ProcessPoolExecutor. This is the preferred method for
+    CPU-bound tasks.
+
+    Args:
+        dm_list: list of DStabilityModel instances"""
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        results = list(executor.map(DStabilityModel.execute, dm_list))
+
+    return results
