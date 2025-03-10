@@ -10,8 +10,6 @@ from .state import StatePoint
 from .subsoil import Subsoil
 from .water import Waternet
 
-# TODO: Alle model componenten samenvoegen
-
 
 class Stage(BaseModel):
     name: str

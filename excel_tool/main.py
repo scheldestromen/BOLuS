@@ -1,5 +1,5 @@
 """
-Main module for input_handler
+Main module for excel_tool
 """
 
 import os
@@ -8,8 +8,8 @@ from pathlib import Path
 from dstability_toolbox.execute import dm_batch_execute
 from dstability_toolbox.modifier import create_d_stability_model
 from dstability_toolbox.results import DStabilityResultExporter
-from input_handler.creator import input_to_models
-from input_handler.input_reader import ExcelInputReader, RawInputToUserInputStructure
+from excel_tool.creator import input_to_models
+from excel_tool.input_reader import ExcelInputReader, RawInputToUserInputStructure
 
 # Werkmap dient niet gesynchroniseerd met OneDrive te zijn indien er gerekend wordt
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Rekenmap")
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Reading the Excel to RawUserInput
     raw_user_input = ExcelInputReader.read_from_file(INPUT_FILE_PATH)
 
-    # Convert the RawInput to models. input_to_models has all the logic
+    # Convert the RawUserInput to models. input_to_models has all the logic
     input_structure = RawInputToUserInputStructure.convert(raw_user_input)
     models = input_to_models(input_structure)
 

@@ -9,8 +9,8 @@ from dstability_toolbox.geometry import (CharPointType, Geometry,
 from dstability_toolbox.model import Model, Scenario, Stage
 from dstability_toolbox.state import create_state_points_from_subsoil
 from dstability_toolbox.subsoil import subsoil_from_soil_profiles
-from input_handler.user_input import (ScenarioConfig, StageConfig,
-                                      UserInputStructure)
+from excel_tool.user_input import (ScenarioConfig, StageConfig,
+                                   UserInputStructure)
 
 
 def create_stage(

@@ -11,7 +11,7 @@ from dstability_toolbox.state import create_state_points_from_subsoil
 from dstability_toolbox.subsoil import Subsoil
 from dstability_toolbox.water import Waternet
 
-# Deze nog even laten zitten. Nut afwegen na aan de gang te zijn gegaan met input_handler
+# Deze nog even laten zitten. Nut afwegen na aan de gang te zijn gegaan met excel_tool
 
 
 class BaseSequence(ABC):

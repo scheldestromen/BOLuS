@@ -23,11 +23,11 @@ from dstability_toolbox.calculation_settings import (GridSettingsSetCollection,
                                                      SlipPlaneModel,
                                                      UpliftVanParticleSwarm,
                                                      BishopBruteForce)
-from input_handler.excel_utils import (parse_key_row, parse_key_value_cols,
-                                       parse_row_instance,
-                                       parse_row_instance_remainder)
-from input_handler.user_input import (GeneralSettings, UserInputStructure,
-                                      ModelConfig)
+from excel_tool.excel_utils import (parse_key_row, parse_key_value_cols,
+                                    parse_row_instance,
+                                    parse_row_instance_remainder)
+from excel_tool.user_input import (GeneralSettings, UserInputStructure,
+                                   ModelConfig)
 from utils.dict_utils import (group_dicts_by_key, list_to_nested_dict,
                               remove_key, check_for_missing_keys)
 from utils.list_utils import (check_list_of_dicts_for_duplicate_values,
