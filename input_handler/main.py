@@ -4,15 +4,15 @@ Main module for input_handler
 import os
 from pathlib import Path
 
-from input_reader import RawUserInput, raw_input_to_user_input_structure
-from creator import input_to_models
+from input_handler.input_reader import RawUserInput, raw_input_to_user_input_structure
+from input_handler.creator import input_to_models
 from dstability_toolbox.modifier import create_d_stability_model
 from dstability_toolbox.execute import dm_batch_execute
 from dstability_toolbox.results import DStabilityResultExporter
 
 # Werkmap dient niet gesynchroniseerd met OneDrive te zijn indien er gerekend wordt
-OUTPUT_DIR = r"C:\Users\danie\Documents\Rekenmap"
-INPUT_FILE_PATH = "Invoer D-Stability tool.xlsx"
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Rekenmap")
+INPUT_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Invoer D-Stability tool.xlsx")
 
 
 if __name__ == "__main__":
