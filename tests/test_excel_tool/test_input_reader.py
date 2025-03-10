@@ -1,5 +1,7 @@
 """Tests for the input reader functionality"""
 
+# TODO: nalopen en herzien
+
 import os
 from pathlib import Path
 from unittest import TestCase
