@@ -8,7 +8,7 @@ from pathlib import Path
 from dstability_toolbox.execute import dm_batch_execute
 from dstability_toolbox.modifier import create_d_stability_model
 from dstability_toolbox.results import DStabilityResultExporter
-from excel_tool.creator import input_to_models
+from dstability_toolbox.model_creator import input_to_models
 from excel_tool.input_reader import ExcelInputReader, RawInputToUserInputStructure
 
 # Werkmap dient niet gesynchroniseerd met OneDrive te zijn indien er gerekend wordt
