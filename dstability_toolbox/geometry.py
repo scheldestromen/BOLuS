@@ -264,27 +264,9 @@ class SurfaceLineCollection(BaseModel):
 
     surface_lines: list[SurfaceLine]
 
-    @classmethod
-    def from_dict(
-        cls, surface_lines_dict: dict[str, list[float]]
-    ) -> "SurfaceLineCollection":
-        """Parses the dictionary into a SurfaceLineCollection
-
-        Args:
-            surface_lines_dict (dict): The dictionary to parse. The keys should be the profile names
-              and the values a flat list of points of that profile [x1, y1, z1, x2, y2, z2, ...]
-        """
-
-        surface_lines: list[SurfaceLine] = []
-
-        for name, point_list in surface_lines_dict.items():
-            surface_line = SurfaceLine.from_list(name=name, point_list=point_list)
-            surface_lines.append(surface_line)
-
-        return cls(surface_lines=surface_lines)
-
     def get_by_name(self, name: str) -> SurfaceLine:
         """Returns the SurfaceLine with the given name"""
+
         profile = next((prof for prof in self.surface_lines if prof.name == name), None)
         if profile:
             return profile
@@ -299,28 +281,6 @@ class CharPointsProfileCollection(BaseModel):
         char_points_profiles (list): A list of CharPointsProfile instances"""
 
     char_points_profiles: List[CharPointsProfile]
-
-    @classmethod
-    def from_dict(
-        cls, char_points_dict: dict[str, dict[str, float]]
-    ) -> "CharPointsProfileCollection":
-        """Parses the dictionary into a CharPointsProfileCollection
-
-        Args:
-            char_points_dict: The dictionary to parse. The keys should be the
-              profile names and the values dicts with the characteristic points,3
-              for example {x_surface_level_water_side: 0, y_surface_level_water_side:
-              0, z_surface_level_water_side: 0, ...}"""
-
-        char_point_profiles: list[CharPointsProfile] = []
-
-        for name, char_points in char_points_dict.items():
-            char_points_profile = CharPointsProfile.from_dict(
-                name=name, char_points_dict=char_points
-            )
-            char_point_profiles.append(char_points_profile)
-
-        return cls(char_points_profiles=char_point_profiles)
 
     def get_by_name(self, name: str) -> CharPointsProfile:
         """Returns the CharPointsProfile with the given name"""

@@ -70,29 +70,6 @@ class GridSettings(ABC, BaseModel):
 
         return self
 
-    @classmethod
-    def from_dict(cls, input_dict: dict):
-        """Returns an instance of the child class of GridSettings based
-        on the slip plane model.
-
-        Args:
-            input_dict: The dictionary to parse. Should at least have the
-              keys and values for the attributes needed for the specific
-              slip plane model.
-        """
-        slip_plane_model_to_class = {
-            SlipPlaneModel.UPLIFT_VAN_PARTICLE_SWARM: UpliftVanParticleSwarm,
-            SlipPlaneModel.BISHOP_BRUTE_FORCE: BishopBruteForce,
-        }
-
-        slip_plane_model = input_dict["slip_plane_model"]
-        class_ = slip_plane_model_to_class.get(slip_plane_model)
-
-        if class_ is None:
-            raise ValueError(f"Unknown slip plane model {slip_plane_model}")
-
-        return class_.model_validate(input_dict)
-
     @abstractmethod
     def to_geolib(self, char_points_profile: CharPointsProfile):
         """Exports the grid settings to a GEOLib class"""
@@ -304,26 +281,6 @@ class GridSettingsSetCollection(BaseModel):
         grid_settings_sets (list): List of GridSettingsSet instances"""
 
     grid_settings_sets: list[GridSettingsSet]
-
-    @classmethod
-    def from_dict(cls, input_dict: dict):
-        """Parses the dictionary into a GridSettingsSetCollection
-
-        Args:
-            input_dict (dict): The dictionary to parse
-        """
-        grid_settings_sets = []
-
-        for set_name, grid_settings_list in input_dict.items():
-            grid_settings = [
-                GridSettings.from_dict(grid_settings_dict)
-                for grid_settings_dict in grid_settings_list
-            ]
-            grid_settings_sets.append(
-                GridSettingsSet(name=set_name, grid_settings=grid_settings)
-            )
-
-        return cls(grid_settings_sets=grid_settings_sets)
 
     def get_by_name(self, name: str) -> GridSettingsSet:
         """Get the grid settings set with the given name"""

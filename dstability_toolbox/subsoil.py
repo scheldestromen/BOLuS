@@ -62,18 +62,6 @@ class SoilProfileCollection(BaseModel):
 
     profiles: list[SoilProfile]
 
-    @classmethod
-    def from_dict(cls, soil_profile_dict: dict):
-        profiles = []
-
-        for name, layer_dicts in soil_profile_dict.items():
-            layers = [
-                SoilLayer.model_validate(layer_dict) for layer_dict in layer_dicts
-            ]
-            profiles.append(SoilProfile(name=name, layers=layers))
-
-        return cls(profiles=profiles)
-
 
 class SoilPolygon(BaseModel):
     """Representation of a 2D soil layer

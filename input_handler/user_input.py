@@ -11,6 +11,9 @@ from dstability_toolbox.subsoil import SoilProfileCollection
 from dstability_toolbox.water import WaternetCollection
 
 
+# TODO - leunt zwaar op de toolbox, onderdeel van toolbox maken?
+#  Doel van tool is batch berekeningen, deze xConfigs zijn essentieel voor nieuwe sommen
+
 class GeneralSettings(BaseModel):
     """Set of general settings"""
 
@@ -85,9 +88,3 @@ class UserInputStructure(BaseModel):
     waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection
     model_configs: list[ModelConfig]
-
-
-def model_configs_from_list(model_config_list: list[dict]) -> list[ModelConfig]:
-    return [
-        ModelConfig.model_validate(model_config) for model_config in model_config_list
-    ]

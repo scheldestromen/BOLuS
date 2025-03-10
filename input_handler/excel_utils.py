@@ -3,7 +3,7 @@
 from typing import Any
 
 
-def get_list_item_indices(li: list, di: dict) -> dict:
+def get_list_item_indices(li: list[str], di: dict[str, str]) -> dict[str, int]:
     """
     Function takes a list of strings and a dictionary. The list contains the values from the dictionary.
     The function returns a dictionary with the keys from the dictionary and the index where the
@@ -13,7 +13,7 @@ def get_list_item_indices(li: list, di: dict) -> dict:
     >>> get_list_item_indices(['derde', 'tweede', 'eerste'], {'first': 'eerste', 'second': 'tweede', 'third': 'derde'})
     {'first': 2, 'second': 1, 'third': 0}
     """
-    indices = {}
+    indices: dict[str, int] = {}
 
     for key in di:
         indices[key] = li.index(di[key])
@@ -22,15 +22,16 @@ def get_list_item_indices(li: list, di: dict) -> dict:
 
 
 def parse_row_instance(
-    sheet: Any, header_row: int, skip_rows: int, col_dict: dict
-) -> list:
+    sheet: Any, header_row: int, skip_rows: int, col_dict: dict[str, str]
+) -> list[dict[str, Any]]:
     """
     Reads an Excelsheet. Every row becomes a dictionary with the keys from the col_dict based on the header_row.
     """
+
     header_list = [cell.value for cell in sheet[header_row]]
     indices = get_list_item_indices(header_list, col_dict)
 
-    rows = []
+    rows: list[dict[str, Any]] = []
 
     for i, row in enumerate(sheet):
         # Skip header

@@ -9,8 +9,7 @@ from dstability_toolbox.execute import dm_batch_execute
 from dstability_toolbox.modifier import create_d_stability_model
 from dstability_toolbox.results import DStabilityResultExporter
 from input_handler.creator import input_to_models
-from input_handler.input_reader import (RawUserInput,
-                                        raw_input_to_user_input_structure)
+from input_handler.input_reader import ExcelInputReader, RawInputToUserInputStructure
 
 # Werkmap dient niet gesynchroniseerd met OneDrive te zijn indien er gerekend wordt
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Rekenmap")
@@ -20,11 +19,11 @@ INPUT_FILE_PATH = os.path.join(
 
 
 if __name__ == "__main__":
-    # Reading the input sheet
-    raw_user_input = RawUserInput.read_from_file(INPUT_FILE_PATH)
+    # Reading the Excel to RawUserInput
+    raw_user_input = ExcelInputReader.read_from_file(INPUT_FILE_PATH)
 
-    # Convert the input to models. input_to_models has all the logic
-    input_structure = raw_input_to_user_input_structure(raw_user_input)
+    # Convert the RawInput to models. input_to_models has all the logic
+    input_structure = RawInputToUserInputStructure.convert(raw_user_input)
     models = input_to_models(input_structure)
 
     # Create new DStability calculations from the DStability models
