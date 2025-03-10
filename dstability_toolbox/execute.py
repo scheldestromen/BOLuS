@@ -1,5 +1,6 @@
-from geolib.models import DStabilityModel
 import concurrent.futures
+
+from geolib.models import DStabilityModel
 
 
 def dm_batch_execute(dm_list: list[DStabilityModel]):

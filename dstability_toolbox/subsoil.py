@@ -1,28 +1,30 @@
+from typing import Optional, Self
+
 from geolib import DStabilityModel
+from geolib.geometry.one import Point as GLPoint
 from geolib.models.dstability.internal import PersistableLayer
 from pydantic import BaseModel, model_validator
-from typing import Self, Optional
-
-from geolib.geometry.one import Point as GLPoint
 from shapely.geometry import Polygon
 
-from dstability_toolbox.geometry import SurfaceLine
 from dstability_toolbox.dm_getter import get_by_id
+from dstability_toolbox.geometry import SurfaceLine
 from utils.geometry_utils import geometry_to_polygons
 
 
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
+
     soil_type: str
     top: float
 
 
 class SoilProfile(BaseModel):
     """Representation of a 1D soil profile"""
+
     name: str
     layers: list[SoilLayer]
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_descending_tops(self) -> Self:
         tops = [layer.top for layer in self.layers]
 
@@ -37,18 +39,18 @@ class SoilProfile(BaseModel):
 
 class SoilProfilePosition(BaseModel):
     """Represents the position of a soil profile in the subsoil
-    
+
     Attributes:
         profile_name (str): The name of the soil profile
         l_coord (float): The l-coordinate of the soil profile"""
-    
+
     profile_name: str
     l_coord: float
 
 
 class SoilProfilePositionCollection(BaseModel):
     """Collection of soil profile positions
-    
+
     Attributes:
         positions (list[SoilProfilePosition]): List of SoilProfilePosition instances"""
 
@@ -57,6 +59,7 @@ class SoilProfilePositionCollection(BaseModel):
 
 class SoilProfileCollection(BaseModel):
     """Collection of 1D soil profiles of type SoilProfile"""
+
     profiles: list[SoilProfile]
 
     @classmethod
@@ -64,7 +67,9 @@ class SoilProfileCollection(BaseModel):
         profiles = []
 
         for name, layer_dicts in soil_profile_dict.items():
-            layers = [SoilLayer.model_validate(layer_dict) for layer_dict in layer_dicts]
+            layers = [
+                SoilLayer.model_validate(layer_dict) for layer_dict in layer_dicts
+            ]
             profiles.append(SoilProfile(name=name, layers=layers))
 
         return cls(profiles=profiles)
@@ -78,6 +83,7 @@ class SoilPolygon(BaseModel):
         points (list): List of tuples each representing 2D-coordinates
         dm_layer_id (str): Optional. The id of the layer in de DStabilityModel it belongs to
     """
+
     soil_type: str
     points: list[tuple[float, float]]
     dm_layer_id: Optional[str] = None
@@ -97,7 +103,9 @@ class SoilPolygon(BaseModel):
     def from_shapely(cls, soil_type: str, polygon: Polygon) -> Self:
         """Creates a SoilPolygon from a Shapely Polygon"""
         if not isinstance(polygon, Polygon):
-            raise ValueError(f"Input must be a Shapely Polygon but is of type {type(polygon)}")
+            raise ValueError(
+                f"Input must be a Shapely Polygon but is of type {type(polygon)}"
+            )
 
         points = list(polygon.exterior.coords)[:-1]  # Remove the repeated first point
         return cls(soil_type=soil_type, points=points)
@@ -120,9 +128,15 @@ class Subsoil(BaseModel):
     soil_polygons: list[SoilPolygon]
 
     @classmethod
-    def from_geolib(cls, dm: DStabilityModel, scenario_index: int, stage_index: int) -> Self:
-        soil_layers = dm._get_soil_layers(scenario_index=scenario_index, stage_index=stage_index)
-        geometry = dm._get_geometry(scenario_index=scenario_index, stage_index=stage_index)
+    def from_geolib(
+        cls, dm: DStabilityModel, scenario_index: int, stage_index: int
+    ) -> Self:
+        soil_layers = dm._get_soil_layers(
+            scenario_index=scenario_index, stage_index=stage_index
+        )
+        geometry = dm._get_geometry(
+            scenario_index=scenario_index, stage_index=stage_index
+        )
 
         soil_polygons: list[SoilPolygon] = []
 
@@ -130,19 +144,20 @@ class Subsoil(BaseModel):
             soil = get_by_id(collection=dm.soils.Soils, item_id=soil_layer.SoilId)
             layer = geometry.get_layer(id=soil_layer.LayerId)
 
-            soil_polygon = SoilPolygon.from_geolib_layer(soil_type=soil.Code, gl_layer=layer)
+            soil_polygon = SoilPolygon.from_geolib_layer(
+                soil_type=soil.Code, gl_layer=layer
+            )
             soil_polygons.append(soil_polygon)
 
         return cls(soil_polygons=soil_polygons)
 
 
 def subsoil_from_soil_profiles(
-        surface_line: SurfaceLine,
-        soil_profiles: list[SoilProfile],
-        transitions: Optional[list[float]] = None,
-        thickness_bottom_layer: float = 1,
-        min_soil_profile_depth: Optional[float] = None
-
+    surface_line: SurfaceLine,
+    soil_profiles: list[SoilProfile],
+    transitions: Optional[list[float]] = None,
+    thickness_bottom_layer: float = 1,
+    min_soil_profile_depth: Optional[float] = None,
 ) -> Subsoil:
     """Creates an instance of Subsoil from one or more SoilProfile objects.
 
@@ -166,10 +181,14 @@ def subsoil_from_soil_profiles(
         raise ValueError("At least one soil profile must be provided")
 
     if len(transitions) != len(soil_profiles) - 1:
-        raise ValueError("The number of soil profiles does not match the number of transitions")
+        raise ValueError(
+            "The number of soil profiles does not match the number of transitions"
+        )
 
     if transitions != sorted(transitions):
-        raise ValueError("The transitions of the soil profiles are not in ascending order")
+        raise ValueError(
+            "The transitions of the soil profiles are not in ascending order"
+        )
 
     surface_line.check_l_coordinates_present()
     l_coords = [p.l for p in surface_line.points]
@@ -181,12 +200,16 @@ def subsoil_from_soil_profiles(
     bounds = [l_min] + transitions + [l_max]
 
     if bounds != sorted(bounds):
-        raise ValueError("One or more soil profile transitions lie beyond the surface line geometry."
-                         f"The bounds are {l_min, l_max} and the transitions are {transitions}")
+        raise ValueError(
+            "One or more soil profile transitions lie beyond the surface line geometry."
+            f"The bounds are {l_min, l_max} and the transitions are {transitions}"
+        )
 
-    geometry_points = ([(surface_line.points[0].l, -100)]
-                       + [(p.l, p.z) for p in surface_line.points]
-                       + [(surface_line.points[-1].l, -100)])
+    geometry_points = (
+        [(surface_line.points[0].l, -100)]
+        + [(p.l, p.z) for p in surface_line.points]
+        + [(surface_line.points[-1].l, -100)]
+    )
     geometry_polygon = Polygon(geometry_points)
     soil_polygons = []
 
@@ -207,10 +230,7 @@ def subsoil_from_soil_profiles(
                 bottom = soil_profile.layers[j + 1].top
 
             polygon = Polygon(
-                [(left, top),
-                 (right, top),
-                 (right, bottom),
-                 (left, bottom)]
+                [(left, top), (right, top), (right, bottom), (left, bottom)]
             )
 
             # Adjust for the surface level
@@ -218,7 +238,9 @@ def subsoil_from_soil_profiles(
             polygons = geometry_to_polygons(geometry)
 
             for polygon in polygons:
-                soil_polygon = SoilPolygon.from_shapely(soil_type=layer.soil_type, polygon=polygon)
+                soil_polygon = SoilPolygon.from_shapely(
+                    soil_type=layer.soil_type, polygon=polygon
+                )
                 soil_polygons.append(soil_polygon)
 
     subsoil = Subsoil(soil_polygons=soil_polygons)

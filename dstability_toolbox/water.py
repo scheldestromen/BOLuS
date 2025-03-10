@@ -1,6 +1,8 @@
-from pydantic import BaseModel
 from enum import StrEnum, auto
 from typing import Any
+
+from pydantic import BaseModel
+
 
 class WaterLineType(StrEnum):
     HEADLINE = auto()
@@ -30,7 +32,8 @@ class ReferenceLine(BaseModel):
         l (list): list of floats for the l-coordinates
         z (list): list of floats for the z-coordinates
         head_line_top (str): Head at top of reference line is based on the headline with this name
-        head_line_bottom (str): Head at bottom of reference line is based on the headline with this name"""
+        head_line_bottom (str): Head at bottom of reference line is based on the headline with this name
+    """
 
     name: str
     l: list[float]
@@ -48,7 +51,7 @@ class Waternet(BaseModel):
         stage_name (str): Name of the stage it belongs to
         head_lines (list[HeadLine]): List of HeadLine
         ref_lines (list[ReferenceLine]): List of ReferenceLine
-        """
+    """
 
     calc_name: str
     scenario_name: str
@@ -61,25 +64,29 @@ class WaternetCollection(BaseModel):
     waternets: list[Waternet]
 
     @staticmethod
-    def parse_head_lines(lines: list[dict[str, Any]], name_phreatic_line: str) -> list[HeadLine]:
+    def parse_head_lines(
+        lines: list[dict[str, Any]], name_phreatic_line: str
+    ) -> list[HeadLine]:
         """Parse the head lines from the dictionary
-        
+
         Args:
             lines (list[dict[str, Any]]): The lines to parse
             name_phreatic_line (str): The name of the phreatic line
 
         Returns:
             The parsed head lines"""
-        
+
         head_lines: list[HeadLine] = []
         for line in lines:
-            if line['type'] == WaterLineType.HEADLINE:
-                head_lines.append(HeadLine(
-                    name=line['line_name'],
-                    is_phreatic=line['line_name'] == name_phreatic_line,
-                    l=line['values'][0::2],
-                    z=line['values'][1::2],
-                ))
+            if line["type"] == WaterLineType.HEADLINE:
+                head_lines.append(
+                    HeadLine(
+                        name=line["line_name"],
+                        is_phreatic=line["line_name"] == name_phreatic_line,
+                        l=line["values"][0::2],
+                        z=line["values"][1::2],
+                    )
+                )
 
         return head_lines
 
@@ -88,29 +95,33 @@ class WaternetCollection(BaseModel):
         ref_lines: list[ReferenceLine] = []
 
         for line in lines:
-            if line['type'] == WaterLineType.REFERENCE_LINE:
-                if line['head_line_top'] is None:
+            if line["type"] == WaterLineType.REFERENCE_LINE:
+                if line["head_line_top"] is None:
                     raise ValueError(
                         f"Head line top is not set for reference line {line['line_name']}"
                     )
 
-                if line['head_line_bottom'] is None:
-                    line['head_line_bottom'] = line['head_line_top']
+                if line["head_line_bottom"] is None:
+                    line["head_line_bottom"] = line["head_line_top"]
 
-                ref_lines.append(ReferenceLine(
-                    name=line['line_name'],
-                    l=line['values'][0::2],
-                    z=line['values'][1::2],
-                    head_line_top=line['head_line_top'],
-                    head_line_bottom=line['head_line_bottom'],
-                ))
+                ref_lines.append(
+                    ReferenceLine(
+                        name=line["line_name"],
+                        l=line["values"][0::2],
+                        z=line["values"][1::2],
+                        head_line_top=line["head_line_top"],
+                        head_line_bottom=line["head_line_bottom"],
+                    )
+                )
 
         return ref_lines
 
     @classmethod
-    def from_dict(cls, waternets_dict: dict[str, Any], name_phreatic_line: str) -> "WaternetCollection":
+    def from_dict(
+        cls, waternets_dict: dict[str, Any], name_phreatic_line: str
+    ) -> "WaternetCollection":
         """Parse from dict
-        
+
         Args:
             waternets_dict (dict[str, Any]): The dictionary to parse
             name_phreatic_line (str): The name of the phreatic line
@@ -125,17 +136,21 @@ class WaternetCollection(BaseModel):
                 for stage_name, lines in scenario_dict.items():
                     head_lines = cls.parse_head_lines(lines, name_phreatic_line)
                     ref_lines = cls.parse_ref_lines(lines)
-                    waternets.append(Waternet(
-                        calc_name=calc_name,
-                        scenario_name=scenario_name,
-                        stage_name=stage_name,
-                        head_lines=head_lines,
-                        ref_lines=ref_lines,
-                    ))
+                    waternets.append(
+                        Waternet(
+                            calc_name=calc_name,
+                            scenario_name=scenario_name,
+                            stage_name=stage_name,
+                            head_lines=head_lines,
+                            ref_lines=ref_lines,
+                        )
+                    )
 
         return cls(waternets=waternets)
 
-    def get_waternet(self, calc_name: str, scenario_name: str, stage_name: str) -> Waternet:
+    def get_waternet(
+        self, calc_name: str, scenario_name: str, stage_name: str
+    ) -> Waternet:
         """Returns the waternet with the given calc_name, scenario_name and stage_name
 
         Args:
@@ -147,12 +162,14 @@ class WaternetCollection(BaseModel):
             The waternet with the given calc_name, scenario_name and stage_name"""
 
         waternet = next(
-            (waternet for waternet in self.waternets
-             if waternet.calc_name == calc_name
-             and waternet.scenario_name == scenario_name
-             and waternet.stage_name == stage_name
-             ),
-            None
+            (
+                waternet
+                for waternet in self.waternets
+                if waternet.calc_name == calc_name
+                and waternet.scenario_name == scenario_name
+                and waternet.stage_name == stage_name
+            ),
+            None,
         )
         if waternet:
             return waternet

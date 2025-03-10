@@ -1,36 +1,44 @@
 from pathlib import Path
 
-from shapely import Point
-
 from geolib import DStabilityModel
 from geolib.geometry.one import Point as GLPoint
-from geolib.models.dstability.internal import SoilCollection as GLSoilCollection
-from geolib.models.dstability.states import DStabilityStatePoint, DStabilityStress
-from geolib.models.dstability.loads import UniformLoad, Consolidation
+from geolib.models.dstability.internal import \
+    SoilCollection as GLSoilCollection
+from geolib.models.dstability.loads import Consolidation, UniformLoad
+from geolib.models.dstability.states import (DStabilityStatePoint,
+                                             DStabilityStress)
+from shapely import Point
 
-from dstability_toolbox.calculation_settings import UpliftVanParticleSwarm, BishopBruteForce
-from dstability_toolbox.dm_getter import get_stage_by_indices, get_by_id
+from dstability_toolbox.calculation_settings import (BishopBruteForce,
+                                                     UpliftVanParticleSwarm)
+from dstability_toolbox.dm_getter import get_by_id, get_stage_by_indices
+from dstability_toolbox.geometry import CharPointsProfile, Geometry
 from dstability_toolbox.loads import Load
 from dstability_toolbox.model import Model
-from dstability_toolbox.geometry import Geometry, CharPointsProfile
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.state import StatePoint
 from dstability_toolbox.subsoil import Subsoil
 from dstability_toolbox.water import Waternet
 
 
-def get_scenario_and_stage_index_by_label(dm: DStabilityModel, scenario: str, stage: str):
+def get_scenario_and_stage_index_by_label(
+    dm: DStabilityModel, scenario: str, stage: str
+):
     # To be implemented when needed
     pass
 
 
-def set_geometry(geometry: Geometry, dm: DStabilityModel, scenario_index: int, stage_index: int):
+def set_geometry(
+    geometry: Geometry, dm: DStabilityModel, scenario_index: int, stage_index: int
+):
     # Eerste instantie: check op bestaande geometrie, dan foutmeldingen
     # Later omgang met bestaande som: bv. door opvulmateriaal boven de gedefinieerde bodemopbouw
     pass
 
 
-def add_soil_collection(soil_collection: SoilCollection, dm: DStabilityModel) -> DStabilityModel:
+def add_soil_collection(
+    soil_collection: SoilCollection, dm: DStabilityModel
+) -> DStabilityModel:
     """Adds the soils in the soil_collection to the DStabilityModel.
     Soils already present are kept.
 
@@ -48,7 +56,9 @@ def add_soil_collection(soil_collection: SoilCollection, dm: DStabilityModel) ->
     return dm
 
 
-def set_subsoil(subsoil: Subsoil, dm: DStabilityModel, scenario_index: int, stage_index: int) -> DStabilityModel:
+def set_subsoil(
+    subsoil: Subsoil, dm: DStabilityModel, scenario_index: int, stage_index: int
+) -> DStabilityModel:
     """Adds the Subsoil to the DStabilityModel. If the geometry already has
     layers, an error is raised.
 
@@ -64,8 +74,10 @@ def set_subsoil(subsoil: Subsoil, dm: DStabilityModel, scenario_index: int, stag
     geometry = dm._get_geometry(scenario_index=scenario_index, stage_index=stage_index)
 
     if geometry.Layers:
-        raise ValueError(f'Geometry of scenario {scenario_index} and stage {stage_index} '
-                         f'already has layers')
+        raise ValueError(
+            f"Geometry of scenario {scenario_index} and stage {stage_index} "
+            f"already has layers"
+        )
 
     for soil_polygon in subsoil.soil_polygons:
         points = soil_polygon.to_geolib_points()
@@ -73,17 +85,17 @@ def set_subsoil(subsoil: Subsoil, dm: DStabilityModel, scenario_index: int, stag
             points=points,
             soil_code=soil_polygon.soil_type,
             scenario_index=scenario_index,
-            stage_index=stage_index
+            stage_index=stage_index,
         )
 
     return dm
 
 
 def add_state_points(
-        state_points: list[StatePoint],
-        dm: DStabilityModel,
-        scenario_index: int,
-        stage_index: int
+    state_points: list[StatePoint],
+    dm: DStabilityModel,
+    scenario_index: int,
+    stage_index: int,
 ) -> DStabilityModel:
     """Adds state points to the DStabilityModel
 
@@ -96,7 +108,9 @@ def add_state_points(
     Returns:
         The modified DStabilityModel
     """
-    subsoil = Subsoil.from_geolib(dm=dm, scenario_index=scenario_index, stage_index=stage_index)
+    subsoil = Subsoil.from_geolib(
+        dm=dm, scenario_index=scenario_index, stage_index=stage_index
+    )
 
     for state_point in state_points:
         point = Point((state_point.x, state_point.z))
@@ -109,22 +123,22 @@ def add_state_points(
                     state_point=DStabilityStatePoint(
                         layer_id=soil_polygon.dm_layer_id,
                         point=GLPoint(x=state_point.x, z=state_point.z),
-                        stress=DStabilityStress(pop=state_point.pop)
+                        stress=DStabilityStress(pop=state_point.pop),
                     ),
                     scenario_index=scenario_index,
-                    stage_index=stage_index
+                    stage_index=stage_index,
                 )
 
     return dm
 
 
 def add_uniform_load(
-        load: Load,
-        soil_collection: SoilCollection,
-        char_point_profile: CharPointsProfile,
-        dm: DStabilityModel,
-        scenario_index: int,
-        stage_index: int
+    load: Load,
+    soil_collection: SoilCollection,
+    char_point_profile: CharPointsProfile,
+    dm: DStabilityModel,
+    scenario_index: int,
+    stage_index: int,
 ):
     """Adds a uniform load to the DStabilityModel based on the input.
 
@@ -154,18 +168,20 @@ def add_uniform_load(
         magnitude=load.magnitude,
         angle_of_distribution=load.angle,
         start=min(load_edge_1, load_edge_2),
-        end=max(load_edge_1, load_edge_2)
+        end=max(load_edge_1, load_edge_2),
     )
 
     # Add consolidation percentages. When added, each layer must have a consolidation percentage
-    subsoil = Subsoil.from_geolib(dm=dm, scenario_index=scenario_index, stage_index=stage_index)
+    subsoil = Subsoil.from_geolib(
+        dm=dm, scenario_index=scenario_index, stage_index=stage_index
+    )
     consolidations = []
 
     for soil_polygon in subsoil.soil_polygons:
         soil = soil_collection.get_by_name(soil_polygon.soil_type)
         consolidation = Consolidation(
             degree=soil.consolidation_traffic_load or 100,
-            layer_id=soil_polygon.dm_layer_id
+            layer_id=soil_polygon.dm_layer_id,
         )
         consolidations.append(consolidation)
 
@@ -173,11 +189,13 @@ def add_uniform_load(
         load=uniform_load,
         consolidations=consolidations,
         scenario_index=scenario_index,
-        stage_index=stage_index
+        stage_index=stage_index,
     )
 
 
-def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, stage_index: int):
+def set_waternet(
+    waternet: Waternet, dm: DStabilityModel, scenario_index: int, stage_index: int
+):
     """Adds the waternet to the DStabilityModel
 
     If a waternet is already defined, an error is raised.
@@ -191,12 +209,16 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
     Returns:
         The modified DStabilityModel"""
 
-    gl_stage = get_stage_by_indices(dm=dm, scenario_index=scenario_index, stage_index=stage_index)
+    gl_stage = get_stage_by_indices(
+        dm=dm, scenario_index=scenario_index, stage_index=stage_index
+    )
     gl_waternet = get_by_id(collection=dm.waternets, item_id=gl_stage.WaternetId)
 
     if gl_waternet.HeadLines or gl_waternet.ReferenceLines:
-        raise ValueError(f'Waternet of scenario {scenario_index} and stage {stage_index} '
-                         f'already has head lines and/or reference lines')
+        raise ValueError(
+            f"Waternet of scenario {scenario_index} and stage {stage_index} "
+            f"already has head lines and/or reference lines"
+        )
 
     # Dict to store the id's in - for adding the ref. lines later
     head_line_id_dict: dict[str, str] = {}
@@ -208,7 +230,7 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
             points=[GLPoint(x=l, z=z) for l, z in zip(head_line.l, head_line.z)],
             is_phreatic_line=head_line.is_phreatic,
             scenario_index=scenario_index,
-            stage_index=stage_index
+            stage_index=stage_index,
         )
         # Store the id as a string (GEOLib uses strings for the ids)
         head_line_id_dict[head_line.name] = str(head_line_id)
@@ -221,17 +243,17 @@ def set_waternet(waternet: Waternet, dm: DStabilityModel, scenario_index: int, s
             scenario_index=scenario_index,
             stage_index=stage_index,
             top_head_line_id=head_line_id_dict[ref_line.head_line_top],
-            bottom_headline_id=head_line_id_dict[ref_line.head_line_bottom]
+            bottom_headline_id=head_line_id_dict[ref_line.head_line_bottom],
         )
 
     return dm
 
 
 def add_calculation_with_grid_settings(
-        grid_settings: BishopBruteForce | UpliftVanParticleSwarm,
-        dm: DStabilityModel,
-        char_points_profile: CharPointsProfile,
-        scenario_index: int
+    grid_settings: BishopBruteForce | UpliftVanParticleSwarm,
+    dm: DStabilityModel,
+    char_points_profile: CharPointsProfile,
+    scenario_index: int,
 ):
     """Adds an analysis method to the given scenario in the DStabilityModel
     based on the given grid settings.
@@ -247,13 +269,22 @@ def add_calculation_with_grid_settings(
         The modified DStabilityModel"""
 
     if dm.scenarios[scenario_index].Calculations:
-        calculation_names = [calculation.Label for calculation in dm.scenarios[scenario_index].Calculations]
+        calculation_names = [
+            calculation.Label
+            for calculation in dm.scenarios[scenario_index].Calculations
+        ]
         if grid_settings.grid_setting_name in calculation_names:
-            raise ValueError(f"There is already a calculation with name {grid_settings.grid_setting_name} in "
-                             f"scenario {scenario_index}. Calculations must have unique names.\n"
-                             f"The characteristic profile name is: {char_points_profile.name}")
+            raise ValueError(
+                f"There is already a calculation with name {grid_settings.grid_setting_name} in "
+                f"scenario {scenario_index}. Calculations must have unique names.\n"
+                f"The characteristic profile name is: {char_points_profile.name}"
+            )
 
-    dm.add_calculation(scenario_index=scenario_index, label=grid_settings.grid_setting_name, set_current=True)
+    dm.add_calculation(
+        scenario_index=scenario_index,
+        label=grid_settings.grid_setting_name,
+        set_current=True,
+    )
     analysis_method = grid_settings.to_geolib(char_points_profile=char_points_profile)
     dm.set_model(analysis_method=analysis_method, scenario_index=scenario_index)
 
@@ -281,20 +312,28 @@ def create_d_stability_model(model: Model):
         else:
             dm.add_scenario(label=scenario.name, notes=scenario.notes, set_current=True)
 
-        for i_grid, grid_settings in enumerate(scenario.grid_settings_set.grid_settings):
+        for i_grid, grid_settings in enumerate(
+            scenario.grid_settings_set.grid_settings
+        ):
             char_point_profile = scenario.stages[-1].geometry.char_point_profile
 
             if i_grid == 0:
                 # Overwrite existing default calculation
-                dm.scenarios[dm.current_scenario].Calculations[0].Label = grid_settings.grid_setting_name
-                analysis_method = grid_settings.to_geolib(char_points_profile=char_point_profile)
-                dm.set_model(analysis_method=analysis_method, scenario_index=dm.current_scenario)
+                dm.scenarios[dm.current_scenario].Calculations[
+                    0
+                ].Label = grid_settings.grid_setting_name
+                analysis_method = grid_settings.to_geolib(
+                    char_points_profile=char_point_profile
+                )
+                dm.set_model(
+                    analysis_method=analysis_method, scenario_index=dm.current_scenario
+                )
             else:
                 add_calculation_with_grid_settings(
                     grid_settings=grid_settings,
                     dm=dm,
                     scenario_index=dm.current_scenario,
-                    char_points_profile=char_point_profile
+                    char_points_profile=char_point_profile,
                 )
 
         for j, stage in enumerate(scenario.stages):
@@ -309,12 +348,17 @@ def create_d_stability_model(model: Model):
                 subsoil=stage.subsoil,
                 dm=dm,
                 scenario_index=dm.current_scenario,
-                stage_index=dm.current_stage)
+                stage_index=dm.current_stage,
+            )
 
             # Add state points
             if stage.state_points is not None:
-                add_state_points(state_points=stage.state_points, dm=dm, scenario_index=dm.current_scenario,
-                                 stage_index=dm.current_stage)
+                add_state_points(
+                    state_points=stage.state_points,
+                    dm=dm,
+                    scenario_index=dm.current_scenario,
+                    stage_index=dm.current_stage,
+                )
 
             if stage.load is not None:
                 add_uniform_load(
@@ -323,14 +367,14 @@ def create_d_stability_model(model: Model):
                     char_point_profile=stage.geometry.char_point_profile,
                     dm=dm,
                     scenario_index=dm.current_scenario,
-                    stage_index=dm.current_stage
+                    stage_index=dm.current_stage,
                 )
 
             set_waternet(
                 waternet=stage.waternet,
                 dm=dm,
                 scenario_index=dm.current_scenario,
-                stage_index=dm.current_stage
+                stage_index=dm.current_stage,
             )
 
     return dm
@@ -338,20 +382,20 @@ def create_d_stability_model(model: Model):
 
 def parse_d_stability_model_from_path(path: Path | str) -> DStabilityModel:
     """Reads a DStabilityModel .stix file and returns a DStabilityModel object.
-    
+
     Args:
         path: The path to the .stix file.
 
     Returns:
         A DStabilityModel object."""
-    
+
     dm: DStabilityModel = DStabilityModel()
 
     if isinstance(path, str):
         path = Path(path)
 
     dm.parse(path)
-    
+
     return dm
 
 

@@ -1,4 +1,5 @@
 """Reads and writes data from and to an Excel file"""
+
 from typing import Any
 
 
@@ -20,7 +21,9 @@ def get_list_item_indices(li: list, di: dict) -> dict:
     return indices
 
 
-def parse_row_instance(sheet: Any, header_row: int, skip_rows: int, col_dict: dict) -> list:
+def parse_row_instance(
+    sheet: Any, header_row: int, skip_rows: int, col_dict: dict
+) -> list:
     """
     Reads an Excelsheet. Every row becomes a dictionary with the keys from the col_dict based on the header_row.
     """
@@ -50,11 +53,7 @@ def parse_row_instance(sheet: Any, header_row: int, skip_rows: int, col_dict: di
 
 
 def parse_row_instance_remainder(
-        sheet: Any,
-        header_row: int,
-        skip_rows: int,
-        col_dict: dict,
-        key_remainder: str
+    sheet: Any, header_row: int, skip_rows: int, col_dict: dict, key_remainder: str
 ) -> list:
     """
     Reads an Excelsheet. Every row becomes a dictionary with the keys from the col_dict based on the header_row.
@@ -78,7 +77,7 @@ def parse_row_instance_remainder(
         other = []
 
         # Loop through the values until an empty cell is found
-        for cell in row[max_index + 1:]:
+        for cell in row[max_index + 1 :]:
             if cell.value is None:
                 break
             other.append(cell.value)
@@ -101,7 +100,8 @@ def parse_row_instance_remainder(
 def parse_key_row(sheet: Any, skip_rows: int) -> dict:
     """Parses an Excel worksheet assuming the first column contains a unique key.
     Each row is parsed to a dictionary with as key, the value in the first column and
-    as value, the rest of the columns in the row, until the first empty cell was found."""
+    as value, the rest of the columns in the row, until the first empty cell was found.
+    """
     row_dict = {}
 
     for i, row in enumerate(sheet):
@@ -116,7 +116,9 @@ def parse_key_row(sheet: Any, skip_rows: int) -> dict:
             continue
 
         if name in row_dict:
-            raise ValueError(f"A duplicate name was found: `{name}` in sheet {sheet.name}")
+            raise ValueError(
+                f"A duplicate name was found: `{name}` in sheet {sheet.name}"
+            )
 
         values = []
 
@@ -133,13 +135,13 @@ def parse_key_row(sheet: Any, skip_rows: int) -> dict:
 
 
 def parse_key_value_cols(
-        sheet: Any,
-        header_row: int,
-        skip_rows: int,
-        key_col: str,
-        value_col: str,
-        col_dict: dict,
-        key_dict: dict
+    sheet: Any,
+    header_row: int,
+    skip_rows: int,
+    key_col: str,
+    value_col: str,
+    col_dict: dict,
+    key_dict: dict,
 ) -> dict:
     """Parses an Excel worksheet in which a column contains the keys and another column contains
     the values. The key value pairs are assumed to be on the same row, but don't have to
@@ -169,7 +171,9 @@ def parse_key_value_cols(
         value = row[indices[value_col]].value
 
         if key in sheet_dict.keys():
-            raise ValueError(f"A duplicate key was found: `{key}` in sheet {sheet.name}")
+            raise ValueError(
+                f"A duplicate key was found: `{key}` in sheet {sheet.name}"
+            )
 
         # If the key is not None then it is assigned
         if key is not None:

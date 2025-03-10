@@ -1,6 +1,7 @@
 from unittest import TestCase
-from dstability_toolbox.loads import Load, LoadCollection
+
 from dstability_toolbox.geometry import CharPointType, Side
+from dstability_toolbox.loads import Load, LoadCollection
 
 
 class TestLoad(TestCase):
@@ -12,7 +13,7 @@ class TestLoad(TestCase):
             angle=20.0,
             width=5.0,
             position=CharPointType.DIKE_CREST_LAND_SIDE,
-            direction=Side.WATER_SIDE
+            direction=Side.WATER_SIDE,
         )
 
 
@@ -25,7 +26,7 @@ class TestLoadCollection(TestCase):
                 angle=20.0,
                 width=5.0,
                 position=CharPointType.DIKE_CREST_LAND_SIDE,
-                direction=Side.WATER_SIDE
+                direction=Side.WATER_SIDE,
             ),
             Load(
                 name="load2",
@@ -33,8 +34,8 @@ class TestLoadCollection(TestCase):
                 angle=25.0,
                 width=7.0,
                 position=CharPointType.DIKE_CREST_WATER_SIDE,
-                direction=Side.LAND_SIDE
-            )
+                direction=Side.LAND_SIDE,
+            ),
         ]
         self.collection = LoadCollection(loads=self.loads)
 
@@ -58,7 +59,7 @@ class TestLoadCollection(TestCase):
                 "angle": 20.0,
                 "width": 5.0,
                 "position": CharPointType.DIKE_CREST_LAND_SIDE,
-                "direction": Side.WATER_SIDE
+                "direction": Side.WATER_SIDE,
             },
             {
                 "name": "load2",
@@ -66,10 +67,10 @@ class TestLoadCollection(TestCase):
                 "angle": 25.0,
                 "width": 7.0,
                 "position": CharPointType.DIKE_CREST_WATER_SIDE,
-                "direction": Side.LAND_SIDE
-            }
+                "direction": Side.LAND_SIDE,
+            },
         ]
-        
+
         collection = LoadCollection.from_list(loads_dicts)
         self.assertEqual(len(collection.loads), 2)
         self.assertEqual(collection.loads[0].name, "load1")

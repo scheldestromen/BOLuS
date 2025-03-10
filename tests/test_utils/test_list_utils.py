@@ -19,5 +19,3 @@ class TestGetListItemIndices(TestCase):
 
         with self.assertRaises(ValueError):
             get_list_item_indices(li, di)
-
-

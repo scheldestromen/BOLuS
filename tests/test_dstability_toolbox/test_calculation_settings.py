@@ -2,17 +2,25 @@ import json
 import os
 from unittest import TestCase
 
-from geolib.models.dstability.analysis import DStabilitySlipPlaneConstraints, \
-    DStabilityUpliftVanParticleSwarmAnalysisMethod, DStabilityBishopBruteForceAnalysisMethod
+from geolib.models.dstability.analysis import (
+    DStabilityBishopBruteForceAnalysisMethod, DStabilitySlipPlaneConstraints,
+    DStabilityUpliftVanParticleSwarmAnalysisMethod)
 from geolib.models.dstability.internal import OptionsType
 
-from dstability_toolbox.calculation_settings import GridSettings, UpliftVanParticleSwarm, BishopBruteForce, \
-    SlipPlaneModel, GridSettingsSetCollection, GridSettingsSet
-from dstability_toolbox.geometry import CharPointType, Side, CharPointsProfile, CharPoint
+from dstability_toolbox.calculation_settings import (BishopBruteForce,
+                                                     GridSettings,
+                                                     GridSettingsSet,
+                                                     GridSettingsSetCollection,
+                                                     SlipPlaneModel,
+                                                     UpliftVanParticleSwarm)
+from dstability_toolbox.geometry import (CharPoint, CharPointsProfile,
+                                         CharPointType, Side)
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), 'fixtures')
-GRID_SETTINGS_SET_COLLECTION_JSON_PATH = os.path.join(FIXTURE_DIR, 'grid_settings_set_collection_example.json')
+FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")
+GRID_SETTINGS_SET_COLLECTION_JSON_PATH = os.path.join(
+    FIXTURE_DIR, "grid_settings_set_collection_example.json"
+)
 
 
 class TestGridSettings(TestCase):
@@ -30,7 +38,7 @@ class TestGridSettings(TestCase):
             "bottom_tangent_line": -8,
             "tangent_line_count": 12,
             "tangent_lines_per_m": 3,
-            "move_grid": True
+            "move_grid": True,
         }
         uplift_dict = {
             "grid_setting_name": "Uplift",
@@ -49,7 +57,7 @@ class TestGridSettings(TestCase):
             "grid_2_width": 8.0,
             "top_tangent_area": 0.5,
             "height_tangent_area": 10.0,
-            "search_mode": OptionsType.DEFAULT
+            "search_mode": OptionsType.DEFAULT,
         }
 
         constraints_dict = {
@@ -63,21 +71,30 @@ class TestGridSettings(TestCase):
             "apply_constraint_zone_b": False,
             "zone_b_position": None,
             "zone_b_direction": None,
-            "zone_b_width": None
+            "zone_b_width": None,
         }
 
         self.bishop_dict = bishop_dict | constraints_dict
         self.uplift_dict = uplift_dict | constraints_dict
 
-        self.char_points_profile = CharPointsProfile(name='Profile 1', points=[
-            CharPoint(x=0, y=0, z=0, l=0, type=CharPointType.SURFACE_LEVEL_LAND_SIDE),
-            CharPoint(x=0, y=0, z=4, l=10, type=CharPointType.DIKE_CREST_LAND_SIDE),
-            CharPoint(x=0, y=0, z=4, l=20, type=CharPointType.DIKE_CREST_WATER_SIDE),
-            CharPoint(x=0, y=0, z=0, l=30, type=CharPointType.SURFACE_LEVEL_WATER_SIDE)
-        ])
+        self.char_points_profile = CharPointsProfile(
+            name="Profile 1",
+            points=[
+                CharPoint(
+                    x=0, y=0, z=0, l=0, type=CharPointType.SURFACE_LEVEL_LAND_SIDE
+                ),
+                CharPoint(x=0, y=0, z=4, l=10, type=CharPointType.DIKE_CREST_LAND_SIDE),
+                CharPoint(
+                    x=0, y=0, z=4, l=20, type=CharPointType.DIKE_CREST_WATER_SIDE
+                ),
+                CharPoint(
+                    x=0, y=0, z=0, l=30, type=CharPointType.SURFACE_LEVEL_WATER_SIDE
+                ),
+            ],
+        )
 
     def test_from_dict_unknown_slip_plane_model(self):
-        input_dict = {'slip_plane_model': 'unknown'}
+        input_dict = {"slip_plane_model": "unknown"}
 
         with self.assertRaises(ValueError):
             GridSettings.from_dict(input_dict)
@@ -92,21 +109,23 @@ class TestGridSettings(TestCase):
         self.assertIsInstance(grid_settings, BishopBruteForce)
 
     def test_from_dict_incomplete_constraints_input(self):
-        self.bishop_dict['minimum_slip_plane_depth'] = None
+        self.bishop_dict["minimum_slip_plane_depth"] = None
 
         with self.assertRaises(ValueError):
             GridSettings.from_dict(self.bishop_dict)
 
     def test_slip_plane_constraints_to_geolib(self):
         grid_settings = GridSettings.from_dict(self.bishop_dict)
-        constraints = grid_settings.slip_plane_constraints_to_geolib(self.char_points_profile)
+        constraints = grid_settings.slip_plane_constraints_to_geolib(
+            self.char_points_profile
+        )
         self.assertIsInstance(constraints, DStabilitySlipPlaneConstraints)
 
 
 class TestUpliftVanParticleSwarm(TestCase):
     def setUp(self):
         self.uplift_van_particle_swarm = UpliftVanParticleSwarm(
-            grid_setting_name='test',
+            grid_setting_name="test",
             slip_plane_model=SlipPlaneModel.UPLIFT_VAN_PARTICLE_SWARM,
             apply_minimum_slip_plane_dimensions=True,
             minimum_slip_plane_depth=3.0,
@@ -136,13 +155,22 @@ class TestUpliftVanParticleSwarm(TestCase):
             search_mode=OptionsType.THOROUGH,
         )
 
-        self.char_points_profile = CharPointsProfile(name='Profile 1', points=[
-            CharPoint(x=0, y=0, z=0, l=0, type=CharPointType.SURFACE_LEVEL_LAND_SIDE),
-            CharPoint(x=0, y=0, z=0, l=5, type=CharPointType.DIKE_TOE_LAND_SIDE),
-            CharPoint(x=0, y=0, z=4, l=10, type=CharPointType.DIKE_CREST_LAND_SIDE),
-            CharPoint(x=0, y=0, z=4, l=20, type=CharPointType.DIKE_CREST_WATER_SIDE),
-            CharPoint(x=0, y=0, z=0, l=30, type=CharPointType.SURFACE_LEVEL_WATER_SIDE)
-        ])
+        self.char_points_profile = CharPointsProfile(
+            name="Profile 1",
+            points=[
+                CharPoint(
+                    x=0, y=0, z=0, l=0, type=CharPointType.SURFACE_LEVEL_LAND_SIDE
+                ),
+                CharPoint(x=0, y=0, z=0, l=5, type=CharPointType.DIKE_TOE_LAND_SIDE),
+                CharPoint(x=0, y=0, z=4, l=10, type=CharPointType.DIKE_CREST_LAND_SIDE),
+                CharPoint(
+                    x=0, y=0, z=4, l=20, type=CharPointType.DIKE_CREST_WATER_SIDE
+                ),
+                CharPoint(
+                    x=0, y=0, z=0, l=30, type=CharPointType.SURFACE_LEVEL_WATER_SIDE
+                ),
+            ],
+        )
 
     def test_to_geolib(self):
         uv_method = self.uplift_van_particle_swarm.to_geolib(self.char_points_profile)
@@ -179,7 +207,7 @@ class TestUpliftVanParticleSwarm(TestCase):
 class TestBishopBruteForce(TestCase):
     def setUp(self):
         self.bishop_brute_force = BishopBruteForce(
-            grid_setting_name='test',
+            grid_setting_name="test",
             slip_plane_model=SlipPlaneModel.BISHOP_BRUTE_FORCE,
             apply_minimum_slip_plane_dimensions=True,
             minimum_slip_plane_depth=3.0,
@@ -202,16 +230,25 @@ class TestBishopBruteForce(TestCase):
             bottom_tangent_line=3.0,
             tangent_line_count=7,
             tangent_lines_per_m=2,
-            move_grid=True
+            move_grid=True,
         )
 
-        self.char_points_profile = CharPointsProfile(name='Profile 1', points=[
-            CharPoint(x=0, y=0, z=0, l=0, type=CharPointType.SURFACE_LEVEL_LAND_SIDE),
-            CharPoint(x=0, y=0, z=0, l=5, type=CharPointType.DIKE_TOE_LAND_SIDE),
-            CharPoint(x=0, y=0, z=4, l=10, type=CharPointType.DIKE_CREST_LAND_SIDE),
-            CharPoint(x=0, y=0, z=4, l=20, type=CharPointType.DIKE_CREST_WATER_SIDE),
-            CharPoint(x=0, y=0, z=0, l=30, type=CharPointType.SURFACE_LEVEL_WATER_SIDE)
-        ])
+        self.char_points_profile = CharPointsProfile(
+            name="Profile 1",
+            points=[
+                CharPoint(
+                    x=0, y=0, z=0, l=0, type=CharPointType.SURFACE_LEVEL_LAND_SIDE
+                ),
+                CharPoint(x=0, y=0, z=0, l=5, type=CharPointType.DIKE_TOE_LAND_SIDE),
+                CharPoint(x=0, y=0, z=4, l=10, type=CharPointType.DIKE_CREST_LAND_SIDE),
+                CharPoint(
+                    x=0, y=0, z=4, l=20, type=CharPointType.DIKE_CREST_WATER_SIDE
+                ),
+                CharPoint(
+                    x=0, y=0, z=0, l=30, type=CharPointType.SURFACE_LEVEL_WATER_SIDE
+                ),
+            ],
+        )
 
     def test_to_geolib(self):
         search_grid = self.bishop_brute_force.to_geolib(self.char_points_profile)
@@ -232,7 +269,7 @@ class TestGridSettingsSets(TestCase):
     def setUp(self):
         self.grid_settings = [
             BishopBruteForce(
-                grid_setting_name='Bishop',
+                grid_setting_name="Bishop",
                 slip_plane_model=SlipPlaneModel.BISHOP_BRUTE_FORCE,
                 apply_minimum_slip_plane_dimensions=True,
                 minimum_slip_plane_depth=3.0,
@@ -255,10 +292,10 @@ class TestGridSettingsSets(TestCase):
                 bottom_tangent_line=3.0,
                 tangent_line_count=7,
                 tangent_lines_per_m=2,
-                move_grid=True
+                move_grid=True,
             ),
             UpliftVanParticleSwarm(
-                grid_setting_name='Uplift',
+                grid_setting_name="Uplift",
                 slip_plane_model=SlipPlaneModel.UPLIFT_VAN_PARTICLE_SWARM,
                 apply_minimum_slip_plane_dimensions=True,
                 minimum_slip_plane_depth=3.0,
@@ -286,24 +323,27 @@ class TestGridSettingsSets(TestCase):
                 top_tangent_area=0,
                 height_tangent_area=10,
                 search_mode=OptionsType.THOROUGH,
-            )
+            ),
         ]
 
     def test_init(self):
-        grid_settings_set = GridSettingsSet(name='test', grid_settings=self.grid_settings)
+        grid_settings_set = GridSettingsSet(
+            name="test", grid_settings=self.grid_settings
+        )
 
-        self.assertEqual(grid_settings_set.name, 'test')
+        self.assertEqual(grid_settings_set.name, "test")
         self.assertEqual(len(grid_settings_set.grid_settings), 2)
         self.assertIsInstance(grid_settings_set.grid_settings[0], BishopBruteForce)
-        self.assertIsInstance(grid_settings_set.grid_settings[1], UpliftVanParticleSwarm)
+        self.assertIsInstance(
+            grid_settings_set.grid_settings[1], UpliftVanParticleSwarm
+        )
 
     def test_init_duplicate_name(self):
-        self.grid_settings[0].grid_setting_name = 'Uplift'
+        self.grid_settings[0].grid_setting_name = "Uplift"
 
         with self.assertRaises(ValueError):
             self.grid_settings_set = GridSettingsSet(
-                name='test',
-                grid_settings=self.grid_settings
+                name="test", grid_settings=self.grid_settings
             )
 
 
@@ -311,19 +351,33 @@ class TestGridSettingsSetCollection(TestCase):
     def setUp(self):
         with open(GRID_SETTINGS_SET_COLLECTION_JSON_PATH) as f:
             self.grid_settings_set_collection_dict = json.loads(json.load(f))
-            self.grid_settings_set_collection = GridSettingsSetCollection.model_validate(self.grid_settings_set_collection_dict)
+            self.grid_settings_set_collection = (
+                GridSettingsSetCollection.model_validate(
+                    self.grid_settings_set_collection_dict
+                )
+            )
 
-        grid_settings_set_list = self.grid_settings_set_collection_dict["grid_settings_sets"]
-        self.input_dict = {di["name"]: di["grid_settings"] for di in grid_settings_set_list}
+        grid_settings_set_list = self.grid_settings_set_collection_dict[
+            "grid_settings_sets"
+        ]
+        self.input_dict = {
+            di["name"]: di["grid_settings"] for di in grid_settings_set_list
+        }
 
     def test_from_dict(self):
-        collection_from_dict = GridSettingsSetCollection.from_dict(input_dict=self.input_dict)
-        collection_from_json = GridSettingsSetCollection.model_validate(self.grid_settings_set_collection)
+        collection_from_dict = GridSettingsSetCollection.from_dict(
+            input_dict=self.input_dict
+        )
+        collection_from_json = GridSettingsSetCollection.model_validate(
+            self.grid_settings_set_collection
+        )
 
         self.assertEqual(collection_from_json, collection_from_dict)
 
     def test_get_by_name(self):
-        collection_from_json = GridSettingsSetCollection.model_validate(self.grid_settings_set_collection)
+        collection_from_json = GridSettingsSetCollection.model_validate(
+            self.grid_settings_set_collection
+        )
         name = "STBI"
         grid_settings_set = collection_from_json.get_by_name(name=name)
 
@@ -332,7 +386,9 @@ class TestGridSettingsSetCollection(TestCase):
         self.assertEqual(grid_settings_set.name, name)
 
     def test_get_by_name_not_found(self):
-        collection_from_json = GridSettingsSetCollection.model_validate(self.grid_settings_set_collection)
+        collection_from_json = GridSettingsSetCollection.model_validate(
+            self.grid_settings_set_collection
+        )
         name = "non-existent-name"
         with self.assertRaises(ValueError):
             collection_from_json.get_by_name(name=name)

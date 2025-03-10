@@ -1,6 +1,6 @@
 from enum import StrEnum, auto
 from math import isclose
-from typing import Optional, Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 from typing_extensions import List
@@ -48,6 +48,7 @@ class Point(BaseModel):
         z: Height coordinate
         l: Length coordinate (relative to a chosen reference point)
     """
+
     x: float
     y: float
     z: float
@@ -66,7 +67,7 @@ class Point(BaseModel):
 
     def distance(self, other: "Point") -> float:
         """Calculates the distance in the x-y plane between two points"""
-        return ((self.x - other.x)**2 + (self.y - other.y)**2)**0.5
+        return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
 
 
 class CharPoint(Point):
@@ -79,7 +80,9 @@ class ProfileLine(BaseModel):
     def check_l_coordinates_present(self):
         """Checks if the l-coordinates are present"""
         if not all(point.l is not None for point in self.points):
-            raise ValueError(f"SurfaceLine {self.name} does not have (all the) l-coordinates")
+            raise ValueError(
+                f"SurfaceLine {self.name} does not have (all the) l-coordinates"
+            )
 
     def check_l_coordinates_increasing(self):
         """Checks if the l-coordinates are monotonically increasing"""
@@ -88,15 +91,13 @@ class ProfileLine(BaseModel):
         steps_filtered = [step for step in steps if step != 0]
 
         if abs(sum(steps_filtered)) != sum([abs(step) for step in steps_filtered]):
-            raise ValueError(f"Profile {self.name} of type {type(self)} has "
-                             f"non-monotonically increasing or decreasing "
-                             f"l-coordinates")
+            raise ValueError(
+                f"Profile {self.name} of type {type(self)} has "
+                f"non-monotonically increasing or decreasing "
+                f"l-coordinates"
+            )
 
-    def set_l_coordinates(
-            self,
-            left_point: Point,
-            ref_point: Optional[Point] = None
-    ):
+    def set_l_coordinates(self, left_point: Point, ref_point: Optional[Point] = None):
         """Calculates the l-coordinates of the points.
 
         The l-axis is defined in the direction of the surface line
@@ -112,9 +113,11 @@ class ProfileLine(BaseModel):
               If not specified then the left_point is the origin.
         """
         if left_point not in [self.points[0], self.points[-1]]:
-            raise ValueError(f'The given argument `left_point` is neither one '
-                             f'of the outer points of the profile with name {self.name}. '
-                             f'This should be the case.')
+            raise ValueError(
+                f"The given argument `left_point` is neither one "
+                f"of the outer points of the profile with name {self.name}. "
+                f"This should be the case."
+            )
 
         if ref_point:
             shift = ref_point.distance(left_point)
@@ -139,7 +142,9 @@ class CharPointsProfile(ProfileLine):
     points: List[CharPoint]
 
     @classmethod
-    def from_dict(cls, name: str, char_points_dict: dict[str, float]) -> "CharPointsProfile":
+    def from_dict(
+        cls, name: str, char_points_dict: dict[str, float]
+    ) -> "CharPointsProfile":
         """Instantiates a CharPointsProfile from a dictionary
 
         Points that have a value of -1 in x, y and z are not included in
@@ -166,13 +171,15 @@ class CharPointsProfile(ProfileLine):
 
     def get_point_by_type(self, char_type: CharPointType) -> CharPoint:
         """Returns the characteristic point of the given type"""
-        
+
         for char_point in self.points:
             if char_point.type == char_type:
                 return char_point
 
-        raise ValueError(f"Characteristic point of type `{char_type.value}` "
-                         f"was not found in profile {self.name}")
+        raise ValueError(
+            f"Characteristic point of type `{char_type.value}` "
+            f"was not found in profile {self.name}"
+        )
 
     def determine_l_direction_sign(self, direction: Side) -> int:
         """Determines in which way to move along the l-axis if a displacement
@@ -194,7 +201,7 @@ class CharPointsProfile(ProfileLine):
            The l-axis is defined positive towards the landside (inward) and a displacement
            is desired towards the waterside (outward) then the absolute value of the displacement
            should be subtracted. The result is therefore -1
-         """
+        """
         self.check_l_coordinates_present()
 
         l_inward = self.get_point_by_type(CharPointType.SURFACE_LEVEL_LAND_SIDE).l
@@ -202,7 +209,12 @@ class CharPointsProfile(ProfileLine):
         inward_positive = l_inward > l_outward  # Determine the direction of the l-axis
 
         # Determine the start and end of the load
-        if direction == Side.LAND_SIDE and inward_positive or direction == Side.WATER_SIDE and not inward_positive:
+        if (
+            direction == Side.LAND_SIDE
+            and inward_positive
+            or direction == Side.WATER_SIDE
+            and not inward_positive
+        ):
             sign = +1
         else:
             sign = -1
@@ -233,9 +245,11 @@ class SurfaceLine(ProfileLine):
         z = point_list[2::3]
 
         if not len(x) == len(y) == len(z):
-            raise ValueError(f"An incorrect number of points is given for the surface line with"
-                             f"name {name}. The length of `point_list` should be dividable by "
-                             f"three so that every point has a x, y and z coordinate.")
+            raise ValueError(
+                f"An incorrect number of points is given for the surface line with"
+                f"name {name}. The length of `point_list` should be dividable by "
+                f"three so that every point has a x, y and z coordinate."
+            )
 
         points = [Point(x=x, y=y, z=z) for x, y, z in zip(x, y, z)]
 
@@ -251,12 +265,15 @@ class SurfaceLineCollection(BaseModel):
     surface_lines: list[SurfaceLine]
 
     @classmethod
-    def from_dict(cls, surface_lines_dict: dict[str, list[float]]) -> "SurfaceLineCollection":
+    def from_dict(
+        cls, surface_lines_dict: dict[str, list[float]]
+    ) -> "SurfaceLineCollection":
         """Parses the dictionary into a SurfaceLineCollection
 
         Args:
             surface_lines_dict (dict): The dictionary to parse. The keys should be the profile names
-              and the values a flat list of points of that profile [x1, y1, z1, x2, y2, z2, ...]"""
+              and the values a flat list of points of that profile [x1, y1, z1, x2, y2, z2, ...]
+        """
 
         surface_lines: list[SurfaceLine] = []
 
@@ -268,9 +285,7 @@ class SurfaceLineCollection(BaseModel):
 
     def get_by_name(self, name: str) -> SurfaceLine:
         """Returns the SurfaceLine with the given name"""
-        profile = next(
-            (prof for prof in self.surface_lines if prof.name == name), None
-        )
+        profile = next((prof for prof in self.surface_lines if prof.name == name), None)
         if profile:
             return profile
         else:
@@ -286,7 +301,9 @@ class CharPointsProfileCollection(BaseModel):
     char_points_profiles: List[CharPointsProfile]
 
     @classmethod
-    def from_dict(cls, char_points_dict: dict[str, dict[str, float]]) -> "CharPointsProfileCollection":
+    def from_dict(
+        cls, char_points_dict: dict[str, dict[str, float]]
+    ) -> "CharPointsProfileCollection":
         """Parses the dictionary into a CharPointsProfileCollection
 
         Args:
@@ -298,7 +315,9 @@ class CharPointsProfileCollection(BaseModel):
         char_point_profiles: list[CharPointsProfile] = []
 
         for name, char_points in char_points_dict.items():
-            char_points_profile = CharPointsProfile.from_dict(name=name, char_points_dict=char_points)
+            char_points_profile = CharPointsProfile.from_dict(
+                name=name, char_points_dict=char_points
+            )
             char_point_profiles.append(char_points_profile)
 
         return cls(char_points_profiles=char_point_profiles)
@@ -330,13 +349,12 @@ class Geometry(BaseModel):
 
 
 def create_geometries(
-        surface_line_collection: SurfaceLineCollection,
-        char_point_collection: CharPointsProfileCollection,
-        char_type_left_point: Literal[
-            CharPointType.SURFACE_LEVEL_LAND_SIDE,
-            CharPointType.SURFACE_LEVEL_WATER_SIDE
-        ],
-        char_type_ref_point: Optional[CharPointType] = None
+    surface_line_collection: SurfaceLineCollection,
+    char_point_collection: CharPointsProfileCollection,
+    char_type_left_point: Literal[
+        CharPointType.SURFACE_LEVEL_LAND_SIDE, CharPointType.SURFACE_LEVEL_WATER_SIDE
+    ],
+    char_type_ref_point: Optional[CharPointType] = None,
 ) -> list[Geometry]:
     """Creates a list of Geometry objects.
 
@@ -357,7 +375,8 @@ def create_geometries(
             f"Each surface line should have a corresponding characteristic "
             f"point profile and vice versa. This is not the case. "
             f"Missing in surface lines: {set(char_names) - set(surf_names)} "
-            f"Missing in characteristic points: {set(surf_names) - set(char_names)}")
+            f"Missing in characteristic points: {set(surf_names) - set(char_names)}"
+        )
 
     geometries: list[Geometry] = []
 
@@ -373,13 +392,15 @@ def create_geometries(
 
         # Set l-coordinates and check if they are increasing
         surface_line.set_l_coordinates(left_point=left_point, ref_point=ref_point)
-        char_points_profile.set_l_coordinates(left_point=left_point, ref_point=ref_point)
+        char_points_profile.set_l_coordinates(
+            left_point=left_point, ref_point=ref_point
+        )
 
         geometries.append(
             Geometry(
                 name=surface_line.name,
                 surface_line=surface_line,
-                char_point_profile=char_points_profile
+                char_point_profile=char_points_profile,
             )
         )
 

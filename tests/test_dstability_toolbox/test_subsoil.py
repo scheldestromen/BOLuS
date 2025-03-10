@@ -4,36 +4,48 @@ from pathlib import Path
 from unittest import TestCase
 
 from geolib import DStabilityModel
+from geolib.models.dstability.internal import (PersistableLayer,
+                                               PersistablePoint)
 from shapely import Polygon
 
 from dstability_toolbox.geometry import Point, SurfaceLine
-from dstability_toolbox.subsoil import Subsoil, SoilPolygon, SoilProfileCollection, SoilProfile, SoilLayer, \
-    subsoil_from_soil_profiles
-from geolib.models.dstability.internal import PersistablePoint, PersistableLayer
+from dstability_toolbox.subsoil import (SoilLayer, SoilPolygon, SoilProfile,
+                                        SoilProfileCollection, Subsoil,
+                                        subsoil_from_soil_profiles)
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), 'fixtures')
-SOIL_PROFILE_COLLECTION_JSON_PATH = os.path.join(FIXTURE_DIR, 'soil_profile_collection_example.json')
-DSTABILITY_DIR = os.path.join(FIXTURE_DIR, 'dstability')
+FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")
+SOIL_PROFILE_COLLECTION_JSON_PATH = os.path.join(
+    FIXTURE_DIR, "soil_profile_collection_example.json"
+)
+DSTABILITY_DIR = os.path.join(FIXTURE_DIR, "dstability")
 
 
 class TestSoilProfile(TestCase):
     def test_check_descending_tops_true(self):
-        soil_profile = SoilProfile(name='profile_1',
-                                   layers=[SoilLayer(soil_type='soil_type_1', top=1),
-                                           SoilLayer(soil_type='soil_type_2', top=0)])
+        soil_profile = SoilProfile(
+            name="profile_1",
+            layers=[
+                SoilLayer(soil_type="soil_type_1", top=1),
+                SoilLayer(soil_type="soil_type_2", top=0),
+            ],
+        )
         self.assertIsInstance(soil_profile, SoilProfile)
 
     def test_check_descending_tops_false(self):
         with self.assertRaises(ValueError):
-            SoilProfile(name='profile_1',
-                        layers=[SoilLayer(soil_type='soil_type_1', top=0),
-                                SoilLayer(soil_type='soil_type_2', top=1)])
+            SoilProfile(
+                name="profile_1",
+                layers=[
+                    SoilLayer(soil_type="soil_type_1", top=0),
+                    SoilLayer(soil_type="soil_type_2", top=1),
+                ],
+            )
 
 
 class TestSoilProfileCollection(TestCase):
     def setUp(self):
-        with open(SOIL_PROFILE_COLLECTION_JSON_PATH, 'r') as f:
+        with open(SOIL_PROFILE_COLLECTION_JSON_PATH, "r") as f:
             self.soil_profile_collection_dict = json.load(f)
 
     def test_from_dict(self):
@@ -44,25 +56,26 @@ class TestSoilProfileCollection(TestCase):
 
         self.assertIsInstance(soil_profile_collection, SoilProfileCollection)
         self.assertEqual(len(soil_profile_collection.profiles), 3)
-        self.assertEqual(names, ['Bodemprofiel 1', 'Bodemprofiel 2', 'Bodemprofiel 3'])
+        self.assertEqual(names, ["Bodemprofiel 1", "Bodemprofiel 2", "Bodemprofiel 3"])
 
 
 class TestSoilPolygon(TestCase):
     def setUp(self):
-        self.gl_layer = PersistableLayer(Points=[
-            PersistablePoint(X=0, Z=0),
-            PersistablePoint(X=0, Z=1),
-            PersistablePoint(X=1, Z=1),
-            PersistablePoint(X=1, Z=0)
-        ])
+        self.gl_layer = PersistableLayer(
+            Points=[
+                PersistablePoint(X=0, Z=0),
+                PersistablePoint(X=0, Z=1),
+                PersistablePoint(X=1, Z=1),
+                PersistablePoint(X=1, Z=0),
+            ]
+        )
         self.soil_polygon = SoilPolygon(
-            soil_type='test',
-            points=[(0, 0), (0, 2), (2, 2), (2, 0)]
+            soil_type="test", points=[(0, 0), (0, 2), (2, 2), (2, 0)]
         )
         self.shapely_polygon = Polygon([(0, 0), (0, 3), (3, 3), (3, 0)])
 
     def test_from_geolib_layer(self):
-        soil_polygon = SoilPolygon.from_geolib_layer('test', self.gl_layer)
+        soil_polygon = SoilPolygon.from_geolib_layer("test", self.gl_layer)
         self.assertIsInstance(soil_polygon, SoilPolygon)
         self.assertEqual(soil_polygon.points, [(0, 0), (0, 1), (1, 1), (1, 0)])
 
@@ -72,19 +85,19 @@ class TestSoilPolygon(TestCase):
         self.assertEqual(shapely_polygon, Polygon([(0, 0), (0, 2), (2, 2), (2, 0)]))
 
     def test_from_shapely(self):
-        soil_type = 'test'
+        soil_type = "test"
         soil_polygon = SoilPolygon.from_shapely(soil_type, self.shapely_polygon)
         self.assertIsInstance(soil_polygon, SoilPolygon)
-        self.assertEqual(soil_polygon, SoilPolygon(
-            soil_type='test',
-            points=[(0, 0), (0, 3), (3, 3), (3, 0)]
-        ))
+        self.assertEqual(
+            soil_polygon,
+            SoilPolygon(soil_type="test", points=[(0, 0), (0, 3), (3, 3), (3, 0)]),
+        )
 
 
 class TestSubsoil(TestCase):
     def test_from_geolib(self):
         dm = DStabilityModel()
-        dm.parse(Path(os.path.join(DSTABILITY_DIR, 'test_1.stix')))
+        dm.parse(Path(os.path.join(DSTABILITY_DIR, "test_1.stix")))
 
         scenario_index = 0
         stage_index = 1
@@ -108,9 +121,9 @@ class TestSubsoilFromSoilProfiles(TestCase):
             Point(x=58, y=43.5, z=0, l=62.5),
             Point(x=72, y=54, z=0, l=80),
         ]
-        self.surface_line = SurfaceLine(name='test', points=profile_points)
+        self.surface_line = SurfaceLine(name="test", points=profile_points)
 
-        with open(SOIL_PROFILE_COLLECTION_JSON_PATH, 'r') as f:
+        with open(SOIL_PROFILE_COLLECTION_JSON_PATH, "r") as f:
             self.soil_profile_collection_dict = json.load(f)
 
         self.soil_profiles = SoilProfileCollection.from_dict(
@@ -126,7 +139,7 @@ class TestSubsoilFromSoilProfiles(TestCase):
         subsoil = subsoil_from_soil_profiles(
             surface_line=self.surface_line,
             soil_profiles=self.soil_profiles,
-            transitions=[20, 50]
+            transitions=[20, 50],
         )
         self.assertIsInstance(subsoil, Subsoil)
         self.assertEqual(len(subsoil.soil_polygons), 14)
@@ -140,7 +153,9 @@ class TestSubsoilFromSoilProfiles(TestCase):
             subsoil_from_soil_profiles(
                 surface_line=self.surface_line,
                 soil_profiles=self.soil_profiles,
-                transitions=[20]  # should have 2 transitions, because there are 3 soil profiles
+                transitions=[
+                    20
+                ],  # should have 2 transitions, because there are 3 soil profiles
             )
 
     def test_l_not_calculated(self):
@@ -151,7 +166,7 @@ class TestSubsoilFromSoilProfiles(TestCase):
             subsoil_from_soil_profiles(
                 surface_line=self.surface_line,
                 soil_profiles=self.soil_profiles,
-                transitions=[20, 50]
+                transitions=[20, 50],
             )
 
     def test_transitions_out_of_bounds(self):
@@ -160,7 +175,7 @@ class TestSubsoilFromSoilProfiles(TestCase):
             subsoil_from_soil_profiles(
                 surface_line=self.surface_line,
                 soil_profiles=self.soil_profiles,
-                transitions=[-20, 50]
+                transitions=[-20, 50],
             )
 
     def test_bottom_no_minimum_depth(self):
@@ -170,11 +185,17 @@ class TestSubsoilFromSoilProfiles(TestCase):
             surface_line=self.surface_line,
             soil_profiles=[self.soil_profiles[0]],
             thickness_bottom_layer=min_layer_thickness,
-            min_soil_profile_depth=None
+            min_soil_profile_depth=None,
         )
         bottom_layer_top = self.soil_profiles[0].layers[-1].top
 
-        z_min = min([point[1] for soil_poly in subsoil.soil_polygons for point in soil_poly.points])
+        z_min = min(
+            [
+                point[1]
+                for soil_poly in subsoil.soil_polygons
+                for point in soil_poly.points
+            ]
+        )
         self.assertAlmostEqual(z_min, bottom_layer_top - min_layer_thickness)
 
     def test_bottom_with_minimum_depth(self):
@@ -185,8 +206,14 @@ class TestSubsoilFromSoilProfiles(TestCase):
             surface_line=self.surface_line,
             soil_profiles=[self.soil_profiles[0]],
             thickness_bottom_layer=min_layer_thickness,
-            min_soil_profile_depth=minimum_depth
+            min_soil_profile_depth=minimum_depth,
         )
 
-        z_min = min([point[1] for soil_poly in subsoil.soil_polygons for point in soil_poly.points])
+        z_min = min(
+            [
+                point[1]
+                for soil_poly in subsoil.soil_polygons
+                for point in soil_poly.points
+            ]
+        )
         self.assertAlmostEqual(z_min, minimum_depth)

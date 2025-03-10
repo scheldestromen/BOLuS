@@ -1,15 +1,18 @@
 """
 Creating calculation settings and grids
 """
-from geolib.models.dstability.internal import OptionsType
-from pydantic import BaseModel, model_validator
+
 from abc import ABC, abstractmethod
-from enum import auto, StrEnum
+from enum import StrEnum, auto
 from typing import Optional
 
-from geolib.models.dstability.analysis import DStabilityBishopBruteForceAnalysisMethod, DStabilitySearchGrid, \
-    DStabilityUpliftVanParticleSwarmAnalysisMethod, DStabilitySearchArea, DStabilitySlipPlaneConstraints
 from geolib.geometry.one import Point as GLPoint
+from geolib.models.dstability.analysis import (
+    DStabilityBishopBruteForceAnalysisMethod, DStabilitySearchArea,
+    DStabilitySearchGrid, DStabilitySlipPlaneConstraints,
+    DStabilityUpliftVanParticleSwarmAnalysisMethod)
+from geolib.models.dstability.internal import OptionsType
+from pydantic import BaseModel, model_validator
 
 from dstability_toolbox.geometry import CharPointsProfile, CharPointType, Side
 
@@ -41,16 +44,29 @@ class GridSettings(ABC, BaseModel):
         """Checks the required input depending on which constraints are used."""
 
         required_fields = {
-            'apply_minimum_slip_plane_dimensions': ['minimum_slip_plane_length', 'minimum_slip_plane_depth'],
-            'apply_constraint_zone_a': ['zone_a_position', 'zone_a_direction', 'zone_a_width'],
-            'apply_constraint_zone_b': ['zone_b_position', 'zone_b_direction', 'zone_b_width']
+            "apply_minimum_slip_plane_dimensions": [
+                "minimum_slip_plane_length",
+                "minimum_slip_plane_depth",
+            ],
+            "apply_constraint_zone_a": [
+                "zone_a_position",
+                "zone_a_direction",
+                "zone_a_width",
+            ],
+            "apply_constraint_zone_b": [
+                "zone_b_position",
+                "zone_b_direction",
+                "zone_b_width",
+            ],
         }
 
         for condition, fields in required_fields.items():
             if getattr(self, condition):
                 for field in fields:
                     if getattr(self, field) is None:
-                        raise ValueError(f"{field} is required when {condition} is True")
+                        raise ValueError(
+                            f"{field} is required when {condition} is True"
+                        )
 
         return self
 
@@ -69,7 +85,7 @@ class GridSettings(ABC, BaseModel):
             SlipPlaneModel.BISHOP_BRUTE_FORCE: BishopBruteForce,
         }
 
-        slip_plane_model = input_dict['slip_plane_model']
+        slip_plane_model = input_dict["slip_plane_model"]
         class_ = slip_plane_model_to_class.get(slip_plane_model)
 
         if class_ is None:
@@ -87,38 +103,51 @@ class GridSettings(ABC, BaseModel):
         if self.apply_constraint_zone_a is True:
             # Determine zone edges based on settings
             sign = char_points_profile.determine_l_direction_sign(self.zone_a_direction)
-            ref_point_zone_a = char_points_profile.get_point_by_type(self.zone_a_position)
+            ref_point_zone_a = char_points_profile.get_point_by_type(
+                self.zone_a_position
+            )
             zone_a_l1 = ref_point_zone_a.l
             zone_a_l2 = ref_point_zone_a.l + sign * self.zone_a_width
 
             # Assign values for Zone A
             slip_plane_constraints.is_zone_a_constraints_enabled = True
-            slip_plane_constraints.x_left_zone_a = min(zone_a_l1, zone_a_l2)  # Min because unknown which is the left
+            slip_plane_constraints.x_left_zone_a = min(
+                zone_a_l1, zone_a_l2
+            )  # Min because unknown which is the left
             slip_plane_constraints.width_zone_a = self.zone_a_width
 
         if self.apply_constraint_zone_b is True:
             # Determine zone edges based on settings
             sign = char_points_profile.determine_l_direction_sign(self.zone_b_direction)
-            ref_point_zone_b = char_points_profile.get_point_by_type(self.zone_b_position)
+            ref_point_zone_b = char_points_profile.get_point_by_type(
+                self.zone_b_position
+            )
             zone_b_l1 = ref_point_zone_b.l
             zone_b_l2 = ref_point_zone_b.l + sign * self.zone_b_width
 
             # Assign values for Zone B
             slip_plane_constraints.is_zone_b_constraints_enabled = True
-            slip_plane_constraints.x_left_zone_b = min(zone_b_l1, zone_b_l2)  # Min because unknown which is the left
+            slip_plane_constraints.x_left_zone_b = min(
+                zone_b_l1, zone_b_l2
+            )  # Min because unknown which is the left
             slip_plane_constraints.width_zone_b = self.zone_b_width
 
         if self.apply_minimum_slip_plane_dimensions is True:
             # Assign values for minimum dimensions
             slip_plane_constraints.is_size_constraints_enabled = True
-            slip_plane_constraints.minimum_slip_plane_length = self.minimum_slip_plane_length
-            slip_plane_constraints.minimum_slip_plane_depth = self.minimum_slip_plane_depth
+            slip_plane_constraints.minimum_slip_plane_length = (
+                self.minimum_slip_plane_length
+            )
+            slip_plane_constraints.minimum_slip_plane_depth = (
+                self.minimum_slip_plane_depth
+            )
 
         return slip_plane_constraints
 
 
 class UpliftVanParticleSwarm(GridSettings):
     """Defines the grid settings needed for creating an Uplift Van particle swarm grid"""
+
     grid_1_position: CharPointType
     grid_1_direction: Side
     grid_1_offset_horizontal: float
@@ -138,11 +167,15 @@ class UpliftVanParticleSwarm(GridSettings):
     def to_geolib(self, char_points_profile: CharPointsProfile):
         # Create the first search area
         grid_1_ref_point = char_points_profile.get_point_by_type(self.grid_1_position)
-        grid_1_sign = char_points_profile.determine_l_direction_sign(self.grid_1_direction)
+        grid_1_sign = char_points_profile.determine_l_direction_sign(
+            self.grid_1_direction
+        )
 
         grid_1_l1 = grid_1_ref_point.l + grid_1_sign * self.grid_1_offset_horizontal
         grid_1_l2 = grid_1_l1 + grid_1_sign * self.grid_1_width
-        grid_1_top = grid_1_ref_point.z + self.grid_1_offset_vertical + self.grid_1_height
+        grid_1_top = (
+            grid_1_ref_point.z + self.grid_1_offset_vertical + self.grid_1_height
+        )
 
         search_area_a = DStabilitySearchArea(
             height=self.grid_1_height,
@@ -152,11 +185,15 @@ class UpliftVanParticleSwarm(GridSettings):
 
         # Create the second search area
         grid_2_ref_point = char_points_profile.get_point_by_type(self.grid_2_position)
-        grid_2_sign = char_points_profile.determine_l_direction_sign(self.grid_2_direction)
+        grid_2_sign = char_points_profile.determine_l_direction_sign(
+            self.grid_2_direction
+        )
 
         grid_2_l1 = grid_2_ref_point.l + grid_2_sign * self.grid_2_offset_horizontal
         grid_2_l2 = grid_2_l1 + grid_2_sign * self.grid_2_width
-        grid_2_top = grid_2_ref_point.z + self.grid_2_offset_vertical + self.grid_2_height
+        grid_2_top = (
+            grid_2_ref_point.z + self.grid_2_offset_vertical + self.grid_2_height
+        )
 
         search_area_b = DStabilitySearchArea(
             height=self.grid_2_height,
@@ -171,7 +208,9 @@ class UpliftVanParticleSwarm(GridSettings):
             search_area_b=search_area_b,
             tangent_area_height=self.height_tangent_area,
             tangent_area_top_z=self.top_tangent_area,
-            slip_plane_constraints=self.slip_plane_constraints_to_geolib(char_points_profile),
+            slip_plane_constraints=self.slip_plane_constraints_to_geolib(
+                char_points_profile
+            ),
         )
 
         return analysis_method
@@ -179,6 +218,7 @@ class UpliftVanParticleSwarm(GridSettings):
 
 class BishopBruteForce(GridSettings):
     """Defines the grid settings for creating a Bishop brute force grid"""
+
     grid_position: CharPointType
     grid_direction: Side
     grid_offset_horizontal: float
@@ -191,23 +231,31 @@ class BishopBruteForce(GridSettings):
     tangent_lines_per_m: int
     move_grid: bool
 
-    def to_geolib(self, char_points_profile: CharPointsProfile) -> DStabilityBishopBruteForceAnalysisMethod:
+    def to_geolib(
+        self, char_points_profile: CharPointsProfile
+    ) -> DStabilityBishopBruteForceAnalysisMethod:
         grid_ref_point = char_points_profile.get_point_by_type(self.grid_position)
         sign = char_points_profile.determine_l_direction_sign(self.grid_direction)
-        grid_width = (self.grid_points_horizontal - 1) / self.grid_points_per_m  # n points means n - 1 gaps
+        grid_width = (
+            self.grid_points_horizontal - 1
+        ) / self.grid_points_per_m  # n points means n - 1 gaps
 
         grid_l1 = grid_ref_point.l + sign * self.grid_offset_horizontal
         grid_l2 = grid_l1 + sign * grid_width
         grid_bottom = grid_ref_point.z + self.grid_offset_vertical
 
         search_grid = DStabilitySearchGrid(
-                bottom_left=GLPoint(x=min(grid_l1, grid_l2), z=grid_bottom),  # Min because unknown which is the left
-                number_of_points_in_x=self.grid_points_horizontal,
-                number_of_points_in_z=self.grid_points_vertical,
-                space=1 / self.grid_points_per_m,
-            )
+            bottom_left=GLPoint(
+                x=min(grid_l1, grid_l2), z=grid_bottom
+            ),  # Min because unknown which is the left
+            number_of_points_in_x=self.grid_points_horizontal,
+            number_of_points_in_z=self.grid_points_vertical,
+            space=1 / self.grid_points_per_m,
+        )
 
-        slip_plane_constraints = self.slip_plane_constraints_to_geolib(char_points_profile)
+        slip_plane_constraints = self.slip_plane_constraints_to_geolib(
+            char_points_profile
+        )
 
         analysis_method = DStabilityBishopBruteForceAnalysisMethod(
             extrapolate_search_space=self.move_grid,
@@ -233,14 +281,18 @@ class GridSettingsSet(BaseModel):
     name: str
     grid_settings: list[BishopBruteForce | UpliftVanParticleSwarm]
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_duplicate_grid_settings_name(self):
-        grid_settings_names = [grid_setting.grid_setting_name for grid_setting in self.grid_settings]
+        grid_settings_names = [
+            grid_setting.grid_setting_name for grid_setting in self.grid_settings
+        ]
 
         if len(grid_settings_names) != len(set(grid_settings_names)):
-            raise ValueError(f"Duplicate grid settings names are not allowed.\n"
-                             f"Grid settings set name: {self.name}\n"
-                             f"Grid settings names: {grid_settings_names}\n")
+            raise ValueError(
+                f"Duplicate grid settings names are not allowed.\n"
+                f"Grid settings set name: {self.name}\n"
+                f"Grid settings names: {grid_settings_names}\n"
+            )
 
         return self
 
@@ -263,8 +315,13 @@ class GridSettingsSetCollection(BaseModel):
         grid_settings_sets = []
 
         for set_name, grid_settings_list in input_dict.items():
-            grid_settings = [GridSettings.from_dict(grid_settings_dict) for grid_settings_dict in grid_settings_list]
-            grid_settings_sets.append(GridSettingsSet(name=set_name, grid_settings=grid_settings))
+            grid_settings = [
+                GridSettings.from_dict(grid_settings_dict)
+                for grid_settings_dict in grid_settings_list
+            ]
+            grid_settings_sets.append(
+                GridSettingsSet(name=set_name, grid_settings=grid_settings)
+            )
 
         return cls(grid_settings_sets=grid_settings_sets)
 

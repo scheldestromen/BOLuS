@@ -1,4 +1,5 @@
 """Module with helper functions for dictionaries"""
+
 from typing import Any
 
 
@@ -57,7 +58,9 @@ def group_dicts_by_key(
     return grouped_dict
 
 
-def list_to_nested_dict(list_of_dicts: list[dict], keys: list[str], remove_group_key=True) -> dict:
+def list_to_nested_dict(
+    list_of_dicts: list[dict], keys: list[str], remove_group_key=True
+) -> dict:
     """
     Converts a list of dictionaries into a nested dictionary. All the dictionaries in the list
     must have the keys as specified in keys.
@@ -76,7 +79,9 @@ def list_to_nested_dict(list_of_dicts: list[dict], keys: list[str], remove_group
     key = keys[0]
     remaining_keys = keys[1:]
 
-    grouped_dict = group_dicts_by_key(list_of_dicts, key, remove_group_key=remove_group_key)
+    grouped_dict = group_dicts_by_key(
+        list_of_dicts, key, remove_group_key=remove_group_key
+    )
 
     nested_dict = {}
 

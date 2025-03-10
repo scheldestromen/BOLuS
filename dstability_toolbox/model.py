@@ -3,12 +3,12 @@ from typing import Optional
 from pydantic import BaseModel
 
 from .calculation_settings import GridSettingsSet
+from .geometry import Geometry
 from .loads import Load
 from .soils import SoilCollection
-from .water import Waternet
-from .geometry import Geometry
-from .subsoil import Subsoil
 from .state import StatePoint
+from .subsoil import Subsoil
+from .water import Waternet
 
 # TODO: Alle model componenten samenvoegen
 

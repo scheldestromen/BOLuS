@@ -1,5 +1,7 @@
-from pydantic import BaseModel
 from typing import Any
+
+from pydantic import BaseModel
+
 from dstability_toolbox.geometry import CharPointType, Side
 
 
@@ -28,6 +30,7 @@ class LoadCollection(BaseModel):
     Attributes:
         loads: A list containing instances of the Load class.
     """
+
     loads: list[Load]
 
     def get_by_name(self, name: str) -> Load:

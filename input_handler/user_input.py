@@ -3,7 +3,8 @@ from typing import Optional
 from pydantic import BaseModel
 
 from dstability_toolbox.calculation_settings import GridSettingsSetCollection
-from dstability_toolbox.geometry import SurfaceLineCollection, CharPointsProfileCollection
+from dstability_toolbox.geometry import (CharPointsProfileCollection,
+                                         SurfaceLineCollection)
 from dstability_toolbox.loads import LoadCollection
 from dstability_toolbox.soils import SoilCollection
 from dstability_toolbox.subsoil import SoilProfileCollection
@@ -12,6 +13,7 @@ from dstability_toolbox.water import WaternetCollection
 
 class GeneralSettings(BaseModel):
     """Set of general settings"""
+
     min_soil_profile_depth: float
     execute_calculations: bool
 
@@ -40,7 +42,8 @@ class ScenarioConfig(BaseModel):
     Attributes:
         scenario_name (str): The name of the scenario.
         stages (list[StageConfig]): A list of stage configurations for the scenario.
-        grid_settings_set_name (Optional[str]): The name of the grid settings set associated with the scenario."""
+        grid_settings_set_name (Optional[str]): The name of the grid settings set associated with the scenario.
+    """
 
     scenario_name: str
     stages: list[StageConfig]
@@ -53,7 +56,8 @@ class ModelConfig(BaseModel):
 
     Attributes:
         calc_name (str): The name of the model.
-        scenarios (list[ScenarioConfig]): A list of scenario configurations for the model."""
+        scenarios (list[ScenarioConfig]): A list of scenario configurations for the model.
+    """
 
     calc_name: str
     scenarios: list[ScenarioConfig]
@@ -74,7 +78,9 @@ class UserInputStructure(BaseModel):
     char_points: CharPointsProfileCollection
     soils: SoilCollection
     soil_profiles: SoilProfileCollection
-    soil_profile_positions: dict[str, dict[str, float | None]]  # TODO: omzetten naar class
+    soil_profile_positions: dict[
+        str, dict[str, float | None]
+    ]  # TODO: omzetten naar class
     loads: LoadCollection
     waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection
@@ -82,4 +88,6 @@ class UserInputStructure(BaseModel):
 
 
 def model_configs_from_list(model_config_list: list[dict]) -> list[ModelConfig]:
-    return [ModelConfig.model_validate(model_config) for model_config in model_config_list]
+    return [
+        ModelConfig.model_validate(model_config) for model_config in model_config_list
+    ]

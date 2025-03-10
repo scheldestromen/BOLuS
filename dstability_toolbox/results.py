@@ -1,29 +1,30 @@
 """
 Reading and exporting DStablityModel results
 """
+
+import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any, Optional
+
 import openpyxl
+from geolib.models.dstability.dstability_model import DStabilityModel
+from geolib.models.dstability.internal import (
+    BishopBruteForceReliabilityResult, BishopBruteForceResult,
+    BishopReliabilityResult, BishopResult,
+    SpencerGeneticAlgorithmReliabilityResult, SpencerGeneticAlgorithmResult,
+    SpencerReliabilityResult, SpencerResult,
+    UpliftVanParticleSwarmReliabilityResult, UpliftVanParticleSwarmResult,
+    UpliftVanReliabilityResult, UpliftVanResult)
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
-from dataclasses import dataclass
-import os
-
-from geolib.models.dstability.internal import UpliftVanResult, UpliftVanParticleSwarmResult, UpliftVanReliabilityResult, \
-    UpliftVanParticleSwarmReliabilityResult, SpencerGeneticAlgorithmResult, SpencerReliabilityResult, \
-    SpencerGeneticAlgorithmReliabilityResult, SpencerResult, BishopBruteForceResult, BishopReliabilityResult, \
-    BishopBruteForceReliabilityResult, BishopResult
 from pydantic import BaseModel
-from geolib.models.dstability.dstability_model import DStabilityModel
 
 from dstability_toolbox.modifier import parse_d_stability_models
 from utils.file_utils import get_files_by_extension
 from utils.list_utils import get_list_item_indices
 
-RESULT_SHEETS = {
-    "Resultaten": "all_results",
-    "Maatgevend": "critical_result"
-}
+RESULT_SHEETS = {"Resultaten": "all_results", "Maatgevend": "critical_result"}
 
 ALL_RESULT_COLS = {
     "name": "Naam",
@@ -46,27 +47,27 @@ ALL_RESULT_COLS = {
 
 # Grouping the result types for convenience
 BishopResultType = (
-        BishopBruteForceResult |
-        BishopReliabilityResult |
-        BishopBruteForceReliabilityResult |
-        BishopResult
+    BishopBruteForceResult
+    | BishopReliabilityResult
+    | BishopBruteForceReliabilityResult
+    | BishopResult
 )
 
 UpliftVanResultType = (
-        UpliftVanResult |
-        UpliftVanParticleSwarmResult |
-        UpliftVanReliabilityResult |
-        UpliftVanParticleSwarmReliabilityResult
+    UpliftVanResult
+    | UpliftVanParticleSwarmResult
+    | UpliftVanReliabilityResult
+    | UpliftVanParticleSwarmReliabilityResult
 )
 
 SpencerResultType = (
-        SpencerGeneticAlgorithmResult |
-        SpencerReliabilityResult |
-        SpencerGeneticAlgorithmReliabilityResult |
-        SpencerResult
+    SpencerGeneticAlgorithmResult
+    | SpencerReliabilityResult
+    | SpencerGeneticAlgorithmReliabilityResult
+    | SpencerResult
 )
 
-DStabilityResult = (BishopResultType | SpencerResultType | UpliftVanResultType)
+DStabilityResult = BishopResultType | SpencerResultType | UpliftVanResultType
 
 
 class ResultSummary(BaseModel):
@@ -98,7 +99,7 @@ class ResultSummary(BaseModel):
         result_type_methods = {
             BishopResultType: cls._from_bishop_result_type,
             UpliftVanResultType: cls._from_uplift_van_result_type,
-            SpencerResultType: cls._from_spencer_result_type
+            SpencerResultType: cls._from_spencer_result_type,
         }
 
         for result_type, method in result_type_methods.items():
@@ -124,19 +125,29 @@ class ResultSummary(BaseModel):
             radius = None
 
         return cls(
-            analysis_type=type(result).__name__[:-6],  # Use the class name and remove the "Result" suffix
-            sf=cls._nan_to_none(getattr(result, 'FactorOfSafety', None)),
-            failure_probability=cls._nan_to_none(getattr(result, 'FailureProbability', None)),
-            reliability_index=cls._nan_to_none(getattr(result, 'ReliabilityIndex', None)),
-            convergence=getattr(result, 'Converged', None),
-            distance_to_convergence=cls._nan_to_none(getattr(result, 'DistanceToConvergence', None)),
+            analysis_type=type(result).__name__[
+                :-6
+            ],  # Use the class name and remove the "Result" suffix
+            sf=cls._nan_to_none(getattr(result, "FactorOfSafety", None)),
+            failure_probability=cls._nan_to_none(
+                getattr(result, "FailureProbability", None)
+            ),
+            reliability_index=cls._nan_to_none(
+                getattr(result, "ReliabilityIndex", None)
+            ),
+            convergence=getattr(result, "Converged", None),
+            distance_to_convergence=cls._nan_to_none(
+                getattr(result, "DistanceToConvergence", None)
+            ),
             l_coord_1=l_coord,
             z_coord_1=z_coord,
             radius_1=radius,
         )
 
     @classmethod
-    def _from_uplift_van_result_type(cls, result: UpliftVanResultType) -> "ResultSummary":
+    def _from_uplift_van_result_type(
+        cls, result: UpliftVanResultType
+    ) -> "ResultSummary":
         """Internal method for converting a UpliftVanResultType object to a ResultSummary object"""
 
         try:
@@ -159,12 +170,20 @@ class ResultSummary(BaseModel):
             radius_2 = None
 
         return cls(
-            analysis_type=type(result).__name__[:-6],  # Use the class name and remove the "Result" suffix
-            sf=cls._nan_to_none(getattr(result, 'FactorOfSafety', None)),
-            failure_probability=cls._nan_to_none(getattr(result, 'FailureProbability', None)),
-            reliability_index=cls._nan_to_none(getattr(result, 'ReliabilityIndex', None)),
-            convergence=getattr(result, 'Converged', None),
-            distance_to_convergence=cls._nan_to_none(getattr(result, 'DistanceToConvergence', None)),
+            analysis_type=type(result).__name__[
+                :-6
+            ],  # Use the class name and remove the "Result" suffix
+            sf=cls._nan_to_none(getattr(result, "FactorOfSafety", None)),
+            failure_probability=cls._nan_to_none(
+                getattr(result, "FailureProbability", None)
+            ),
+            reliability_index=cls._nan_to_none(
+                getattr(result, "ReliabilityIndex", None)
+            ),
+            convergence=getattr(result, "Converged", None),
+            distance_to_convergence=cls._nan_to_none(
+                getattr(result, "DistanceToConvergence", None)
+            ),
             l_coord_1=l_coord_1,
             z_coord_1=z_coord_1,
             radius_1=radius_1,
@@ -177,19 +196,27 @@ class ResultSummary(BaseModel):
     def _from_spencer_result_type(cls, result: SpencerResultType) -> "ResultSummary":
         """Internal method for converting a SpencerResultType object to a ResultSummary object"""
         return cls(
-            analysis_type=type(result).__name__[:-6],  # Use the class name and remove the "Result" suffix
-            sf=cls._nan_to_none(getattr(result, 'FactorOfSafety', None)),
-            failure_probability=cls._nan_to_none(getattr(result, 'FailureProbability', None)),
-            reliability_index=cls._nan_to_none(getattr(result, 'ReliabilityIndex', None)),
-            convergence=getattr(result, 'Converged', None),
-            distance_to_convergence=cls._nan_to_none(getattr(result, 'DistanceToConvergence', None)),
+            analysis_type=type(result).__name__[
+                :-6
+            ],  # Use the class name and remove the "Result" suffix
+            sf=cls._nan_to_none(getattr(result, "FactorOfSafety", None)),
+            failure_probability=cls._nan_to_none(
+                getattr(result, "FailureProbability", None)
+            ),
+            reliability_index=cls._nan_to_none(
+                getattr(result, "ReliabilityIndex", None)
+            ),
+            convergence=getattr(result, "Converged", None),
+            distance_to_convergence=cls._nan_to_none(
+                getattr(result, "DistanceToConvergence", None)
+            ),
         )
 
 
 @dataclass
 class DStabilityResultExporter:
     """Exports DStabilityModel results to an Excel file using a template
-    
+
     Attributes:
         dm_list: List of DStabilityModel objects containing calculation results
         template_path: Path to Excel template file
@@ -204,7 +231,9 @@ class DStabilityResultExporter:
 
     dm_list: list[DStabilityModel]
     result_sheet_name: str = "Resultaten"
-    template_path: Path = Path(os.path.join(os.path.dirname(__file__), "templates", "export_template.xlsx"))
+    template_path: Path = Path(
+        os.path.join(os.path.dirname(__file__), "templates", "export_template.xlsx")
+    )
     header_row: int = 2
     result_cols: Optional[dict[str, str]] = None
     _workbook: Optional[Workbook] = None
@@ -243,47 +272,56 @@ class DStabilityResultExporter:
                 for calculation_index, calculation in enumerate(scenario.Calculations):
                     calculation_name = calculation.Label
 
-                    if dm.has_result(scenario_index=scenario_index,
-                                     calculation_index=calculation_index):
-                        result = dm.get_result(scenario_index=scenario_index,
-                                               calculation_index=calculation_index)
+                    if dm.has_result(
+                        scenario_index=scenario_index,
+                        calculation_index=calculation_index,
+                    ):
+                        result = dm.get_result(
+                            scenario_index=scenario_index,
+                            calculation_index=calculation_index,
+                        )
 
                         result_summary = ResultSummary.from_result(result=result)
                         result_dict = result_summary.model_dump()
                         result_dict = self.round_result_dict(result_dict=result_dict)
 
-                        result_dict.update({
-                            "name": dm_name,
-                            "scenario": scenario_name,
-                            "calculation": calculation_name,
-                        })
-                        result_row = {self._header_indices[key]: value for key, value in result_dict.items()}
+                        result_dict.update(
+                            {
+                                "name": dm_name,
+                                "scenario": scenario_name,
+                                "calculation": calculation_name,
+                            }
+                        )
+                        result_row = {
+                            self._header_indices[key]: value
+                            for key, value in result_dict.items()
+                        }
                         self._worksheet.append(result_row)
 
     @staticmethod
     def round_result_dict(result_dict: dict[str, Any]) -> dict[str, Any]:
         """Rounds the result dictionary"""
-        
+
         for key, value in result_dict.items():
             if value is None:
                 continue
 
-            if key == 'sf':
+            if key == "sf":
                 result_dict[key] = round(value, 3)
-            elif key == 'reliability_index':
+            elif key == "reliability_index":
                 result_dict[key] = round(value, 4)
-            elif key == 'failure_probability':
+            elif key == "failure_probability":
                 result_dict[key] = round(value, 6)
-            elif any(coord_key in key for coord_key in ['coord', 'radius']):
+            elif any(coord_key in key for coord_key in ["coord", "radius"]):
                 result_dict[key] = round(value, 2)
-            elif key == 'distance_to_convergence':
+            elif key == "distance_to_convergence":
                 result_dict[key] = round(value, 3)
 
         return result_dict
 
     def export_results(self, output_path: Path | str):
         """Exports the results to the Excel file
-        
+
         Args:
             output_path: Path to the output Excel file"""
 
@@ -295,7 +333,7 @@ class DStabilityResultExporter:
 
 def results_from_dir(directory: str, output_path: str):
     """Exports the results from a directory of .stix files to an Excel file
-    
+
     Args:
         directory: The directory containing the .stix files. All other files are ignored.
         output_path: The path to the output Excel file.
@@ -303,8 +341,8 @@ def results_from_dir(directory: str, output_path: str):
     Returns:
         A DStabilityResultExporter object."""
 
-    stix_files = get_files_by_extension(directory=directory, file_ext='.stix')
-    stix_paths = [stx['path'] for stx in stix_files]
+    stix_files = get_files_by_extension(directory=directory, file_ext=".stix")
+    stix_paths = [stx["path"] for stx in stix_files]
     dm_list = parse_d_stability_models(path_list=stix_paths)
 
     exporter = DStabilityResultExporter(

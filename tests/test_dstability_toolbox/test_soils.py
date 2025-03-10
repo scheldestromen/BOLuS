@@ -1,6 +1,8 @@
 from unittest import TestCase
-from geolib.soils.soil import Soil as GLSoil
+
 from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel
+from geolib.soils.soil import Soil as GLSoil
+
 from dstability_toolbox.soils import Soil, SoilCollection
 
 
@@ -12,8 +14,12 @@ class TestSoil(TestCase):
         self.gl_soil.code = "test_soil"
         self.gl_soil.soil_weight_parameters.unsaturated_weight = 16.0
         self.gl_soil.soil_weight_parameters.saturated_weight = 18.0
-        self.gl_soil.shear_strength_model_above_phreatic_level = ShearStrengthModelTypePhreaticLevel.MOHR_COULOMB
-        self.gl_soil.shear_strength_model_below_phreatic_level = ShearStrengthModelTypePhreaticLevel.MOHR_COULOMB
+        self.gl_soil.shear_strength_model_above_phreatic_level = (
+            ShearStrengthModelTypePhreaticLevel.MOHR_COULOMB
+        )
+        self.gl_soil.shear_strength_model_below_phreatic_level = (
+            ShearStrengthModelTypePhreaticLevel.MOHR_COULOMB
+        )
         self.gl_soil.mohr_coulomb_parameters.cohesion.mean = 5.0
         self.gl_soil.mohr_coulomb_parameters.friction_angle.mean = 30.0
         self.gl_soil.undrained_parameters.shear_strength_ratio.mean = 0.25
@@ -25,9 +31,9 @@ class TestSoil(TestCase):
             gl_soil=GLSoil(name="test_soil", code="test_soil"),
             pop=10.0,
             ocr=2.0,
-            consolidation_traffic_load=50
+            consolidation_traffic_load=50,
         )
-        
+
         self.assertEqual(soil.gl_soil.name, "test_soil")
         self.assertEqual(soil.pop, 10.0)
         self.assertEqual(soil.ocr, 2.0)
@@ -49,7 +55,7 @@ class TestSoilCollection(TestCase):
 
         self.soils = [
             Soil(gl_soil=gl_soil1, pop=10.0, consolidation_traffic_load=50),
-            Soil(gl_soil=gl_soil2, pop=15.0, consolidation_traffic_load=75)
+            Soil(gl_soil=gl_soil2, pop=15.0, consolidation_traffic_load=75),
         ]
         self.collection = SoilCollection(name="test_collection", soils=self.soils)
 
@@ -85,7 +91,7 @@ class TestSoilCollection(TestCase):
                 "shear_stress_ratio_s": 0.25,
                 "strength_exponent_m": 0.8,
                 "pop": 10.0,
-                "consolidation_traffic_load": 50
+                "consolidation_traffic_load": 50,
             },
             {
                 "name": "soil2",
@@ -98,15 +104,14 @@ class TestSoilCollection(TestCase):
                 "shear_stress_ratio_s": 0.3,
                 "strength_exponent_m": 0.9,
                 "pop": 15.0,
-                "consolidation_traffic_load": 75
-            }
+                "consolidation_traffic_load": 75,
+            },
         ]
-        
+
         collection = SoilCollection.from_list(soils_dicts)
         self.assertEqual(len(collection.soils), 2)
         self.assertEqual(collection.soils[0].gl_soil.name, "soil1")
         self.assertEqual(collection.soils[1].gl_soil.name, "soil2")
-
 
     def test_from_list_duplicate_names(self):
         """Test that creating a collection with duplicate soil names raises an error"""
@@ -122,7 +127,7 @@ class TestSoilCollection(TestCase):
                 "shear_stress_ratio_s": 0.25,
                 "strength_exponent_m": 0.8,
                 "pop": 10.0,
-                "consolidation_traffic_load": 50
+                "consolidation_traffic_load": 50,
             },
             {
                 "name": "soil1",  # Duplicate name
@@ -135,10 +140,10 @@ class TestSoilCollection(TestCase):
                 "shear_stress_ratio_s": 0.3,
                 "strength_exponent_m": 0.9,
                 "pop": 15.0,
-                "consolidation_traffic_load": 75
-            }
+                "consolidation_traffic_load": 75,
+            },
         ]
-        
+
         with self.assertRaises(ValueError):
             SoilCollection.from_list(soils_dicts)
 
@@ -149,6 +154,6 @@ class TestSoilCollection(TestCase):
                 "name": "soil1",
             }
         ]
-        
+
         with self.assertRaises(ValueError):
             SoilCollection.from_list(soils_dicts)

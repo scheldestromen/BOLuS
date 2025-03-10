@@ -1,21 +1,14 @@
 from unittest import TestCase
-from dstability_toolbox.water import (
-    Waternet,
-    HeadLine,
-    ReferenceLine,
-    WaternetCollection,
-    WaterLineType
-)
+
+from dstability_toolbox.water import (HeadLine, ReferenceLine, WaterLineType,
+                                      Waternet, WaternetCollection)
 
 
 class TestHeadLine(TestCase):
     def test_create_headline(self):
         """Test creating a basic headline with all required attributes"""
         HeadLine(
-            name="test_headline",
-            is_phreatic=True,
-            l=[0.0, 1.0, 2.0],
-            z=[0.0, 1.0, 2.0]
+            name="test_headline", is_phreatic=True, l=[0.0, 1.0, 2.0], z=[0.0, 1.0, 2.0]
         )
 
 
@@ -27,7 +20,7 @@ class TestReferenceLine(TestCase):
             l=[0.0, 1.0, 2.0],
             z=[0.0, 1.0, 2.0],
             head_line_top="top_headline",
-            head_line_bottom="bottom_headline"
+            head_line_bottom="bottom_headline",
         )
 
 
@@ -36,17 +29,14 @@ class TestWaternet(TestCase):
         """Test creating a waternet with headlines and reflines"""
         head_lines = [
             HeadLine(
-                name="headline1",
-                is_phreatic=True,
-                l=[0.0, 1.0, 2.0],
-                z=[0.0, 1.0, 2.0]
+                name="headline1", is_phreatic=True, l=[0.0, 1.0, 2.0], z=[0.0, 1.0, 2.0]
             ),
             HeadLine(
                 name="headline2",
                 is_phreatic=False,
                 l=[0.0, 1.0, 2.0],
-                z=[1.0, 2.0, 3.0]
-            )
+                z=[1.0, 2.0, 3.0],
+            ),
         ]
         ref_lines = [
             ReferenceLine(
@@ -54,7 +44,7 @@ class TestWaternet(TestCase):
                 l=[0.0, 1.0, 2.0],
                 z=[0.5, 1.5, 2.5],
                 head_line_top="headline1",
-                head_line_bottom="headline2"
+                head_line_bottom="headline2",
             )
         ]
         self.waternet = Waternet(
@@ -62,7 +52,7 @@ class TestWaternet(TestCase):
             scenario_name="test_scenario",
             stage_name="test_stage",
             head_lines=head_lines,
-            ref_lines=ref_lines
+            ref_lines=ref_lines,
         )
 
 
@@ -76,33 +66,34 @@ class TestWaternetCollection(TestCase):
                         {
                             "type": WaterLineType.HEADLINE,
                             "line_name": "headline1",
-                            "values": [0.0, 0.0, 1.0, 1.0, 2.0, 2.0]
+                            "values": [0.0, 0.0, 1.0, 1.0, 2.0, 2.0],
                         },
                         {
                             "type": WaterLineType.HEADLINE,
                             "line_name": "headline2",
-                            "values": [0.0, 1.0, 1.0, 2.0, 2.0, 3.0]
+                            "values": [0.0, 1.0, 1.0, 2.0, 2.0, 3.0],
                         },
                         {
                             "type": WaterLineType.REFERENCE_LINE,
                             "line_name": "refline1",
                             "values": [0.0, 0.5, 1.0, 1.5, 2.0, 2.5],
                             "head_line_top": "headline1",
-                            "head_line_bottom": "headline2"
-                        }
+                            "head_line_bottom": "headline2",
+                        },
                     ]
                 }
             }
         }
         self.collection = WaternetCollection.from_dict(
-            self.waternets_dict,
-            name_phreatic_line="headline1"
+            self.waternets_dict, name_phreatic_line="headline1"
         )
 
     def test_parse_head_lines_dict(self):
         """Test parsing headlines from dictionary"""
-        head_lines = WaternetCollection.parse_head_lines(self.waternets_dict["calc1"]["scenario1"]["stage1"], "headline1")
-        
+        head_lines = WaternetCollection.parse_head_lines(
+            self.waternets_dict["calc1"]["scenario1"]["stage1"], "headline1"
+        )
+
         self.assertEqual(len(head_lines), 2)
         self.assertEqual(head_lines[0].name, "headline1")
         self.assertTrue(head_lines[0].is_phreatic)
@@ -113,8 +104,10 @@ class TestWaternetCollection(TestCase):
     def test_parse_ref_lines(self):
         """Test parsing reference lines from dictionary"""
 
-        ref_lines = WaternetCollection.parse_ref_lines(self.waternets_dict["calc1"]["scenario1"]["stage1"])
-        
+        ref_lines = WaternetCollection.parse_ref_lines(
+            self.waternets_dict["calc1"]["scenario1"]["stage1"]
+        )
+
         self.assertEqual(len(ref_lines), 1)
         self.assertEqual(ref_lines[0].name, "refline1")
         self.assertEqual(ref_lines[0].l, [0.0, 1.0, 2.0])
@@ -136,9 +129,7 @@ class TestWaternetCollection(TestCase):
         """Test retrieving a waternet by calc, scenario and stage names"""
 
         waternet = self.collection.get_waternet(
-            calc_name="calc1",
-            scenario_name="scenario1",
-            stage_name="stage1"
+            calc_name="calc1", scenario_name="scenario1", stage_name="stage1"
         )
         self.assertEqual(waternet.calc_name, "calc1")
         self.assertEqual(waternet.scenario_name, "scenario1")
@@ -148,22 +139,16 @@ class TestWaternetCollection(TestCase):
         """Test that getting a non-existent waternet raises an error"""
         with self.assertRaises(ValueError):
             self.collection.get_waternet(
-                calc_name="nonexistent",
-                scenario_name="scenario1",
-                stage_name="stage1"
+                calc_name="nonexistent", scenario_name="scenario1", stage_name="stage1"
             )
 
     def test_from_dict_empty_lines(self):
         """Test creating a collection with empty lines list"""
-        empty_dict = {
-            "calc1": {
-                "scenario1": {
-                    "stage1": []
-                }
-            }
-        }
-        
-        collection = WaternetCollection.from_dict(empty_dict, name_phreatic_line="headline1")
+        empty_dict = {"calc1": {"scenario1": {"stage1": []}}}
+
+        collection = WaternetCollection.from_dict(
+            empty_dict, name_phreatic_line="headline1"
+        )
         waternet = collection.waternets[0]
         self.assertEqual(len(waternet.head_lines), 0)
         self.assertEqual(len(waternet.ref_lines), 0)
