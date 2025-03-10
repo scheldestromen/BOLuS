@@ -3,11 +3,11 @@ import os
 from copy import deepcopy
 from unittest import TestCase
 
-from dstability_toolbox.geometry import (CharPoint, CharPointsProfile,
-                                         CharPointsProfileCollection,
-                                         CharPointType, Point, SurfaceLine,
-                                         SurfaceLineCollection,
-                                         create_geometries)
+from toolbox.geometry import (CharPoint, CharPointsProfile,
+                              CharPointsProfileCollection,
+                              CharPointType, Point, SurfaceLine,
+                              SurfaceLineCollection,
+                              create_geometries)
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")

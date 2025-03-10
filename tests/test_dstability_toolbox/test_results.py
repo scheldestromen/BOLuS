@@ -10,8 +10,8 @@ from geolib.models.dstability.internal import (BishopBruteForceResult,
                                                UpliftVanParticleSwarmResult,
                                                UpliftVanReliabilityResult)
 
-from dstability_toolbox.results import (DStabilityResultExporter,
-                                        ResultSummary, results_from_dir)
+from toolbox.results import (DStabilityResultExporter,
+                             ResultSummary, results_from_dir)
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")

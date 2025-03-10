@@ -6,18 +6,18 @@ from geolib.models.dstability.internal import \
     SoilCollection as GLSoilCollection
 from geolib.soils import Soil as GLSoil
 
-from dstability_toolbox.geometry import (CharPoint, CharPointsProfile,
-                                         CharPointType, Side)
-from dstability_toolbox.loads import Load
-from dstability_toolbox.model import Model
-from dstability_toolbox.modifier import (add_soil_collection, add_state_points,
-                                         add_uniform_load,
-                                         create_d_stability_model, set_subsoil,
-                                         set_waternet)
-from dstability_toolbox.soils import Soil, SoilCollection
-from dstability_toolbox.state import StatePoint
-from dstability_toolbox.subsoil import SoilPolygon, Subsoil
-from dstability_toolbox.water import HeadLine, ReferenceLine, Waternet
+from toolbox.geometry import (CharPoint, CharPointsProfile,
+                              CharPointType, Side)
+from toolbox.loads import Load
+from toolbox.model import Model
+from toolbox.modifier import (add_soil_collection, add_state_points,
+                              add_uniform_load,
+                              create_d_stability_model, set_subsoil,
+                              set_waternet)
+from toolbox.soils import Soil, SoilCollection
+from toolbox.state import StatePoint
+from toolbox.subsoil import SoilPolygon, Subsoil
+from toolbox.water import HeadLine, ReferenceLine, Waternet
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")

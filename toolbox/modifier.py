@@ -9,16 +9,16 @@ from geolib.models.dstability.states import (DStabilityStatePoint,
                                              DStabilityStress)
 from shapely import Point
 
-from dstability_toolbox.calculation_settings import (BishopBruteForce,
-                                                     UpliftVanParticleSwarm)
-from dstability_toolbox.geolib_utils import get_by_id, get_stage_by_indices
-from dstability_toolbox.geometry import CharPointsProfile, Geometry
-from dstability_toolbox.loads import Load
-from dstability_toolbox.model import Model
-from dstability_toolbox.soils import SoilCollection
-from dstability_toolbox.state import StatePoint
-from dstability_toolbox.subsoil import Subsoil
-from dstability_toolbox.water import Waternet
+from toolbox.calculation_settings import (BishopBruteForce,
+                                          UpliftVanParticleSwarm)
+from toolbox.geolib_utils import get_by_id, get_stage_by_indices
+from toolbox.geometry import CharPointsProfile, Geometry
+from toolbox.loads import Load
+from toolbox.model import Model
+from toolbox.soils import SoilCollection
+from toolbox.state import StatePoint
+from toolbox.subsoil import Subsoil
+from toolbox.water import Waternet
 
 
 def get_scenario_and_stage_index_by_label(

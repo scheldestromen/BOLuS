@@ -6,15 +6,15 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from dstability_toolbox.calculation_settings import GridSettingsSetCollection
-from dstability_toolbox.geometry import (CharPointType, Geometry,
-                                         create_geometries, SurfaceLineCollection, CharPointsProfileCollection)
-from dstability_toolbox.loads import LoadCollection
-from dstability_toolbox.model import Model, Scenario, Stage
-from dstability_toolbox.soils import SoilCollection
-from dstability_toolbox.state import create_state_points_from_subsoil
-from dstability_toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection
-from dstability_toolbox.water import WaternetCollection
+from toolbox.calculation_settings import GridSettingsSetCollection
+from toolbox.geometry import (CharPointType, Geometry,
+                              create_geometries, SurfaceLineCollection, CharPointsProfileCollection)
+from toolbox.loads import LoadCollection
+from toolbox.model import Model, Scenario, Stage
+from toolbox.soils import SoilCollection
+from toolbox.state import create_state_points_from_subsoil
+from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection
+from toolbox.water import WaternetCollection
 
 
 class GeneralSettings(BaseModel):

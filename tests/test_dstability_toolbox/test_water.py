@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from dstability_toolbox.water import (HeadLine, ReferenceLine, WaterLineType,
-                                      Waternet, WaternetCollection)
+from toolbox.water import (HeadLine, ReferenceLine, WaterLineType,
+                           Waternet, WaternetCollection)
 
 
 class TestHeadLine(TestCase):

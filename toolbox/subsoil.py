@@ -6,8 +6,8 @@ from geolib.models.dstability.internal import PersistableLayer
 from pydantic import BaseModel, model_validator
 from shapely.geometry import Polygon
 
-from dstability_toolbox.geolib_utils import get_by_id
-from dstability_toolbox.geometry import SurfaceLine
+from toolbox.geolib_utils import get_by_id
+from toolbox.geometry import SurfaceLine
 from utils.geometry_utils import geometry_to_polygons
 
 

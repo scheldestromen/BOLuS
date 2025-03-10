@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from dstability_toolbox.geometry import CharPointType, Side
+from toolbox.geometry import CharPointType, Side
 
 
 class Load(BaseModel):

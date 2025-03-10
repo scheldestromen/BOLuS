@@ -6,8 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from dstability_toolbox.soils import SoilCollection
-from dstability_toolbox.subsoil import Subsoil
+from toolbox.soils import SoilCollection
+from toolbox.subsoil import Subsoil
 from utils.geometry_utils import determine_point_in_polygon
 
 

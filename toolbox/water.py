@@ -1,5 +1,4 @@
 from enum import StrEnum, auto
-from typing import Any
 
 from pydantic import BaseModel
 

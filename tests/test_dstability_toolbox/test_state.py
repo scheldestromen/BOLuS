@@ -2,9 +2,9 @@ from unittest import TestCase
 
 from geolib.soils import Soil as GLSoil
 
-from dstability_toolbox.soils import Soil, SoilCollection
-from dstability_toolbox.state import create_state_points_from_subsoil
-from dstability_toolbox.subsoil import SoilPolygon, Subsoil
+from toolbox.soils import Soil, SoilCollection
+from toolbox.state import create_state_points_from_subsoil
+from toolbox.subsoil import SoilPolygon, Subsoil
 
 
 class TestState(TestCase):

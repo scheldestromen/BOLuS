@@ -14,7 +14,7 @@ from geolib.models.dstability.analysis import (
 from geolib.models.dstability.internal import OptionsType
 from pydantic import BaseModel, model_validator
 
-from dstability_toolbox.geometry import CharPointsProfile, CharPointType, Side
+from toolbox.geometry import CharPointsProfile, CharPointType, Side
 
 
 class SlipPlaneModel(StrEnum):

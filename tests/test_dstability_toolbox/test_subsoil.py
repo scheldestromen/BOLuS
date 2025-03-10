@@ -8,10 +8,10 @@ from geolib.models.dstability.internal import (PersistableLayer,
                                                PersistablePoint)
 from shapely import Polygon
 
-from dstability_toolbox.geometry import Point, SurfaceLine
-from dstability_toolbox.subsoil import (SoilLayer, SoilPolygon, SoilProfile,
-                                        SoilProfileCollection, Subsoil,
-                                        subsoil_from_soil_profiles)
+from toolbox.geometry import Point, SurfaceLine
+from toolbox.subsoil import (SoilLayer, SoilPolygon, SoilProfile,
+                             SoilProfileCollection, Subsoil,
+                             subsoil_from_soil_profiles)
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")

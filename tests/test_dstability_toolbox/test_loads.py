@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from dstability_toolbox.geometry import CharPointType, Side
-from dstability_toolbox.loads import Load, LoadCollection
+from toolbox.geometry import CharPointType, Side
+from toolbox.loads import Load, LoadCollection
 
 
 class TestLoad(TestCase):
