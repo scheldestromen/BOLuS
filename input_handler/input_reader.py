@@ -433,6 +433,8 @@ class RawUserInput(BaseModel):
 
 
 def raw_input_to_user_input_structure(raw_input: RawUserInput) -> UserInputStructure:
+    # TODO: refactor - de from_dict en list methods zijn eigenlijk niet logisch op die plek
+    # Deze horen niet bij de objecten maar bij het 'excel' deel van de tool.
     settings = GeneralSettings.model_validate(raw_input.settings)
     surface_lines = SurfaceLineCollection.from_dict(raw_input.surface_lines)
     char_points = CharPointsProfileCollection.from_dict(raw_input.char_points)
