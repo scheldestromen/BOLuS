@@ -38,7 +38,8 @@ class SoilProfile(BaseModel):
 
 
 class SoilProfilePosition(BaseModel):
-    """Represents the position of a soil profile in the subsoil
+    """Represents the position of a soil profile in the subsoil in
+    a 2D cross-section. The l-coordinate is the horizontal coordinate
 
     Attributes:
         profile_name (str): The name of the soil profile
@@ -48,19 +49,41 @@ class SoilProfilePosition(BaseModel):
     l_coord: float
 
 
-class SoilProfilePositionCollection(BaseModel):
+class SoilProfilePositionSet(BaseModel):
+    """Represents the SoilProfilePosition instances belonging to
+    one subsoil schematization.
+
+    Attributes:
+        set_name (str): name of the set
+        soil_profile_positions (list[SoilProfilePosition]): SoilProfilePositions belonging
+          to the set."""
+
+    set_name: str
+    soil_profile_positions: list[SoilProfilePosition]
+
+
+class SoilProfilePositionSetCollection(BaseModel):
     """Collection of soil profile positions
 
     Attributes:
-        positions (list[SoilProfilePosition]): List of SoilProfilePosition instances"""
+        sets (list[SoilProfilePositionSet]): List of SoilProfilePosition instances"""
 
-    positions: list[SoilProfilePosition]
+    sets: list[SoilProfilePositionSet]
 
 
 class SoilProfileCollection(BaseModel):
     """Collection of 1D soil profiles of type SoilProfile"""
 
     profiles: list[SoilProfile]
+
+    def get_by_name(self, name: str) -> SurfaceLine:
+        """Returns the SoilProfileCollection with the given name"""
+
+        profile = next((prof for prof in self.profiles if prof.name == name), None)
+        if profile:
+            return profile
+        else:
+            raise ValueError(f"Could not find soil profile with name {name}")
 
 
 class SoilPolygon(BaseModel):

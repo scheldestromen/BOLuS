@@ -13,7 +13,7 @@ from toolbox.loads import LoadCollection
 from toolbox.model import Model, Scenario, Stage
 from toolbox.soils import SoilCollection
 from toolbox.state import create_state_points_from_subsoil
-from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection
+from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionCollection
 from toolbox.water import WaternetCollection
 
 
@@ -84,7 +84,7 @@ class UserInputStructure(BaseModel):
     char_points: CharPointsProfileCollection
     soils: SoilCollection
     soil_profiles: SoilProfileCollection
-    soil_profile_positions: dict[str, dict[str, float | None]]  # TODO: omzetten naar class
+    soil_profile_positions: SoilProfilePositionCollection
     loads: LoadCollection
     waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection
@@ -121,15 +121,14 @@ def create_stage(
         )
 
     surface_line = geometry.surface_line
-    profile_positions = input_structure.soil_profile_positions[
+    profile_positions = input_structure.soil_profile_positions.get_by_name(
         stage_config.soil_profile_position_name
-    ]
+    )
 
+    # TODO: aanpassen aan nieuwe object structuur
     soil_profiles_and_coords = [
-        (sp, coord)
-        for name, coord in profile_positions.items()
-        for sp in input_structure.soil_profiles.profiles
-        if sp.name == name
+        (input_structure.soil_profiles.get_by_name(position.name), position.l_coord)
+        for position in profile_positions.positions
     ]
 
     # Create subsoil from the surface line, soil_profiles and the transitions

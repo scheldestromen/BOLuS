@@ -16,7 +16,8 @@ from toolbox.geometry import (CharPointsProfileCollection,
                               CharPointsProfile)
 from toolbox.loads import LoadCollection, Load
 from toolbox.soils import SoilCollection, Soil
-from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile
+from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
+    SoilProfilePositionSet, SoilProfilePositionSetCollection
 from toolbox.water import WaterLineType, WaternetCollection, HeadLine, ReferenceLine, Waternet
 from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
@@ -698,13 +699,19 @@ class RawInputToUserInputStructure:
 
     @staticmethod
     def convert_soil_profile_positions(soil_profile_positions_dict: dict[str, dict[str, float | None]]):
-        # positions: list[SoilProfilePosition] = []
+        sets: list[SoilProfilePositionSet] = []
 
-        # for name, l_coords in soil_profile_positions_dict.items():
-        #     positions.append(SoilProfilePosition(name=name, l_coords=l_coords))
-        # TODO: Omkatten naar SoilProfilePositionCollection
+        for set_name, position_set_dict in soil_profile_positions_dict.items():
+            positions: [SoilProfilePosition] = []
 
-        return soil_profile_positions_dict
+            for soil_profile_name, l_coord in position_set_dict.items():
+                positions.append(SoilProfilePosition(name=soil_profile_name, l_coord=l_coord))
+
+            sets.append(SoilProfilePositionSet(set_name=set_name, positions=positions))
+
+        soil_profile_position_collection = SoilProfilePositionSetCollection(sets=sets)
+
+        return soil_profile_position_collection
 
     @staticmethod
     def convert_loads(loads_dicts: list[dict[str, Any]]) -> LoadCollection:
