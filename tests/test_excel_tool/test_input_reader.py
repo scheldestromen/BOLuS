@@ -8,12 +8,13 @@ from unittest import TestCase
 
 import openpyxl
 from geolib.models.dstability.internal import OptionsType
+from geolib.soils import ShearStrengthModelTypePhreaticLevel
 
 from excel_tool.input_reader import (ExcelInputReader, RawUserInput,
-                                   RawInputToUserInputStructure,
-                                   INPUT_TO_BOOL, INPUT_TO_CHAR_POINTS,
-                                   INPUT_TO_SIDE, INPUT_TO_WATER_LINE_TYPE,
-                                   INPUT_TO_SLIP_PLANE_MODEL)
+                                     RawInputToUserInputStructure,
+                                     INPUT_TO_BOOL, INPUT_TO_CHAR_POINTS,
+                                     INPUT_TO_SIDE, INPUT_TO_WATER_LINE_TYPE,
+                                     INPUT_TO_SLIP_PLANE_MODEL)
 from toolbox.geometry import CharPointType, Side
 from toolbox.water import WaterLineType
 from toolbox.calculation_settings import SlipPlaneModel
@@ -40,8 +41,59 @@ class TestRawInputToUserInputStructure(TestCase):
             char_points={
                 "Profile 1": {
                     "x_surface_level_water_side": 0,
-                    "y_surface_level_water_side": 0,
-                    "z_surface_level_water_side": 0,
+                    "y_surface_level_water_side": -1,
+                    "z_surface_level_water_side": -2,
+                    "x_toe_canal": -1,
+                    "y_toe_canal": -1,
+                    "z_toe_canal": -1,
+                    "x_start_canal": -1,
+                    "y_start_canal": -1,
+                    "z_start_canal": -1,
+                    "x_dike_toe_water_side": -1,
+                    "y_dike_toe_water_side": -1,
+                    "z_dike_toe_water_side": -1,
+                    "x_berm_crest_water_side": -1,
+                    "y_berm_crest_water_side": -1,
+                    "z_berm_crest_water_side": -1,
+                    "x_berm_start_water_side": -1,
+                    "y_berm_start_water_side": -1,
+                    "z_berm_start_water_side": -1,
+                    "x_dike_crest_water_side": -1,
+                    "y_dike_crest_water_side": -1,
+                    "z_dike_crest_water_side": -1,
+                    "x_traffic_load_water_side": -1,
+                    "y_traffic_load_water_side": -1,
+                    "z_traffic_load_water_side": -1,
+                    "x_traffic_load_land_side": -1,
+                    "y_traffic_load_land_side": -1,
+                    "z_traffic_load_land_side": -1,
+                    "x_dike_crest_land_side": -1,
+                    "y_dike_crest_land_side": -1,
+                    "z_dike_crest_land_side": -1,
+                    "x_berm_start_land_side": -1,
+                    "y_berm_start_land_side": -1,
+                    "z_berm_start_land_side": -1,
+                    "x_berm_crest_land_side": -1,
+                    "y_berm_crest_land_side": -1,
+                    "z_berm_crest_land_side": -1,
+                    "x_dike_toe_land_side": -1,
+                    "y_dike_toe_land_side": -1,
+                    "z_dike_toe_land_side": -1,
+                    "x_ditch_start_water_side": -1,
+                    "y_ditch_start_water_side": -1,
+                    "z_ditch_start_water_side": -1,
+                    "x_ditch_bottom_water_side": -1,
+                    "y_ditch_bottom_water_side": -1,
+                    "z_ditch_bottom_water_side": -1,
+                    "x_ditch_bottom_land_side": -1,
+                    "y_ditch_bottom_land_side": -1,
+                    "z_ditch_bottom_land_side": -1,
+                    "x_ditch_start_land_side": -1,
+                    "y_ditch_start_land_side": -1,
+                    "z_ditch_start_land_side": -1,
+                    "x_surface_level_land_side": 1,
+                    "y_surface_level_land_side": 2,
+                    "z_surface_level_land_side": 3
                 }
             },
             soil_params=[{
@@ -57,15 +109,15 @@ class TestRawInputToUserInputStructure(TestCase):
                 "pop": 10.0,
                 "consolidation_traffic_load": 50,
             }],
-            soil_profiles={"Profile 1": [{"soil_type": "Clay", "top": 0.0}]},
-            soil_profile_positions={"Profile 1": {"l_coord": 0.0}},
+            soil_profiles={"Profile 1": [{"soil_type": "Clay", "top": 1.0}]},
+            soil_profile_positions={"Calc 1": {"Profile 1": None}},
             loads=[{
                 "name": "Traffic",
                 "magnitude": 13.0,
                 "angle": 0.0,
                 "width": 2.5,
-                "position": "Kruin binnentalud",
-                "direction": "Binnenwaarts",
+                "position": "dike_crest_land_side",
+                "direction": "water_side",
             }],
             hydraulic_pressure={
                 "calc1": {
@@ -73,29 +125,68 @@ class TestRawInputToUserInputStructure(TestCase):
                         "stage1": [{
                             "type": "Stijghoogtelijn",
                             "line_name": "phreatic",
-                            "values": [0, 0, 1, 1],
+                            "values": [0, 2, 50, 1],
                         }]
                     }
                 }
             },
-            grid_settings={
-                "Set 1": [{
-                    "grid_setting_name": "Bishop",
-                    "slip_plane_model": "Bishop",
-                    "grid_position": "Kruin binnentalud",
-                    "grid_direction": "Binnenwaarts",
-                }]
+            grid_settings={"Set 1": [{
+                "grid_setting_name": "Bishop",
+                "slip_plane_model": "bishop_brute_force",
+                "grid_position": "dike_crest_land_side",
+                "grid_direction": "land_side",
+                "grid_offset_horizontal": 1,
+                "grid_offset_vertical": 4,
+                "grid_points_horizontal": 20,
+                "grid_points_vertical": 20,
+                "grid_points_per_m": 2,
+                "bottom_tangent_line": -10,
+                "tangent_line_count": 20,
+                "tangent_lines_per_m": 2,
+                "move_grid": True,
+                "grid_1_position": None,
+                "grid_1_direction": None,
+                "grid_1_offset_horizontal": None,
+                "grid_1_offset_vertical": None,
+                "grid_1_width": None,
+                "grid_1_height": None,
+                "grid_2_position": None,
+                "grid_2_direction": None,
+                "grid_2_offset_horizontal": None,
+                "grid_2_offset_vertical": None,
+                "grid_2_height": None,
+                "grid_2_width": None,
+                "top_tangent_area": None,
+                "height_tangent_area": None,
+                "search_mode": None,
+                "apply_minimum_slip_plane_dimensions": False,
+                "minimum_slip_plane_depth": None,
+                "minimum_slip_plane_length": None,
+                "apply_constraint_zone_a": False,
+                "zone_a_position": None,
+                "zone_a_direction": None,
+                "zone_a_width": None,
+                "apply_constraint_zone_b": False,
+                "zone_b_position": None,
+                "zone_b_direction": None,
+                "zone_b_width": None}]
             },
             model_configs=[{
                 "calc_name": "Calc 1",
-                "scenario_name": "Scenario 1",
-                "stage_name": "Stage 1",
-                "geometry_name": "Profile 1",
-                "soil_profile_position_name": "Profile 1",
-                "apply_state_points": "Ja",
-                "load_name": "Traffic",
-                "grid_settings_set_name": "Set 1",
-                "evaluate": "Ja",
+                "scenarios": [{
+                    "scenario_name": "Scenario 1",
+                    "grid_settings_set_name": "Set 1",
+                    "stages": [
+                        {
+                            "stage_name": "Stage 1",
+                            "geometry_name": "Profile 1",
+                            "soil_profile_position_name": "Calc 1",
+                            "apply_state_points": True,
+                            "load_name": "Traffic",
+                            "evaluate": True
+                        }
+                    ]
+                }]
             }]
         )
 
@@ -113,16 +204,51 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertEqual(len(surface_lines.surface_lines[0].points), 2)
 
     def test_convert_char_points(self):
-        pass
+        """Test converting characteristic points"""
+        char_point_col = RawInputToUserInputStructure.convert_char_points(self.raw_input.char_points)
+        self.assertEqual(len(char_point_col.char_points_profiles), 1)
+        self.assertEqual(char_point_col.char_points_profiles[0].name, "Profile 1")
+        self.assertEqual(char_point_col.char_points_profiles[0].points[0].type, CharPointType.SURFACE_LEVEL_WATER_SIDE)
+        self.assertEqual(char_point_col.char_points_profiles[0].points[0].x, 0.)
+        self.assertEqual(char_point_col.char_points_profiles[0].points[0].z, -2.)
 
     def test_convert_soil_collection(self):
-        pass
+        """Test converting soil collection"""
+        soils = RawInputToUserInputStructure.convert_soil_collection(self.raw_input.soil_params)
+        self.assertEqual(len(soils.soils), 1)
+        soil = soils.soils[0]
+        self.assertEqual(soil.gl_soil.name, "Clay")
+        self.assertEqual(soil.gl_soil.soil_weight_parameters.unsaturated_weight, 16.0)
+        self.assertEqual(soil.gl_soil.soil_weight_parameters.saturated_weight, 18.0)
+        self.assertEqual(soil.gl_soil.shear_strength_model_above_phreatic_level,
+                         ShearStrengthModelTypePhreaticLevel.MOHR_COULOMB)
+        self.assertEqual(soil.gl_soil.shear_strength_model_below_phreatic_level,
+                         ShearStrengthModelTypePhreaticLevel.MOHR_COULOMB)
+        self.assertEqual(soil.gl_soil.mohr_coulomb_parameters.cohesion.mean, 5.0)
+        self.assertEqual(soil.gl_soil.mohr_coulomb_parameters.friction_angle.mean, 30.0)
+        self.assertEqual(soil.gl_soil.undrained_parameters.shear_strength_ratio.mean, 0.25)
+        self.assertEqual(soil.gl_soil.undrained_parameters.strength_increase_exponent.mean, 0.8)
+        self.assertEqual(soil.pop, 10.0)
+        self.assertEqual(soil.consolidation_traffic_load, 50.)
 
     def test_convert_soil_profile_collection(self):
-        pass
+        """Test converting soil profile collection"""
+        profiles = RawInputToUserInputStructure.convert_soil_profile_collection(self.raw_input.soil_profiles)
+        self.assertEqual(len(profiles.soil_profiles), 1)
+        profile = profiles.soil_profiles[0]
+        self.assertEqual(profile.name, "Profile 1")
+        self.assertEqual(len(profile.layers), 1)
+        self.assertEqual(profile.layers[0].soil_name, "Clay")
+        self.assertEqual(profile.layers[0].top_level, 5.0)
 
     def test_convert_soil_profile_positions(self):
-        pass
+        """Test converting soil profile positions"""
+        positions = RawInputToUserInputStructure.convert_soil_profile_positions(self.raw_input.soil_profile_positions)
+        self.assertEqual(len(positions.soil_profile_positions), 1)
+        position = positions.soil_profile_positions[0]
+        self.assertEqual(position.name, "Calc 1")
+        self.assertEqual(position.x_coordinate, 0.0)
+        self.assertEqual(position.soil_profile_name, "Profile 1")
 
     def test_convert_loads(self):
         """Test converting loads"""
@@ -131,7 +257,7 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertEqual(loads.loads[0].name, "Traffic")
         self.assertEqual(loads.loads[0].magnitude, 13.0)
         self.assertEqual(loads.loads[0].position, CharPointType.DIKE_CREST_LAND_SIDE)
-        self.assertEqual(loads.loads[0].direction, Side.LAND_SIDE)
+        self.assertEqual(loads.loads[0].direction, Side.WATER_SIDE)
 
     def test_convert_waternet_collection(self):
         """Test converting waternet collection"""
@@ -149,14 +275,14 @@ class TestRawInputToUserInputStructure(TestCase):
 
     def test_convert_grid_settings_set_collection(self):
         """Test converting grid settings set collection"""
-        grid_settings = RawInputToUserInputStructure.convert_grid_settings_set_collection(
+        grid_setting_set_collection = RawInputToUserInputStructure.convert_grid_settings_set_collection(
             self.raw_input.grid_settings
         )
-        self.assertEqual(len(grid_settings.grid_settings_sets), 1)
-        grid_set = grid_settings.grid_settings_sets[0]
+        self.assertEqual(len(grid_setting_set_collection.grid_settings_sets), 1)
+        grid_set = grid_setting_set_collection.grid_settings_sets[0]
         self.assertEqual(grid_set.name, "Set 1")
         self.assertEqual(len(grid_set.grid_settings), 1)
-        self.assertEqual(grid_set.grid_settings[0].name, "Bishop")
+        self.assertEqual(grid_set.grid_settings[0].grid_setting_name, "Bishop")
 
     def test_convert_model_configs(self):
         """Test converting model configs"""
@@ -164,9 +290,10 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertEqual(len(configs), 1)
         config = configs[0]
         self.assertEqual(config.calc_name, "Calc 1")
-        self.assertEqual(config.scenario_name, "Scenario 1")
-        self.assertTrue(config.apply_state_points)
-        self.assertTrue(config.evaluate)
+        self.assertEqual(len(config.scenarios), 1)
+        self.assertEqual(config.scenarios[0].scenario_name, "Scenario 1")
+        self.assertTrue(config.scenarios[0].stages[0].apply_state_points)
+        self.assertTrue(config.scenarios[0].evaluate)
 
     def test_convert(self):
         pass

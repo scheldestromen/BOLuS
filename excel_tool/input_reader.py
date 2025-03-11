@@ -258,7 +258,7 @@ class RawUserInput(BaseModel):
 
     settings: dict[str, str | float]
     surface_lines: dict[str, list[float]]
-    char_points: dict[str, dict[str, float]]
+    char_points: dict[str, dict[str, float | None]]
     soil_params: list[dict[str, float | str | None]]
     soil_profiles: dict[str, list]
     soil_profile_positions: dict[str, dict[str, float | None]]
