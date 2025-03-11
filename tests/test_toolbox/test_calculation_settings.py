@@ -7,6 +7,7 @@ from geolib.models.dstability.analysis import (
     DStabilityUpliftVanParticleSwarmAnalysisMethod)
 from geolib.models.dstability.internal import OptionsType
 
+from excel_tool.input_reader import RawInputToUserInputStructure
 from toolbox.calculation_settings import (BishopBruteForce,
                                           GridSettings,
                                           GridSettingsSet,
@@ -93,29 +94,10 @@ class TestGridSettings(TestCase):
             ],
         )
 
-    def test_from_dict_unknown_slip_plane_model(self):
-        input_dict = {"slip_plane_model": "unknown"}
-
-        with self.assertRaises(ValueError):
-            GridSettings.from_dict(input_dict)
-
-    def test_from_dict_uplift_van_particle_swarm(self):
-        grid_settings = GridSettings.from_dict(self.uplift_dict)
-
-        self.assertIsInstance(grid_settings, UpliftVanParticleSwarm)
-
-    def test_from_dict_bishop_brute_force(self):
-        grid_settings = GridSettings.from_dict(self.bishop_dict)
-        self.assertIsInstance(grid_settings, BishopBruteForce)
-
-    def test_from_dict_incomplete_constraints_input(self):
-        self.bishop_dict["minimum_slip_plane_depth"] = None
-
-        with self.assertRaises(ValueError):
-            GridSettings.from_dict(self.bishop_dict)
-
     def test_slip_plane_constraints_to_geolib(self):
-        grid_settings = GridSettings.from_dict(self.bishop_dict)
+        grid_settings = RawInputToUserInputStructure.grid_settings_from_dict(
+            self.bishop_dict
+        )
         constraints = grid_settings.slip_plane_constraints_to_geolib(
             self.char_points_profile
         )
@@ -363,16 +345,6 @@ class TestGridSettingsSetCollection(TestCase):
         self.input_dict = {
             di["name"]: di["grid_settings"] for di in grid_settings_set_list
         }
-
-    def test_from_dict(self):
-        collection_from_dict = GridSettingsSetCollection.from_dict(
-            input_dict=self.input_dict
-        )
-        collection_from_json = GridSettingsSetCollection.model_validate(
-            self.grid_settings_set_collection
-        )
-
-        self.assertEqual(collection_from_json, collection_from_dict)
 
     def test_get_by_name(self):
         collection_from_json = GridSettingsSetCollection.model_validate(

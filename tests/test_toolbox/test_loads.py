@@ -49,29 +49,3 @@ class TestLoadCollection(TestCase):
         """Test that getting a non-existent load raises an error"""
         with self.assertRaises(NameError):
             self.collection.get_by_name("nonexistent_load")
-
-    def test_from_list(self):
-        """Test creating a load collection from a list of dictionaries"""
-        loads_dicts = [
-            {
-                "name": "load1",
-                "magnitude": 10.0,
-                "angle": 20.0,
-                "width": 5.0,
-                "position": CharPointType.DIKE_CREST_LAND_SIDE,
-                "direction": Side.WATER_SIDE,
-            },
-            {
-                "name": "load2",
-                "magnitude": 15.0,
-                "angle": 25.0,
-                "width": 7.0,
-                "position": CharPointType.DIKE_CREST_WATER_SIDE,
-                "direction": Side.LAND_SIDE,
-            },
-        ]
-
-        collection = LoadCollection.from_list(loads_dicts)
-        self.assertEqual(len(collection.loads), 2)
-        self.assertEqual(collection.loads[0].name, "load1")
-        self.assertEqual(collection.loads[1].name, "load2")

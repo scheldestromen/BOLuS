@@ -8,6 +8,7 @@ from geolib.models.dstability.internal import (PersistableLayer,
                                                PersistablePoint)
 from shapely import Polygon
 
+from excel_tool.input_reader import RawInputToUserInputStructure
 from toolbox.geometry import Point, SurfaceLine
 from toolbox.subsoil import (SoilLayer, SoilPolygon, SoilProfile,
                              SoilProfileCollection, Subsoil,
@@ -47,16 +48,6 @@ class TestSoilProfileCollection(TestCase):
     def setUp(self):
         with open(SOIL_PROFILE_COLLECTION_JSON_PATH, "r") as f:
             self.soil_profile_collection_dict = json.load(f)
-
-    def test_from_dict(self):
-        soil_profile_collection = SoilProfileCollection.from_dict(
-            soil_profile_dict=self.soil_profile_collection_dict
-        )
-        names = [sp.name for sp in soil_profile_collection.profiles]
-
-        self.assertIsInstance(soil_profile_collection, SoilProfileCollection)
-        self.assertEqual(len(soil_profile_collection.profiles), 3)
-        self.assertEqual(names, ["Bodemprofiel 1", "Bodemprofiel 2", "Bodemprofiel 3"])
 
 
 class TestSoilPolygon(TestCase):
@@ -126,7 +117,7 @@ class TestSubsoilFromSoilProfiles(TestCase):
         with open(SOIL_PROFILE_COLLECTION_JSON_PATH, "r") as f:
             self.soil_profile_collection_dict = json.load(f)
 
-        self.soil_profiles = SoilProfileCollection.from_dict(
+        self.soil_profiles = RawInputToUserInputStructure.convert_soil_profile_collection(
             soil_profile_dict=self.soil_profile_collection_dict
         ).profiles
 

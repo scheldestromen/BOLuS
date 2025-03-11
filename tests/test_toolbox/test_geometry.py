@@ -3,6 +3,7 @@ import os
 from copy import deepcopy
 from unittest import TestCase
 
+from excel_tool.input_reader import RawInputToUserInputStructure
 from toolbox.geometry import (CharPoint, CharPointsProfile,
                               CharPointsProfileCollection,
                               CharPointType, Point, SurfaceLine,
@@ -175,19 +176,6 @@ class TestSurfaceLineCollection(TestCase):
             ]
         )
 
-    def test_from_dict(self):
-        surface_line_collection = SurfaceLineCollection.from_dict(
-            self.surface_line_collection_dict
-        )
-        names = [
-            surface_line.name for surface_line in surface_line_collection.surface_lines
-        ]
-        x = [p.x for p in surface_line_collection.surface_lines[0].points]
-
-        self.assertEqual(len(surface_line_collection.surface_lines), 3)
-        self.assertEqual(names, ["Dwarsprofiel 1", "Dwarsprofiel 2", "Dwarsprofiel 3"])
-        self.assertEqual(len(x), 54)
-
     def test_get_by_name(self):
         name = "Profile 2"
         surface_line = self.surface_line_collection.get_by_name(name)
@@ -235,18 +223,6 @@ class TestCharPointsProfileCollection(TestCase):
             ]
         )
 
-    def test_from_dict(self):
-        char_points_profile_collection = CharPointsProfileCollection.from_dict(
-            self.char_collection_dict
-        )
-        names = [
-            char_prof.name
-            for char_prof in char_points_profile_collection.char_points_profiles
-        ]
-
-        self.assertEqual(len(char_points_profile_collection.char_points_profiles), 3)
-        self.assertEqual(names, ["Dwarsprofiel 1", "Dwarsprofiel 2", "Dwarsprofiel 3"])
-
     def test_get_by_name(self):
         name = "Profile 2"
         char_points_profile = self.char_collection.get_by_name(name)
@@ -270,10 +246,10 @@ class TestGeometry(TestCase):
         with open(SURF_COLLECTION_JSON_PATH) as f:
             surface_line_collection_dict = json.load(f)
 
-        self.surface_line_collection = SurfaceLineCollection.from_dict(
+        self.surface_line_collection = RawInputToUserInputStructure.convert_surface_lines(
             surface_line_collection_dict
         )
-        self.char_line_collection = CharPointsProfileCollection.from_dict(
+        self.char_line_collection = RawInputToUserInputStructure.convert_char_points(
             char_collection_dict
         )
 

@@ -522,7 +522,7 @@ class ExcelInputReader(BaseModel):
 
 class RawInputToUserInputStructure:
     @staticmethod
-    def convert(raw_input: ExcelInputReader) -> UserInputStructure:
+    def convert(raw_input: RawUserInput) -> UserInputStructure:
         """Converts the raw user input into a UserInputStructure
         
         Args:
@@ -578,7 +578,7 @@ class RawInputToUserInputStructure:
         return SurfaceLineCollection(surface_lines=surface_lines)
 
     @staticmethod
-    def convert_char_points(char_points_dict: dict[str, dict[str, float]]) -> CharPointsProfileCollection:
+    def convert_char_points(char_points_dict: dict[str, dict[str, float | None]]) -> CharPointsProfileCollection:
         """Parses the dictionary into a CharPointsProfileCollection
 
         Args:
