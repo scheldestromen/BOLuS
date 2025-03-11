@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Reading the Excel to RawUserInput
     raw_user_input = ExcelInputReader.read_from_file(INPUT_FILE_PATH)
 
-    # Convert the RawUserInput to models. input_to_models has all the logic
+    # Convert the RawUserInput to models
     input_structure = RawInputToUserInputStructure.convert(raw_user_input)
     models = input_to_models(input_structure)
 
