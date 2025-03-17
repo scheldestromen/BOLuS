@@ -698,7 +698,14 @@ class RawInputToUserInputStructure:
         return SoilProfileCollection(profiles=profiles)
 
     @staticmethod
-    def convert_soil_profile_positions(soil_profile_positions_dict: dict[str, dict[str, float | None]]):
+    def convert_soil_profile_positions(
+            soil_profile_positions_dict: dict[str, dict[str, float | None]]
+    ) -> SoilProfilePositionSetCollection:
+        """Parses the dictionary into a SoilProfilePositionSetCollection
+
+        Args:
+            soil_profile_positions_dict: The dictionary to parse."""
+
         sets: list[SoilProfilePositionSet] = []
 
         for set_name, position_set_dict in soil_profile_positions_dict.items():

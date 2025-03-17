@@ -1,12 +1,8 @@
 """Tests for the input reader functionality"""
 
-# TODO: nalopen en herzien
-
 import os
-from pathlib import Path
 from unittest import TestCase
 
-import openpyxl
 from geolib.models.dstability.internal import OptionsType
 from geolib.soils import ShearStrengthModelTypePhreaticLevel
 
@@ -19,7 +15,7 @@ from excel_tool.input_reader import (ExcelInputReader, RawUserInput,
 from toolbox.geometry import CharPointType, Side, Point, SurfaceLineCollection, CharPointsProfileCollection, CharPoint
 from toolbox.model import Stage
 from toolbox.soils import SoilCollection, Soil
-from toolbox.subsoil import SoilProfileCollection, SoilProfile
+from toolbox.subsoil import SoilProfileCollection, SoilProfile, SoilProfilePositionSet,SoilProfilePositionSetCollection, SoilProfilePosition
 from toolbox.loads import LoadCollection, Load
 from toolbox.water import WaternetCollection, Waternet, HeadLine
 from toolbox.calculation_settings import SlipPlaneModel, GridSettingsSetCollection, GridSettingsSet, BishopBruteForce, \
@@ -315,7 +311,19 @@ class TestRawInputToUserInputStructure(TestCase):
     def test_convert_soil_profile_positions(self):
         """Test converting soil profile positions"""
         positions = RawInputToUserInputStructure.convert_soil_profile_positions(self.raw_input.soil_profile_positions)
-        # TODO aanpassen na implementatie van SoilProfilePositionCollection
+        self.assertIsInstance(positions, SoilProfilePositionSetCollection)
+        self.assertEqual(len(positions.sets), 1)
+        position_set = positions.sets[0]
+        self.assertIsInstance(position_set, SoilProfilePositionSet)
+        self.assertEqual(position_set.set_name, "Calc 1")
+        self.assertEqual(len(position_set.soil_profile_positions), 2)
+        position = position_set.soil_profile_positions[0]
+        self.assertIsInstance(position, SoilProfilePosition)
+        self.assertEqual(position.profile_name, "Soil Profile 1")
+        self.assertEqual(position.l_coord, None)
+        position = position_set.soil_profile_positions[1]
+        self.assertEqual(position.profile_name, "Soil Profile 2")
+        self.assertEqual(position.l_coord, 20)
 
     def test_convert_loads(self):
         """Test converting loads"""
