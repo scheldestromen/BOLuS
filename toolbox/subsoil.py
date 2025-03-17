@@ -46,12 +46,12 @@ class SoilProfilePosition(BaseModel):
         l_coord (float): The l-coordinate of the soil profile"""
 
     profile_name: str
-    l_coord: float
+    l_coord: float | None
 
 
 class SoilProfilePositionSet(BaseModel):
     """Represents the SoilProfilePosition instances belonging to
-    one subsoil schematization.
+    one subsoil schematization of (multiple) SoilProfile instances.
 
     Attributes:
         set_name (str): name of the set
@@ -61,6 +61,15 @@ class SoilProfilePositionSet(BaseModel):
     set_name: str
     soil_profile_positions: list[SoilProfilePosition]
 
+    def get_by_name(self, name: str) -> SoilProfilePosition:
+        """Returns the SoilProfilePosition with the given name"""
+
+        position = next((pos for pos in self.soil_profile_positions if pos.profile_name == name), None)
+
+        if position:
+            return position
+        else:
+            raise ValueError(f"Could not find soil profile position with name '{name}'")
 
 class SoilProfilePositionSetCollection(BaseModel):
     """Collection of soil profile positions
@@ -70,20 +79,31 @@ class SoilProfilePositionSetCollection(BaseModel):
 
     sets: list[SoilProfilePositionSet]
 
+    def get_by_name(self, name: str) -> SoilProfilePositionSet:
+        """Returns the SoilProfilePositionSet with the given name"""
+
+        position_set = next((set for set in self.sets if set.set_name == name), None)
+
+        if position_set:
+            return position_set
+        else:
+            raise ValueError(f"Could not find soil profile position set with name '{name}'")
+
+
 
 class SoilProfileCollection(BaseModel):
     """Collection of 1D soil profiles of type SoilProfile"""
 
     profiles: list[SoilProfile]
 
-    def get_by_name(self, name: str) -> SurfaceLine:
-        """Returns the SoilProfileCollection with the given name"""
+    def get_by_name(self, name: str) -> SoilProfile:
+        """Returns the SoilProfile with the given name"""
 
         profile = next((prof for prof in self.profiles if prof.name == name), None)
         if profile:
             return profile
         else:
-            raise ValueError(f"Could not find soil profile with name {name}")
+            raise ValueError(f"Could not find soil profile with name '{name}'")
 
 
 class SoilPolygon(BaseModel):

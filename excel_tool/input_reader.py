@@ -702,12 +702,12 @@ class RawInputToUserInputStructure:
         sets: list[SoilProfilePositionSet] = []
 
         for set_name, position_set_dict in soil_profile_positions_dict.items():
-            positions: [SoilProfilePosition] = []
+            positions: list[SoilProfilePosition] = []
 
             for soil_profile_name, l_coord in position_set_dict.items():
-                positions.append(SoilProfilePosition(name=soil_profile_name, l_coord=l_coord))
+                positions.append(SoilProfilePosition(profile_name=soil_profile_name, l_coord=l_coord))
 
-            sets.append(SoilProfilePositionSet(set_name=set_name, positions=positions))
+            sets.append(SoilProfilePositionSet(set_name=set_name, soil_profile_positions=positions))
 
         soil_profile_position_collection = SoilProfilePositionSetCollection(sets=sets)
 
