@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from toolbox.geometry import CharPointType, Side
 
 
+# TODO: LoadBlueprint maken (net als bij revetment)
 class Load(BaseModel):
     """Representation of a uniform load.
 

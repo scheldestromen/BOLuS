@@ -13,7 +13,7 @@ from toolbox.loads import LoadCollection
 from toolbox.model import Model, Scenario, Stage
 from toolbox.soils import SoilCollection
 from toolbox.state import create_state_points_from_subsoil
-from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection
+from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection, RevetmentProfile
 from toolbox.water import WaternetCollection
 
 
@@ -31,12 +31,14 @@ class StageConfig(BaseModel):
         stage_name (str): The name of the stage.
         geometry_name (str): The name of the geometry belonging to this stage.
         soil_profile_position_name (str): The name of the soil profile position belonging to this stage.
+        revetment_profile_name (str): Optional. The name of the revetment profile belonging to this stage.
         apply_state_points (bool): Whether the state points should be applied to this stage.
-        load_name (str): The name of the load belonging to this stage."""
+        load_name (str): Optional.The name of the load belonging to this stage."""
 
     stage_name: str
     geometry_name: str
     soil_profile_position_name: str
+    revetment_profile_name: Optional[str]
     apply_state_points: bool
     load_name: Optional[str]
 
@@ -85,11 +87,12 @@ class UserInputStructure(BaseModel):
     soils: SoilCollection
     soil_profiles: SoilProfileCollection
     soil_profile_positions: SoilProfilePositionSetCollection
+    revetment_profile_blueprints: RevetmentProfileBlueprintCollection
     loads: LoadCollection
     waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection
     model_configs: list[ModelConfig]
-
+    
 
 def create_stage(
     stage_config: StageConfig,
@@ -121,6 +124,7 @@ def create_stage(
         )
 
     surface_line = geometry.surface_line
+
     profile_positions = input_structure.soil_profile_positions.get_by_name(
         stage_config.soil_profile_position_name
     )
@@ -137,6 +141,21 @@ def create_stage(
         transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
         min_soil_profile_depth=input_structure.settings.min_soil_profile_depth,
     )
+
+    if stage_config.revetment_profile_name is not None:
+        revetment_profile_blueprint = input_structure.revetment_profile_blueprints.get_by_name(
+            stage_config.revetment_profile_name
+        )
+
+        revetment_profile=revetment_profile_blueprint.create_revetment_profile(
+                char_point_profile=geometry.char_point_profile
+            )
+
+        subsoil = add_revetment_profile_to_subsoil(
+            subsoil=subsoil,
+            revetment_profile=revetment_profile,
+            surface_line=surface_line,
+        )
 
     load = (
         input_structure.loads.get_by_name(stage_config.load_name)
@@ -183,8 +202,8 @@ def create_scenario(
         input_structure: The user-provided input structure.
 
     Returns:
-        A Scenario object.
-    """
+        A Scenario object."""
+    
     stages = [
         create_stage(
             stage_config=stage,
@@ -218,8 +237,8 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
         input_structure: The user-provided input structure
 
     Returns:
-        List[Model]: A list of Model objects.
-    """
+        List[Model]: A list of Model objects."""
+    
     models: List[Model] = []
 
     # Create Geometry objects from the input

@@ -17,7 +17,7 @@ from toolbox.geometry import (CharPointsProfileCollection,
 from toolbox.loads import LoadCollection, Load
 from toolbox.soils import SoilCollection, Soil
 from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
-    SoilProfilePositionSet, SoilProfilePositionSetCollection
+    SoilProfilePositionSet, SoilProfilePositionSetCollection, RevetmentLayerBlueprint, RevetmentProfileBlueprint, RevetmentProfileBlueprintCollection
 from toolbox.water import WaterLineType, WaternetCollection, HeadLine, ReferenceLine, Waternet
 from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
@@ -40,6 +40,7 @@ INPUT_SHEETS = {
     "soil_params": "Sterkteparameters",
     "soil_profiles": "Bodemprofielen",
     "soil_profile_positions": "Bodemopbouw",
+    "revetment_profile_blueprints": "Bekleding",
     "loads": "Belasting",
     "hydraulic_pressure": "Waterspanningsschematisatie",
     "grid_settings": "Gridinstellingen",
@@ -112,7 +113,7 @@ CHAR_POINT_COLS = {
 }
 
 SOIL_COLS = {
-    "name": "Naam",
+    "name": "Naam grondsoort",
     "unsaturated_weight": "Onverzadigd gewicht",
     "saturated_weight": "Verzadigd gewicht",
     "strength_model_above": "Sterktemodel boven",
@@ -138,6 +139,14 @@ LOAD_COLS = {
     "width": "Breedte",
     "position": "Positie",
     "direction": "Richting",
+}
+
+REVERTMENT_PROFILE_COLS = {
+    "revetment_profile_name": "Naam bekledingsprofiel",
+    "from_char_point": "Van punt",
+    "to_char_point": "Tot punt",
+    "thickness": "Dikte",
+    "soil_type": "Grondsoort",
 }
 
 HYDRAULIC_PRESSURE_COLS = {
@@ -200,6 +209,7 @@ CALCULATION_COLS = {
     "geometry_name": "Geometrie",
     "soil_profile_position_name": "Bodemopbouw",
     "apply_state_points": "State points toepassen",
+    "revetment_profile_name": "Bekledingsprofiel",
     "load_name": "Belasting",
     "grid_settings_set_name": "Glijvlakinstellingen",
     "evaluate": "Berekenen",
@@ -256,13 +266,15 @@ NAME_PHREATIC_LINE = "Freatisch"
 
 class RawUserInput(BaseModel):
     """Represents the raw user input"""
+    # TODO: Dit beter toelichten? Deze hoort hier eigenlijk niet thuis. Dit is niet specifiek Excel-gerelateerd.
 
     settings: dict[str, str | float]
     surface_lines: dict[str, list[float]]
     char_points: dict[str, dict[str, float | None]]
     soil_params: list[dict[str, float | str | None]]
-    soil_profiles: dict[str, list]
+    soil_profiles: dict[str, list[dict[str, float | str]]]
     soil_profile_positions: dict[str, dict[str, float | None]]
+    revetment_profile_blueprints: dict[str, list[dict[str, str | float]]]
     loads: list[dict]
     hydraulic_pressure: dict
     grid_settings: dict[str, list]
@@ -285,6 +297,7 @@ class ExcelInputReader(BaseModel):
             soil_params=ExcelInputReader.parse_soil_params(workbook),
             soil_profiles=ExcelInputReader.parse_soil_profiles(workbook),
             soil_profile_positions=ExcelInputReader.parse_soil_profile_positions(workbook),
+            revetment_profile_blueprints=ExcelInputReader.parse_revetment_profile_blueprints(workbook),
             loads=ExcelInputReader.parse_loads(workbook),
             hydraulic_pressure=ExcelInputReader.parse_hydraulic_pressure(workbook),
             grid_settings=ExcelInputReader.parse_grid_settings(workbook),
@@ -375,6 +388,23 @@ class ExcelInputReader(BaseModel):
         return soil_profile_positions
 
     @staticmethod
+    def parse_revetment_profile_blueprints(workbook: Any) -> dict[str, list[dict[str, str | float]]]:     
+        revetment_profile_blueprints = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["revetment_profile_blueprints"]],
+            header_row=1,
+            skip_rows=2,
+            col_dict=REVERTMENT_PROFILE_COLS,
+        )
+
+        for revetment_profile_blueprint in revetment_profile_blueprints:
+            revetment_profile_blueprint["from_char_point"] = INPUT_TO_CHAR_POINTS.get(revetment_profile_blueprint["from_char_point"])
+            revetment_profile_blueprint["to_char_point"] = INPUT_TO_CHAR_POINTS.get(revetment_profile_blueprint["to_char_point"])
+
+        revetment_profile_blueprints = group_dicts_by_key(revetment_profile_blueprints, group_by_key="revetment_profile_name")
+
+        return revetment_profile_blueprints
+    
+
     def parse_loads(workbook: Any):
         loads = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["loads"]],
@@ -521,6 +551,7 @@ class ExcelInputReader(BaseModel):
         return model_configs
 
 
+# TODO: De gehele validatie zou hier geborgd moeten zijn
 class RawInputToUserInputStructure:
     @staticmethod
     def convert(raw_input: RawUserInput) -> UserInputStructure:
@@ -532,15 +563,20 @@ class RawInputToUserInputStructure:
         Returns:
             The converted UserInputStructure"""
 
+        # TODO: Naam freatische lijn input maken (Instellingen), hier preprocessen en dan 
+        #  meegeven aan waternets.
+        char_points = RawInputToUserInputStructure.convert_char_points(raw_input.char_points)
+
         return UserInputStructure(
             settings=RawInputToUserInputStructure.convert_settings(raw_input.settings),
             surface_lines=RawInputToUserInputStructure.convert_surface_lines(raw_input.surface_lines),
-            char_points=RawInputToUserInputStructure.convert_char_points(raw_input.char_points),
+            char_points=char_points,
             soils=RawInputToUserInputStructure.convert_soil_collection(raw_input.soil_params),
             soil_profiles=RawInputToUserInputStructure.convert_soil_profile_collection(raw_input.soil_profiles),
             soil_profile_positions=RawInputToUserInputStructure.convert_soil_profile_positions(
                 raw_input.soil_profile_positions
             ),
+            revetment_profile_blueprints=RawInputToUserInputStructure.convert_revetment_profile_blueprint_collection(raw_input.revetment_profile_blueprints),
             loads=RawInputToUserInputStructure.convert_loads(raw_input.loads),
             waternets=RawInputToUserInputStructure.convert_waternet_collection(
                 raw_input.hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE
@@ -719,6 +755,37 @@ class RawInputToUserInputStructure:
         soil_profile_position_collection = SoilProfilePositionSetCollection(sets=sets)
 
         return soil_profile_position_collection
+    
+    @staticmethod
+    def convert_revetment_profile_blueprint_collection(
+        revetment_profile_dict: dict[str, list[dict[str, Any]]]
+        ) -> RevetmentProfileBlueprintCollection:
+        """Parses the dictionary into a RevetmentProfileBlueprintCollection
+
+        Args:
+            revetment_profile_dict: The dictionary to parse."""
+        
+        revetment_profile_blueprints: list[RevetmentProfileBlueprint] = []
+
+        for name, revetment_layer_list in revetment_profile_dict.items():
+            layer_blueprints: list[RevetmentLayerBlueprint] = []
+
+            for revetment_layer in revetment_layer_list:
+                layer_blueprints.append(RevetmentLayerBlueprint(
+                    soil_type=revetment_layer["soil_type"],
+                    thickness=revetment_layer["thickness"],
+                    char_point_types=(
+                        revetment_layer["from_char_point"],
+                        revetment_layer["to_char_point"],
+                    ),
+                ))
+            revetment_profile_blueprint = RevetmentProfileBlueprint(
+                name=name,
+                layer_blueprints=layer_blueprints,
+            )
+            revetment_profile_blueprints.append(revetment_profile_blueprint)
+
+        return RevetmentProfileBlueprintCollection(profile_blueprints=revetment_profile_blueprints)
 
     @staticmethod
     def convert_loads(loads_dicts: list[dict[str, Any]]) -> LoadCollection:
@@ -726,7 +793,7 @@ class RawInputToUserInputStructure:
 
         Args:
             loads_dicts: List with load dicts to parse. The keys should match
-              the Load attributes (name, magnitude, angle)."""
+              the Load attributes."""
         
         loads = [Load.model_validate(load_dict) for load_dict in loads_dicts]
 

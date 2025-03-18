@@ -66,7 +66,7 @@ class TestSoilPolygon(TestCase):
         self.shapely_polygon = Polygon([(0, 0), (0, 3), (3, 3), (3, 0)])
 
     def test_from_geolib_layer(self):
-        soil_polygon = SoilPolygon.from_geolib_layer("test", self.gl_layer)
+        soil_polygon = SoilPolygon.from_geolib_layer(self.gl_layer, "test")
         self.assertIsInstance(soil_polygon, SoilPolygon)
         self.assertEqual(soil_polygon.points, [(0, 0), (0, 1), (1, 1), (1, 0)])
 

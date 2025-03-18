@@ -4,12 +4,16 @@ from geolib import DStabilityModel
 from geolib.geometry.one import Point as GLPoint
 from geolib.models.dstability.internal import PersistableLayer
 from pydantic import BaseModel, model_validator
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, LineString
+from shapely.ops import split
 
 from toolbox.geolib_utils import get_by_id
-from toolbox.geometry import SurfaceLine
+from toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
 from utils.geometry_utils import geometry_to_polygons
 
+
+# TODO: Revetment toevoegen werkt, maar bij een (verticale) laagscheiding gaat het mis.
+#  Het stuk bodemopbouw waar de bekleding moet, moet wellicht eerst verwijderd worden.
 
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
@@ -112,7 +116,8 @@ class SoilPolygon(BaseModel):
     Attributes:
         soil_type (str): Type of the soil
         points (list): List of tuples each representing 2D-coordinates
-        dm_layer_id (str): Optional. The id of the layer in de DStabilityModel it belongs to
+        dm_layer_id (str): Optional. The id of the layer in de DStabilityModel it belongs to.
+          It is needed for adding state points and consolidations percentages due to uniform loads.
     """
 
     soil_type: str
@@ -120,8 +125,9 @@ class SoilPolygon(BaseModel):
     dm_layer_id: Optional[str] = None
 
     @classmethod
-    def from_geolib_layer(cls, soil_type: str, gl_layer: PersistableLayer) -> Self:
+    def from_geolib_layer(cls, gl_layer: PersistableLayer, soil_type: str) -> Self:
         """Creates a SoilPolygon from a GEOLib PersistableLayer"""
+
         points = [(point.X, point.Z) for point in gl_layer.Points]
         return cls(soil_type=soil_type, points=points, dm_layer_id=gl_layer.Id)
 
@@ -133,6 +139,7 @@ class SoilPolygon(BaseModel):
     @classmethod
     def from_shapely(cls, soil_type: str, polygon: Polygon) -> Self:
         """Creates a SoilPolygon from a Shapely Polygon"""
+
         if not isinstance(polygon, Polygon):
             raise ValueError(
                 f"Input must be a Shapely Polygon but is of type {type(polygon)}"
@@ -182,6 +189,189 @@ class Subsoil(BaseModel):
 
         return cls(soil_polygons=soil_polygons)
 
+
+class RevetmentLayer(BaseModel):
+    """Representation of a revetment layer. This is a layer at the surface level,
+    parallel to the surface line, with a certain thickness. This can represent 
+    the clay revetment or a road construction.
+    
+    Attributes:
+        soil_type (str): The type of soil (soil_code in D-Stability) of the revetment layer
+        thickness (float): The thickness of the revetment layer
+        l_coords (tuple[float, float]): The l-coordinates of the revetment layer (start and end).
+          These do not have to be in order."""
+
+    soil_type: str
+    thickness: float
+    l_coords: tuple[float, float]
+
+    def to_soil_polygon(self, surface_line: SurfaceLine) -> SoilPolygon:
+        """Returns a SoilPolygon instance representing the revetment layer
+        
+        Args:
+            surface_line (SurfaceLine): The surface line of the subsoil. The surface
+              should contain the l-coordinates of the points.
+
+        Returns:
+            SoilPolygon: The SoilPolygon instance representing the revetment layer
+        """
+
+        shapely_surface_line = LineString([(p.l, p.z) for p in surface_line.points])
+
+        # Buffer the surface line by the thickness of the revetment layer
+        buffer = shapely_surface_line.buffer(distance=self.thickness, cap_style='square')
+
+        # Create a helper polygon to clip the buffered to the defined l-coordinates
+        helper_top = max(p.z for p in surface_line.points) + 1
+        helper_bottom = min(p.z for p in surface_line.points) - 1
+        helper_left = min(self.l_coords)
+        helper_right = max(self.l_coords)
+        helper_polygon = Polygon(
+            [
+                (helper_left, helper_top), 
+                (helper_right, helper_top), 
+                (helper_right, helper_bottom), 
+                (helper_left, helper_bottom)
+            ]
+        )
+
+        # Clip the buffered surface line to the helper polygon
+        clipped_buffer = buffer.intersection(helper_polygon)
+
+        # Split the clipped buffer by the surface line
+        split_buffer = split(clipped_buffer, shapely_surface_line)
+
+        if len(split_buffer.geoms) != 2:
+            raise ValueError("Something went wrong creating a revetment layer")
+
+        # Get the lower polygon (under the surface line). This is the revetment layer
+        min_y_coord = min(p.bounds[1] for p in split_buffer.geoms)
+        revetment_layer = next(p for p in split_buffer.geoms if p.bounds[1] == min_y_coord)
+
+        return SoilPolygon.from_shapely(soil_type=self.soil_type, polygon=revetment_layer)
+
+
+class RevetmentProfile(BaseModel):
+    """Representation of all the revetment layers in a subsoil.
+    
+    Attributes:
+        name (str): The name of the revetment profile
+        layers (list[RevetmentLayer]): The revetment layers in the profile"""
+
+    layers: list[RevetmentLayer]
+
+    def to_soil_polygons(self, surface_line: SurfaceLine) -> list[SoilPolygon]:
+        """Returns a list of SoilPolygon instances representing the revetment layers
+        within the subsoil."""
+
+        soil_polygons: list[SoilPolygon] = []
+
+        for layer in self.layers:
+            soil_polygon = layer.to_soil_polygon(surface_line=surface_line)
+            soil_polygons.append(soil_polygon)
+
+        return soil_polygons
+    
+    def validate_non_overlapping(self) -> None:
+        """Validates that the revetment layers do not overlap"""
+
+        # TODO: Implement this
+        pass
+
+
+class RevetmentLayerBlueprint(BaseModel):
+    """Blueprint for creating revetment layers. This acts as a factory for RevetmentLayer instances.
+    
+    Attributes:
+        soil_type (str): The type of soil (soil_code in D-Stability) of the revetment layer
+        thickness (float): The thickness of the revetment layer
+        char_point_types (tuple[CharPointType, CharPointType]): The characteristic point types to use.
+    """
+
+    soil_type: str
+    thickness: float
+    char_point_types: tuple[CharPointType, CharPointType]
+
+    def create_revetment_layer(self, char_point_profile: CharPointsProfile) -> RevetmentLayer:
+        """Creates a concrete RevetmentLayer instance using a char_point_profile.
+        
+        Args:
+            char_point_profile (CharPointsProfile): The profile of the characteristic points.
+            
+        Returns:
+            RevetmentLayer: A concrete revetment layer with l_coords derived from char_points.
+        """
+        char_points = [char_point_profile.get_point_by_type(char_point_type) 
+                      for char_point_type in self.char_point_types]
+        
+        # Ensure both l coordinates are not None
+        if char_points[0].l is None or char_points[1].l is None:
+            raise ValueError("Characteristic points must have l-coordinates")
+            
+        l_coords = (float(char_points[0].l), float(char_points[1].l))
+        
+        return RevetmentLayer(
+            soil_type=self.soil_type, 
+            thickness=self.thickness,
+            l_coords=l_coords
+        )
+
+
+
+class RevetmentProfileBlueprint(BaseModel):
+    """Blueprint for creating a revetment profile. This acts as a factory for RevetmentProfile instances.
+    
+    A RevetmentProfileBlueprint can be used to create many RevetmentProfile instances, while
+    a RevetmentProfile has a one-to-one relationship with a subsoil.
+    
+    Attributes:
+        name (str): The name of the revetment profile
+        layer_blueprints (list[RevetmentLayerBlueprint]): The revetment layer blueprints (optional)
+        layers (list[RevetmentLayer]): The concrete revetment layers (optional)"""
+
+    name: str
+    layer_blueprints: Optional[list[RevetmentLayerBlueprint]] = None
+    
+    def create_revetment_profile(self, char_point_profile: CharPointsProfile) -> RevetmentProfile:
+        """Creates a revetment profile from the blueprints.
+        
+        Args:
+            char_point_profile (CharPointsProfile): The char points profile
+            
+        Returns:
+            RevetmentProfile: The revetment profile instance
+        """
+        if not self.layer_blueprints:
+            raise ValueError("No layer blueprints available")
+        
+        revetment_layers = [
+            blueprint.create_revetment_layer(char_point_profile) 
+            for blueprint in self.layer_blueprints
+            ]
+            
+        return RevetmentProfile(layers=revetment_layers)
+
+
+class RevetmentProfileBlueprintCollection(BaseModel):
+    """Collection of revetment profile blueprints
+    
+    Attributes:
+        profile_blueprints (list[RevetmentProfileBlueprint]): The revetment profile blueprints in the collection"""
+
+    profile_blueprints: list[RevetmentProfileBlueprint]
+
+    def get_by_name(self, name: str) -> RevetmentProfileBlueprint:
+        """Returns the RevetmentProfileBlueprint with the given name"""
+
+        profile_blueprint = next(
+            (profile_blueprint for profile_blueprint in self.profile_blueprints if profile_blueprint.name == name), 
+            None
+            )
+        if profile_blueprint:
+            return profile_blueprint
+        else:
+            raise ValueError(f"Could not find revetment profile blueprint with name '{name}'")
+        
 
 def subsoil_from_soil_profiles(
     surface_line: SurfaceLine,
@@ -275,5 +465,30 @@ def subsoil_from_soil_profiles(
                 soil_polygons.append(soil_polygon)
 
     subsoil = Subsoil(soil_polygons=soil_polygons)
+
+    return subsoil
+
+
+def add_revetment_profile_to_subsoil(
+    subsoil: Subsoil,
+    revetment_profile: RevetmentProfile,
+    surface_line: SurfaceLine,
+) -> Subsoil:
+    """Adds a revetment profile to the subsoil.
+    
+    Args:
+        subsoil: The subsoil to add the revetment profile to
+        revetment_profile: The revetment profile to add
+        surface_line: The surface line of the subsoil
+    """
+
+    # Check if l-coordinates are present in the surface line
+    surface_line.check_l_coordinates_present()
+
+    # Create soil polygons from the revetment profile and add them to the subsoil
+    revetment_polygons = revetment_profile.to_soil_polygons(surface_line=surface_line)
+
+    # The revetment polygons should be added last. Else they will be removed by subseding polygons
+    subsoil.soil_polygons.extend(revetment_polygons)
 
     return subsoil

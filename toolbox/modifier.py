@@ -73,6 +73,7 @@ def set_subsoil(
     """
     geometry = dm._get_geometry(scenario_index=scenario_index, stage_index=stage_index)
 
+    # TODO: Omgang met bestaande berekeningen
     if geometry.Layers:
         raise ValueError(
             f"Geometry of scenario {scenario_index} and stage {stage_index} "
@@ -175,7 +176,7 @@ def add_uniform_load(
     subsoil = Subsoil.from_geolib(
         dm=dm, scenario_index=scenario_index, stage_index=stage_index
     )
-    consolidations = []
+    consolidations: list[Consolidation] = []
 
     for soil_polygon in subsoil.soil_polygons:
         soil = soil_collection.get_by_name(soil_polygon.soil_type)

@@ -23,8 +23,8 @@ def remove_key(d: dict, key: Any):
 
 
 def group_dicts_by_key(
-    dicts: list, group_by_key: str, remove_group_key: bool = True
-) -> dict:
+    dicts: list[dict[Any, Any]], group_by_key: str, remove_group_key: bool = True
+) -> dict[Any, list[dict[Any, Any]]]:
     """
     Takes a list of dictionaries and groups them by the specified key. It returns
     a dictionary with the group_by_key as key and the list of dictionaries as value.
