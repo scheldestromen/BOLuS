@@ -386,12 +386,13 @@ def create_d_stability_model(model: Model):
                     stage_index=dm.current_stage,
                 )
 
-            set_waternet(
-                waternet=stage.waternet,
-                dm=dm,
-                scenario_index=dm.current_scenario,
-                stage_index=dm.current_stage,
-            )
+            if stage.waternet is not None:
+                set_waternet(
+                    waternet=stage.waternet,
+                    dm=dm,
+                    scenario_index=dm.current_scenario,
+                    stage_index=dm.current_stage,
+                )
 
     return dm
 

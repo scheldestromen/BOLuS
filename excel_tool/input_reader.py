@@ -58,6 +58,7 @@ SETTINGS_COLS = {"setting": "Instelling", "value": "Waarde"}
 SETTINGS_NAMES = {
     "Minimale diepte ondergrond": "min_soil_profile_depth",
     "Rekenen": "execute_calculations",
+    "Waterspanningen toepassen": "apply_waternet",
     "Uitvoermap": "output_dir",
 }
 
@@ -340,6 +341,9 @@ class ExcelInputReader(BaseModel):
         )
         settings["execute_calculations"] = INPUT_TO_BOOL[
             settings["execute_calculations"]
+        ]
+        settings["apply_waternet"] = INPUT_TO_BOOL[
+            settings["apply_waternet"]
         ]
         return settings
 

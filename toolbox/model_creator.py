@@ -22,6 +22,7 @@ class GeneralSettings(BaseModel):
 
     min_soil_profile_depth: float
     execute_calculations: bool
+    apply_waternet: bool
     output_dir: Optional[str] = None
 
 
@@ -150,13 +151,19 @@ def create_stage(
 
         revetment_profile=revetment_profile_blueprint.create_revetment_profile(
                 char_point_profile=geometry.char_point_profile
-            )
+        )
 
         subsoil = add_revetment_profile_to_subsoil(
             subsoil=subsoil,
             revetment_profile=revetment_profile,
             surface_line=surface_line,
         )
+
+    waternet = input_structure.waternets.get_waternet(
+        calc_name=calc_name,
+        scenario_name=scenario_name,
+        stage_name=stage_config.stage_name,
+    ) if input_structure.settings.apply_waternet else None  # TODO: Tijdelijke oplossing voor implementatie waterspanningen
 
     load = (
         input_structure.loads.get_by_name(stage_config.load_name)
@@ -181,9 +188,7 @@ def create_stage(
         subsoil=subsoil,
         state_points=state_points,
         load=load,
-        waternet=input_structure.waternets.get_waternet(
-            calc_name, scenario_name, stage_config.stage_name
-        ),
+        waternet=waternet,
     )
 
 
