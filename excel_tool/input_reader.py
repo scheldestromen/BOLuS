@@ -4,11 +4,16 @@ Reads the input file
 
 from pathlib import Path
 from typing import Any
+import warnings
 
 import openpyxl
 from geolib.models.dstability.internal import OptionsType
 from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel, Soil as GLSoil           
 from pydantic import BaseModel
+
+# Filter to suppress only the specific warning about Data Validation extension
+warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed", 
+                      category=UserWarning, module="openpyxl.worksheet._reader")
 
 from toolbox.geometry import (CharPointsProfileCollection,
                               CharPointType, Side,
