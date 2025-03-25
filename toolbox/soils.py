@@ -1,11 +1,8 @@
-# Grondsoorten
-from typing import Any, List, Optional
+from typing import Optional
 
 from geolib.soils.soil import Soil as GLSoil
+from geolib.models.dstability.internal import PersistableShadingTypeEnum
 from pydantic import BaseModel
-
-from utils.dict_utils import check_for_missing_keys
-from utils.list_utils import check_list_of_dicts_for_duplicate_values
 
 
 class Soil(BaseModel):
@@ -25,6 +22,8 @@ class Soil(BaseModel):
     pop: Optional[float] = None
     ocr: Optional[float] = None
     consolidation_traffic_load: Optional[int] = None
+    color: Optional[str] = None
+    pattern: Optional[PersistableShadingTypeEnum] = None
 
 
 class SoilCollection(BaseModel):
@@ -36,7 +35,7 @@ class SoilCollection(BaseModel):
     """
 
     name: Optional[str] = None
-    soils: List[Soil]
+    soils: list[Soil]
 
     def get_by_name(self, name: str) -> Soil:
         """Returns the soil with the given name"""

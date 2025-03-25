@@ -4,6 +4,7 @@ from geolib import DStabilityModel
 from geolib.geometry.one import Point as GLPoint
 from geolib.models.dstability.internal import \
     SoilCollection as GLSoilCollection
+from geolib.models.dstability.internal import PersistableSoilVisualization
 from geolib.models.dstability.loads import Consolidation, UniformLoad
 from geolib.models.dstability.states import (DStabilityStatePoint,
                                              DStabilityStress)
@@ -37,10 +38,15 @@ def set_geometry(
 
 
 def add_soil_collection(
-    soil_collection: SoilCollection, dm: DStabilityModel
+    soil_collection: SoilCollection, 
+    dm: DStabilityModel,
 ) -> DStabilityModel:
     """Adds the soils in the soil_collection to the DStabilityModel.
-    Soils already present are kept.
+    Soils already present are kept. 
+    
+    The soils in the soil_collection can have a color. it is assumed that the color.
+    The color must contain the opacity such that the format is #AARRGGBB in which 
+    A is the opacity.
 
     Args:
         soil_collection: The soil_collection to add to the DStabilityModel
@@ -51,7 +57,16 @@ def add_soil_collection(
     """
 
     for soil in soil_collection.soils:
-        dm.add_soil(soil.gl_soil)
+        soil_id = dm.add_soil(soil.gl_soil)
+
+        if soil.color is not None or soil.pattern is not None:
+            dm.datastructure.soilvisualizations.SoilVisualizations.append(
+                PersistableSoilVisualization(
+                    Color=soil.color,
+                    PersistableShadingType=soil.pattern,
+                    SoilId=str(soil_id),
+                )
+            )
 
     return dm
 

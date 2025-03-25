@@ -8,7 +8,8 @@ import warnings
 
 import openpyxl
 from geolib.models.dstability.internal import OptionsType
-from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel, Soil as GLSoil           
+from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel, Soil as GLSoil
+from geolib.models.dstability.internal import PersistableShadingTypeEnum
 from pydantic import BaseModel
 
 # Filter to suppress only the specific warning about Data Validation extension
@@ -57,6 +58,7 @@ SETTINGS_COLS = {"setting": "Instelling", "value": "Waarde"}
 SETTINGS_NAMES = {
     "Minimale diepte ondergrond": "min_soil_profile_depth",
     "Rekenen": "execute_calculations",
+    "Uitvoermap": "output_dir",
 }
 
 CHAR_POINT_COLS = {
@@ -129,6 +131,8 @@ SOIL_COLS = {
     "strength_exponent_m": "Sterkte-exponent m",
     "pop": "POP",
     "consolidation_traffic_load": "Consolidatie belasting",
+    "color": "Kleur",
+    "pattern": "Patroon",
 }
 
 SOIL_PROFILE_COLS = {
@@ -266,6 +270,19 @@ INPUT_TO_SEARCH_MODE = {
     "Thorough": OptionsType.THOROUGH,
 }
 
+INPUT_TO_PATTERN = {
+    "Stip fijn": PersistableShadingTypeEnum.DOT_A,
+    "Sip matig": PersistableShadingTypeEnum.DOT_B,
+    "Stip grof": PersistableShadingTypeEnum.DOT_C,
+    "Stip zeer grof": PersistableShadingTypeEnum.DOT_D,
+    "Horizontaal fijn": PersistableShadingTypeEnum.HORIZONTAL_A,
+    "Horizontaal grof": PersistableShadingTypeEnum.HORIZONTAL_B,
+    "Diagonaal 1 fijn": PersistableShadingTypeEnum.DIAGONAL_A,
+    "Diagonaal 1 grof": PersistableShadingTypeEnum.DIAGONAL_B,
+    "Diagonaal 2 fijn": PersistableShadingTypeEnum.DIAGONAL_C,
+    "Diagonaal 2 grof": PersistableShadingTypeEnum.DIAGONAL_D,
+}
+
 NAME_PHREATIC_LINE = "Freatisch"
 
 
@@ -274,7 +291,7 @@ class RawUserInput(BaseModel):
     # TODO: Dit beter toelichten? Deze hoort hier eigenlijk niet thuis. Dit is niet specifiek Excel-gerelateerd.
     #  - Refactor, toelichting en type-hints uitwerken
 
-    settings: dict[str, str | float]
+    settings: dict[str, Any]
     surface_lines: dict[str, list[float]]
     char_points: dict[str, dict[str, float | None]]
     soil_params: list[dict[str, float | str | None]]
@@ -358,6 +375,9 @@ class ExcelInputReader(BaseModel):
             skip_rows=2,
             col_dict=SOIL_COLS,
         )
+        for soil_param in soil_params:
+            soil_param["pattern"] = INPUT_TO_PATTERN.get(soil_param["pattern"])
+
         return soil_params
 
     @staticmethod
@@ -716,6 +736,8 @@ class RawInputToUserInputStructure:
                 gl_soil=gl_soil,
                 pop=soil_dict["pop"],
                 consolidation_traffic_load=soil_dict["consolidation_traffic_load"],
+                color=soil_dict["color"],
+                pattern=soil_dict["pattern"],
             )
             soils.append(soil)
 

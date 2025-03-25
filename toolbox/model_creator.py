@@ -22,6 +22,7 @@ class GeneralSettings(BaseModel):
 
     min_soil_profile_depth: float
     execute_calculations: bool
+    output_dir: Optional[str] = None
 
 
 class StageConfig(BaseModel):
