@@ -4,7 +4,7 @@ from geolib import DStabilityModel
 from geolib.geometry.one import Point as GLPoint
 from geolib.models.dstability.internal import PersistableLayer
 from pydantic import BaseModel, model_validator
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import Polygon, LineString, GeometryCollection, MultiPolygon
 from shapely.ops import split
 
 from toolbox.geolib_utils import get_by_id
@@ -14,6 +14,7 @@ from utils.geometry_utils import geometry_to_polygons
 
 # TODO: Revetment toevoegen werkt, maar bij een (verticale) laagscheiding gaat het mis.
 #  Het stuk bodemopbouw waar de bekleding moet, moet wellicht eerst verwijderd worden.
+#  - Omgang met nauwkeurigheid van punten?
 
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
@@ -190,6 +191,54 @@ class Subsoil(BaseModel):
         return cls(soil_polygons=soil_polygons)
 
 
+    def remove_soil_polygons(self, remove_polygons: list[SoilPolygon]) -> None:
+        """Substracts a polygon from the subsoil. This is done by 'clipping' the subsoil
+        polygon with the polygon to substract. This is needed for adding soil layers 
+        to the subsoil that overlap with the subsoil, like a revetment layer.
+
+        This method modifies the subsoil in place.
+
+        Args:
+            remove_polygons (list[SoilPolygon]): The polygons to remove"""
+        
+        # Create a new list to store the modified polygons
+        new_soil_polygons: list[SoilPolygon] = []
+        
+        for soil_polygon in self.soil_polygons:
+            soil_polygon_shapely = soil_polygon.to_shapely()
+
+            should_keep = True
+            for polygon in remove_polygons:
+                polygon_shapely = polygon.to_shapely()
+                
+                if soil_polygon_shapely.intersects(polygon_shapely):
+                    should_keep = False
+                    clipped_polygon = soil_polygon_shapely.difference(polygon_shapely)
+                    
+                    # Handle different geometry types
+                    if isinstance(clipped_polygon, (GeometryCollection, MultiPolygon)):
+                        for geom in clipped_polygon.geoms:
+                            if isinstance(geom, Polygon):
+                                new_soil_polygon = SoilPolygon.from_shapely(
+                                    soil_type=soil_polygon.soil_type, polygon=geom
+                                )
+                                new_soil_polygons.append(new_soil_polygon)
+
+                    elif isinstance(clipped_polygon, Polygon):
+                        new_soil_polygon = SoilPolygon.from_shapely(
+                            soil_type=soil_polygon.soil_type, polygon=clipped_polygon
+                        )
+                        new_soil_polygons.append(new_soil_polygon)
+                    break  # No need to check other layers once we've clipped this polygon
+            
+            # If the polygon wasn't clipped, keep it
+            if should_keep:
+                new_soil_polygons.append(soil_polygon)
+        
+        # Replace the old list with the new one
+        self.soil_polygons = new_soil_polygons
+
+
 class RevetmentLayer(BaseModel):
     """Representation of a revetment layer. This is a layer at the surface level,
     parallel to the surface line, with a certain thickness. This can represent 
@@ -223,7 +272,7 @@ class RevetmentLayer(BaseModel):
 
         # Create a helper polygon to clip the buffered to the defined l-coordinates
         helper_top = max(p.z for p in surface_line.points) + 1
-        helper_bottom = min(p.z for p in surface_line.points) - 1
+        helper_bottom = min(p.z for p in surface_line.points) - 100
         helper_left = min(self.l_coords)
         helper_right = max(self.l_coords)
         helper_polygon = Polygon(
@@ -315,7 +364,6 @@ class RevetmentLayerBlueprint(BaseModel):
             thickness=self.thickness,
             l_coords=l_coords
         )
-
 
 
 class RevetmentProfileBlueprint(BaseModel):
@@ -488,7 +536,10 @@ def add_revetment_profile_to_subsoil(
     # Create soil polygons from the revetment profile and add them to the subsoil
     revetment_polygons = revetment_profile.to_soil_polygons(surface_line=surface_line)
 
-    # The revetment polygons should be added last. Else they will be removed by subseding polygons
+    # Subtract the revetment polygons from the subsoil (so they don't overlap)
+    subsoil.remove_soil_polygons(revetment_polygons)
+
+    # Add the revetment polygons to the subsoil
     subsoil.soil_polygons.extend(revetment_polygons)
 
     return subsoil

@@ -267,6 +267,7 @@ NAME_PHREATIC_LINE = "Freatisch"
 class RawUserInput(BaseModel):
     """Represents the raw user input"""
     # TODO: Dit beter toelichten? Deze hoort hier eigenlijk niet thuis. Dit is niet specifiek Excel-gerelateerd.
+    #  - Refactor, toelichting en type-hints uitwerken
 
     settings: dict[str, str | float]
     surface_lines: dict[str, list[float]]
