@@ -20,6 +20,7 @@ from toolbox.water import WaternetCollection
 class GeneralSettings(BaseModel):
     """Set of general settings"""
 
+    calculate_l_coordinates: bool
     min_soil_profile_depth: float
     execute_calculations: bool
     apply_waternet: bool
@@ -251,7 +252,8 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
     geometries = create_geometries(
         surface_line_collection=input_structure.surface_lines,
         char_point_collection=input_structure.char_points,
-        char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE,
+        char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE,  # TODO: Invoer maken voor deze parameter
+        calculate_l_coordinates=input_structure.settings.calculate_l_coordinates,
     )
 
     # Create a Model for each calculation dictionary

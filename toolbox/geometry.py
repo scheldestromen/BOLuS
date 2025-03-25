@@ -110,8 +110,8 @@ class ProfileLine(BaseModel):
               on of the two outer points.
             ref_point: The reference point. Defines the origin of the
               l-axis. This point should be aligned with the SurfaceLine.
-              If not specified then the left_point is the origin.
-        """
+              If not specified then the left_point is the origin."""
+        
         if left_point not in [self.points[0], self.points[-1]]:
             raise ValueError(
                 f"The given argument `left_point` is neither one "
@@ -128,6 +128,13 @@ class ProfileLine(BaseModel):
             dist_from_left = point.distance(left_point)
             point.l = dist_from_left - shift
 
+        self.check_l_coordinates_increasing()
+
+    def set_x_as_l_coordinates(self):
+        """Sets the x-coordinates as the l-coordinates"""
+        for point in self.points:
+            point.l = point.x
+        
         self.check_l_coordinates_increasing()
 
 
@@ -311,21 +318,34 @@ class Geometry(BaseModel):
 def create_geometries(
     surface_line_collection: SurfaceLineCollection,
     char_point_collection: CharPointsProfileCollection,
-    char_type_left_point: Literal[
-        CharPointType.SURFACE_LEVEL_LAND_SIDE, CharPointType.SURFACE_LEVEL_WATER_SIDE
-    ],
+    calculate_l_coordinates: bool = True,
+    char_type_left_point: Optional[
+        Literal[
+            CharPointType.SURFACE_LEVEL_LAND_SIDE, CharPointType.SURFACE_LEVEL_WATER_SIDE
+        ]
+    ] = None,
     char_type_ref_point: Optional[CharPointType] = None,
+
 ) -> list[Geometry]:
     """Creates a list of Geometry objects.
 
     Args:
         surface_line_collection: The collection of surface lines
         char_point_collection: The collection of characteristic points
+        calculate_l_coordinates: Whether the l-coordinates should be calculated
         char_type_left_point: The characteristic point type to use for
           the left point of the surface line. This can only be either
-          of the outer points of the surface line
+          of the outer points of the surface line. Only used if
+          calculate_l_coordinates is True.
         char_type_ref_point: The characteristic point type to use for
-          the reference point (l=0) of the surface line"""
+          the reference point (l=0) of the surface line. Only used if
+          calculate_l_coordinates is True.
+        """
+
+    # If calculate_l_coordinates, then we need char_type_left_point and char_type_ref_point
+    if calculate_l_coordinates:
+        if char_type_left_point is None:
+            raise ValueError("A left point is required if calculate_l_coordinates is True (3D-geometry)")
 
     surf_names = [surf.name for surf in surface_line_collection.surface_lines]
     char_names = [char.name for char in char_point_collection.char_points_profiles]
@@ -343,18 +363,21 @@ def create_geometries(
     for surface_line in surface_line_collection.surface_lines:
         char_points_profile = char_point_collection.get_by_name(surface_line.name)
 
-        left_point = char_points_profile.get_point_by_type(char_type_left_point)
-
         if char_type_ref_point:
             ref_point = char_points_profile.get_point_by_type(char_type_ref_point)
         else:
             ref_point = None
 
         # Set l-coordinates and check if they are increasing
-        surface_line.set_l_coordinates(left_point=left_point, ref_point=ref_point)
-        char_points_profile.set_l_coordinates(
-            left_point=left_point, ref_point=ref_point
-        )
+        if calculate_l_coordinates:
+            left_point = char_points_profile.get_point_by_type(char_type_left_point)
+            surface_line.set_l_coordinates(left_point=left_point, ref_point=ref_point)
+            char_points_profile.set_l_coordinates(
+                left_point=left_point, ref_point=ref_point
+            )
+        else:
+            surface_line.set_x_as_l_coordinates()
+            char_points_profile.set_x_as_l_coordinates()
 
         geometries.append(
             Geometry(

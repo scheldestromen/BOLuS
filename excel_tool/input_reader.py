@@ -56,6 +56,7 @@ INPUT_SHEETS = {
 SETTINGS_COLS = {"setting": "Instelling", "value": "Waarde"}
 
 SETTINGS_NAMES = {
+    "Dimensie geometrie": "calculate_l_coordinates",
     "Minimale diepte ondergrond": "min_soil_profile_depth",
     "Rekenen": "execute_calculations",
     "Waterspanningen toepassen": "apply_waternet",
@@ -230,6 +231,11 @@ INPUT_TO_BOOL = {
     "Nee": False,
 }
 
+INPUT_TO_CALCULATE_L_COORDINATES = {
+    "2D": False,
+    "3D": True,
+}
+
 INPUT_TO_CHAR_POINTS = {
     "Maaiveld buitenwaarts": CharPointType.SURFACE_LEVEL_WATER_SIDE,
     "Teen geul": CharPointType.TOE_CANAL,
@@ -344,6 +350,9 @@ class ExcelInputReader(BaseModel):
         ]
         settings["apply_waternet"] = INPUT_TO_BOOL[
             settings["apply_waternet"]
+        ]
+        settings["calculate_l_coordinates"] = INPUT_TO_CALCULATE_L_COORDINATES[
+            settings["calculate_l_coordinates"]
         ]
         return settings
 
