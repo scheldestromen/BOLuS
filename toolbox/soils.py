@@ -13,13 +13,17 @@ class Soil(BaseModel):
 
     Attributes:
         gl_soil: The GEOLib soil object
-        pop (float): The Pre-overburden pressure value for the soil
+        pop_mean (float): The Pre-overburden pressure value for the soil
+        pop_std (float): The standard deviation of the Pre-overburden pressure value for the soil
+        probabilistic_pop (bool): Whether the Pre-overburden pressure value is probabilistic
         ocr (float): The over-consolidation ratio (not implemented)
         consolidation_traffic_load (int): Percentage [0 - 100%] of consolidation traffic load
     """
 
     gl_soil: GLSoil
-    pop: Optional[float] = None
+    pop_mean: Optional[float] = None
+    pop_std: Optional[float] = None
+    probabilistic_pop: Optional[bool] = None
     ocr: Optional[float] = None
     consolidation_traffic_load: Optional[int] = None
     color: Optional[str] = None

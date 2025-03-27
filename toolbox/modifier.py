@@ -7,7 +7,8 @@ from geolib.models.dstability.internal import \
 from geolib.models.dstability.internal import PersistableSoilVisualization
 from geolib.models.dstability.loads import Consolidation, UniformLoad
 from geolib.models.dstability.states import (DStabilityStatePoint,
-                                             DStabilityStress)
+                                             DStabilityStress,
+                                             PersistableStochasticParameter)
 from shapely import Point
 
 from toolbox.calculation_settings import (BishopBruteForce,
@@ -106,7 +107,7 @@ def set_subsoil(
 
     return dm
 
-
+# TODO: correlatie nog implementeren
 def add_state_points(
     state_points: list[StatePoint],
     dm: DStabilityModel,
@@ -135,11 +136,22 @@ def add_state_points(
             polygon = soil_polygon.to_shapely()
 
             if polygon.contains(point):
+                if state_point.probabilistic_pop is True:
+                    stochastic_parameter = PersistableStochasticParameter(
+                        Mean=state_point.pop_mean,
+                        StandardDeviation=state_point.pop_std,
+                        IsProbabilistic=state_point.probabilistic_pop,
+                    )
+                else:
+                    stochastic_parameter = PersistableStochasticParameter()
+
                 dm.add_state_point(
                     state_point=DStabilityStatePoint(
                         layer_id=soil_polygon.dm_layer_id,
                         point=GLPoint(x=state_point.x, z=state_point.z),
-                        stress=DStabilityStress(pop=state_point.pop),
+                        stress=DStabilityStress(pop=state_point.pop_mean,
+                                                stochastic_parameter=stochastic_parameter),
+                        is_probabilistic=state_point.probabilistic_pop,
                     ),
                     scenario_index=scenario_index,
                     stage_index=stage_index,

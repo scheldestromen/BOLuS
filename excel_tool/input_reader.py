@@ -127,11 +127,22 @@ SOIL_COLS = {
     "saturated_weight": "Verzadigd gewicht",
     "strength_model_above": "Sterktemodel boven",
     "strength_model_below": "Sterktemodel onder",
-    "c": "Cohesie c",
-    "phi": "Wrijvingshoek φ",
-    "shear_stress_ratio_s": "Schuifspanningsratio S",
-    "strength_exponent_m": "Sterkte-exponent m",
-    "pop": "POP",
+    "probabilistic_strength_parameters": "Probabilistische sterkteparameters",
+    "c_mean": "c gem.",
+    "c_std": "c std",
+    "phi_mean": "φ gem.",
+    "phi_std": "φ std",
+    "psi_mean": "ψ gem.",
+    "psi_std": "ψ std",
+    "shear_stress_ratio_s_mean": "S gem.",
+    "shear_stress_ratio_s_std": "S std",
+    "strength_exponent_m_mean": "m gem.",
+    "strength_exponent_m_std": "m std",
+    "pop_mean": "POP gem.",
+    "pop_std": "POP std",
+    "probabilistic_pop": "Probabilistische POP",
+    "correlation_c-phi": "c-φ",
+    "correlation_s-m": "S-m",
     "consolidation_traffic_load": "Consolidatie belasting",
     "color": "Kleur",
     "pattern": "Patroon",
@@ -386,12 +397,16 @@ class ExcelInputReader(BaseModel):
     def parse_soil_params(workbook: Any) -> list[dict[str, float | str | None]]:
         soil_params = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["soil_params"]],
-            header_row=1,
-            skip_rows=2,
+            header_row=2,
+            skip_rows=3,
             col_dict=SOIL_COLS,
         )
         for soil_param in soil_params:
             soil_param["pattern"] = INPUT_TO_PATTERN.get(soil_param["pattern"])
+            soil_param["probabilistic_strength_parameters"] = INPUT_TO_BOOL.get(soil_param["probabilistic_strength_parameters"])
+            soil_param["probabilistic_pop"] = INPUT_TO_BOOL.get(soil_param["probabilistic_pop"])
+            soil_param["correlation_c-phi"] = INPUT_TO_BOOL.get(soil_param["correlation_c-phi"])
+            soil_param["correlation_s-m"] = INPUT_TO_BOOL.get(soil_param["correlation_s-m"])
 
         return soil_params
 
@@ -679,19 +694,39 @@ class RawInputToUserInputStructure:
 
     @staticmethod
     def convert_soil_collection(soil_list: list[dict[str, float | str | None]]) -> SoilCollection:
-        """Initiates a SoilCollection from a list of soil dictionaries.
+        """Parses the dictionary into a SoilCollection
 
-        Each dict should have keys:
+        Args:
+            soil_list: list of dictionaries with the soil properties
+
+        Returns:
+            A SoilCollection instance
+
+        Required keys in the dictionary:
           name: str
           unsaturated_weight: float
           saturated_weight: float
           strength_model_above: Literal["Shansep", "Mohr-Coulomb", "Su Table"]
           strength_model_below: Literal["Shansep", "Mohr-Coulomb", "Su Table"]
-          c: float
-          phi: float
-          shear_stress_ratio_s: float
-          strength_exponent_m: float
-          pop: float
+          probabilistic_strength_parameters: bool
+          c_mean: float
+          c_std: float
+          phi_mean: float
+          phi_std: float
+          psi_mean: float
+          psi_std: float
+          shear_stress_ratio_s_mean: float
+          shear_stress_ratio_s_std: float
+          strength_exponent_m_mean: float
+          strength_exponent_m_std: float
+          probabilistic_pop: bool
+          pop_mean: float
+          pop_std: float
+          correlation_s-m: bool
+          correlation_c-phi: bool
+          consolidation_traffic_load: float
+          color: str
+          pattern: str
 
         Args:
             soil_list: list of dictionaries with the soil properties
@@ -702,12 +737,25 @@ class RawInputToUserInputStructure:
             "saturated_weight",
             "strength_model_above",
             "strength_model_below",
-            "c",
-            "phi",
-            "shear_stress_ratio_s",
-            "strength_exponent_m",
-            "pop",
+            "probabilistic_strength_parameters",
+            "c_mean",
+            "c_std",
+            "phi_mean",
+            "phi_std",
+            "psi_mean",
+            "psi_std",
+            "shear_stress_ratio_s_mean",
+            "shear_stress_ratio_s_std",
+            "strength_exponent_m_mean",
+            "strength_exponent_m_std",
+            "probabilistic_pop",
+            "pop_mean",
+            "pop_std",
+            "correlation_s-m",
+            "correlation_c-phi",
             "consolidation_traffic_load",
+            "color",
+            "pattern",
         ]
 
         strength_model = {
@@ -726,6 +774,7 @@ class RawInputToUserInputStructure:
             check_for_missing_keys(soil_dict, req_keys)
 
             gl_soil = GLSoil()
+            gl_soil.is_probabilistic = soil_dict["probabilistic_strength_parameters"]
             gl_soil.name = soil_dict["name"]
             gl_soil.code = soil_dict["name"]
             gl_soil.soil_weight_parameters.unsaturated_weight = soil_dict[
@@ -740,18 +789,33 @@ class RawInputToUserInputStructure:
             gl_soil.shear_strength_model_below_phreatic_level = strength_model[
                 soil_dict["strength_model_below"]
             ]
-            gl_soil.mohr_coulomb_parameters.cohesion.mean = soil_dict["c"]
-            gl_soil.mohr_coulomb_parameters.friction_angle.mean = soil_dict["phi"]
+            gl_soil.mohr_coulomb_parameters.cohesion.mean = soil_dict["c_mean"]
+            gl_soil.mohr_coulomb_parameters.cohesion.standard_deviation = soil_dict["c_std"]
+            gl_soil.mohr_coulomb_parameters.cohesion.is_probabilistic = True if soil_dict["c_std"] else False
+            gl_soil.mohr_coulomb_parameters.friction_angle.mean = soil_dict["phi_mean"]
+            gl_soil.mohr_coulomb_parameters.friction_angle.standard_deviation = soil_dict["phi_std"]
+            gl_soil.mohr_coulomb_parameters.friction_angle.is_probabilistic = True if soil_dict["phi_std"] else False
+            gl_soil.mohr_coulomb_parameters.dilatancy_angle.mean = soil_dict["psi_mean"]
+            gl_soil.mohr_coulomb_parameters.dilatancy_angle.standard_deviation = soil_dict["psi_std"]
+            gl_soil.mohr_coulomb_parameters.dilatancy_angle.is_probabilistic = True if soil_dict["psi_std"] else False
             gl_soil.undrained_parameters.shear_strength_ratio.mean = soil_dict[
-                "shear_stress_ratio_s"
+                "shear_stress_ratio_s_mean"
             ]
+            gl_soil.undrained_parameters.shear_strength_ratio.standard_deviation = soil_dict["shear_stress_ratio_s_std"]
+            gl_soil.undrained_parameters.shear_strength_ratio.is_probabilistic = True if soil_dict["shear_stress_ratio_s_std"] else False
             gl_soil.undrained_parameters.strength_increase_exponent.mean = soil_dict[
-                "strength_exponent_m"
+                "strength_exponent_m_mean"
             ]
+            gl_soil.undrained_parameters.strength_increase_exponent.standard_deviation = soil_dict["strength_exponent_m_std"]
+            gl_soil.undrained_parameters.strength_increase_exponent.is_probabilistic = True if soil_dict["strength_exponent_m_std"] else False
+            gl_soil.mohr_coulomb_parameters.cohesion_and_friction_angle_correlated = soil_dict["correlation_c-phi"]
+            gl_soil.undrained_parameters.shear_strength_ratio_and_shear_strength_exponent_correlated = soil_dict["correlation_s-m"]
 
             soil = Soil(
                 gl_soil=gl_soil,
-                pop=soil_dict["pop"],
+                pop_mean=soil_dict["pop_mean"],
+                pop_std=soil_dict["pop_std"],
+                probabilistic_pop=soil_dict["probabilistic_pop"],
                 consolidation_traffic_load=soil_dict["consolidation_traffic_load"],
                 color=soil_dict["color"],
                 pattern=soil_dict["pattern"],
