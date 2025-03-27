@@ -137,7 +137,8 @@ class UpliftVanParticleSwarm(GridSettings):
     grid_2_offset_vertical: float
     grid_2_height: float
     grid_2_width: float
-    top_tangent_area: float
+    tangent_area_position: CharPointType
+    tangent_area_offset: float
     height_tangent_area: float
     search_mode: OptionsType
 
@@ -178,16 +179,23 @@ class UpliftVanParticleSwarm(GridSettings):
             top_left=GLPoint(x=min(grid_2_l1, grid_2_l2), z=grid_2_top),
         )
 
+        # Create the tangent area
+        tangent_area_ref_point = char_points_profile.get_point_by_type(self.tangent_area_position)
+        tangent_area_top = tangent_area_ref_point.z + self.tangent_area_offset
+
+        # Slip plane constraints
+        slip_plane_constraints = self.slip_plane_constraints_to_geolib(
+            char_points_profile
+        )
+
         # Create the analysis method
         analysis_method = DStabilityUpliftVanParticleSwarmAnalysisMethod(
             options_type=self.search_mode,
             search_area_a=search_area_a,
             search_area_b=search_area_b,
             tangent_area_height=self.height_tangent_area,
-            tangent_area_top_z=self.top_tangent_area,
-            slip_plane_constraints=self.slip_plane_constraints_to_geolib(
-                char_points_profile
-            ),
+            tangent_area_top_z=tangent_area_top,
+            slip_plane_constraints=slip_plane_constraints,
         )
 
         return analysis_method
@@ -203,7 +211,8 @@ class BishopBruteForce(GridSettings):
     grid_points_horizontal: int
     grid_points_vertical: int
     grid_points_per_m: int
-    bottom_tangent_line: float
+    tangent_line_position: CharPointType
+    tangent_line_offset: float
     tangent_line_count: int
     tangent_lines_per_m: int
     move_grid: bool
@@ -230,6 +239,12 @@ class BishopBruteForce(GridSettings):
             space=1 / self.grid_points_per_m,
         )
 
+        # Create the tangent line
+        tangent_lines_ref_point = char_points_profile.get_point_by_type(self.tangent_line_position)
+        tangent_lines_top = tangent_lines_ref_point.z + self.tangent_line_offset
+        tangent_lines_bottom = tangent_lines_top - (self.tangent_line_count - 1) / self.tangent_lines_per_m
+
+        # Slip plane constraints
         slip_plane_constraints = self.slip_plane_constraints_to_geolib(
             char_points_profile
         )
@@ -238,7 +253,7 @@ class BishopBruteForce(GridSettings):
             extrapolate_search_space=self.move_grid,
             search_grid=search_grid,
             slip_plane_constraints=slip_plane_constraints,
-            bottom_tangent_line_z=self.bottom_tangent_line,
+            bottom_tangent_line_z=tangent_lines_bottom,
             number_of_tangent_lines=self.tangent_line_count,
             space_tangent_lines=1 / self.tangent_lines_per_m,
         )
