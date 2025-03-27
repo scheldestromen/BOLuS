@@ -23,11 +23,11 @@ if __name__ == "__main__":
     # Convert the RawUserInput to models
     input_structure = RawInputToUserInputStructure.convert(raw_user_input)
 
-    # Output directory - must not be synced with OneDrive when calculations are run
+    # Output directory - must NOT be synced with OneDrive when calculations are run
     output_dir = input_structure.settings.output_dir
 
     if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Rekenmap")
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Uitvoer")
     else:
         if not os.path.exists(output_dir):
             raise FileNotFoundError(f"Output directory '{output_dir}' does not exist")

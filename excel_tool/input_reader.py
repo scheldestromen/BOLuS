@@ -181,7 +181,8 @@ GRID_SETTINGS_COLS = {
     "grid_points_horizontal": "Aantal gridpunten horizontaal",
     "grid_points_vertical": "Aantal gridpunten verticaal",
     "grid_points_per_m": "Dichtheid gridpunten",
-    "bottom_tangent_line": "Onderste tangentlijn",
+    "tangent_line_position": "Positie tangentlijnen",
+    "tangent_line_offset": "Offset tangentlijnen verticaal",
     "tangent_line_count": "Aantal tangentlijnen",
     "tangent_lines_per_m": "Dichtheid tangentlijnen",
     "move_grid": "Grid verplaatsen",
@@ -197,7 +198,8 @@ GRID_SETTINGS_COLS = {
     "grid_2_offset_vertical": "Offset verticaal grid 2",
     "grid_2_height": "Hoogte grid 2",
     "grid_2_width": "Breedte grid 2",
-    "top_tangent_area": "Bovenzijde tangentvlak",
+    "tangent_area_position": "Positie tangentvlak",
+    "tangent_area_offset": "Offset tangentvlak verticaal",
     "height_tangent_area": "Hoogte tangentvlak",
     "search_mode": "Zoekmodus",
     "apply_minimum_slip_plane_dimensions": "Minimale glijvlakdimensies toepassen",
@@ -505,8 +507,10 @@ class ExcelInputReader(BaseModel):
 
             for key in [
                 "grid_position",
+                "tangent_line_position",
                 "grid_1_position",
                 "grid_2_position",
+                "tangent_area_position",
                 "zone_a_position",
                 "zone_b_position",
             ]:
@@ -958,7 +962,7 @@ class RawInputToUserInputStructure:
         Args:
             grid_settings_dicts (dict): The dictionary to parse"""
         
-        grid_settings_sets = []
+        grid_settings_sets: list[GridSettingsSet] = []
 
         for set_name, grid_settings_list in grid_settings_dicts.items():
             grid_settings = [
