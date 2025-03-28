@@ -324,14 +324,6 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertFalse(soil.gl_soil.undrained_parameters.shear_strength_ratio_and_shear_strength_exponent_correlated)
         self.assertEqual(soil.consolidation_traffic_load, 50.)
 
-    def test_convert_soil_collection_duplicate_names(self):
-        """Test converting soil collection with duplicate names"""
-
-        soil_dicts = self.raw_input.soil_params * 2
-
-        with self.assertRaises(ValueError):
-            RawInputToUserInputStructure.convert_soil_collection(soil_dicts)
-
     def test_convert_soil_collection_missing_keys(self):
         """Test converting soil collection with duplicate names"""
 

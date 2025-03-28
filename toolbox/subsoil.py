@@ -12,9 +12,10 @@ from toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
 from utils.geometry_utils import geometry_to_polygons
 
 
-# TODO: Revetment toevoegen werkt, maar bij een (verticale) laagscheiding gaat het mis.
-#  Het stuk bodemopbouw waar de bekleding moet, moet wellicht eerst verwijderd worden.
-#  - Omgang met nauwkeurigheid van punten?
+# TODO: Zou mooi zijn om een baseclass voor collectins te maken. Dan
+#  moeten de collections allen de attribute items hebben, en de items de attribute name.
+#  - Eénmaal implementeren van get_by_name (indien a)
+#  - Eénmaal implementeren van check op dubbele namen
 
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
@@ -431,11 +432,11 @@ def subsoil_from_soil_profiles(
     """Creates an instance of Subsoil from one or more SoilProfile objects.
 
     Args:
+        surface_line: SurfaceLine object
         soil_profiles: One or more SoilProfile objects
         transitions: List of transition l-coordinates. Optional in case of single profile.
           Must be in ascending order and of length len(soil_profiles) - 1
-        surface_line: SurfaceLine object
-        thickness_bottom_layer: The layer thickness of the bottom layer. Defaults to 5 m.
+        thickness_bottom_layer: The layer thickness of the bottom layer. Defaults to 1 m.
           The layer bottoms are determined by the layer underneath, but the bottom layer
           of a SoilProfile does not have that.
         min_soil_profile_depth: (Optional) The minimum depth of a SoilProfile. If the SoilProfile
@@ -460,7 +461,7 @@ def subsoil_from_soil_profiles(
         )
 
     surface_line.check_l_coordinates_present()
-    l_coords = [p.l for p in surface_line.points]
+    l_coords: list[float] = [p.l for p in surface_line.points]  # type: ignore
 
     # Determine the bounds of the soil profiles, which are the given transitions
     # and the minimum and maximum l-coordinates

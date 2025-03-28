@@ -149,7 +149,7 @@ SOIL_COLS = {
 }
 
 SOIL_PROFILE_COLS = {
-    "name": "Naam grondprofiel",
+    "name": "Naam bodemprofiel",
     "soil_type": "Grondsoort",
     "top": "Bovenkant",
 }
@@ -309,6 +309,7 @@ class RawUserInput(BaseModel):
     """Represents the raw user input"""
     # TODO: Dit beter toelichten? Deze hoort hier eigenlijk niet thuis. Dit is niet specifiek Excel-gerelateerd.
     #  - Refactor, toelichting en type-hints uitwerken
+    # TODO: Dit is wellicht een goede plek om de validatie van de input te doen.
 
     settings: dict[str, Any]
     surface_lines: dict[str, list[float]]
@@ -373,6 +374,7 @@ class ExcelInputReader(BaseModel):
         surface_lines = parse_key_row(
             sheet=workbook[INPUT_SHEETS["surface_lines"]], skip_rows=1
         )
+        
         return surface_lines
 
     @staticmethod
@@ -383,9 +385,8 @@ class ExcelInputReader(BaseModel):
             skip_rows=1,
             col_dict=CHAR_POINT_COLS,
         )
-        check_list_of_dicts_for_duplicate_values(
-            char_points, "name"
-        )  # Check uniqueness of names
+        check_list_of_dicts_for_duplicate_values(char_points, "name")
+
         char_points = {
             char_dict["name"]: remove_key(char_dict, "name")
             for char_dict in char_points
@@ -400,6 +401,8 @@ class ExcelInputReader(BaseModel):
             skip_rows=3,
             col_dict=SOIL_COLS,
         )
+        check_list_of_dicts_for_duplicate_values(soil_params, "name") 
+
         for soil_param in soil_params:
             soil_param["pattern"] = INPUT_TO_PATTERN.get(soil_param["pattern"])
             soil_param["probabilistic_strength_parameters"] = INPUT_TO_BOOL.get(soil_param["probabilistic_strength_parameters"])
@@ -428,6 +431,7 @@ class ExcelInputReader(BaseModel):
             sheet=workbook[INPUT_SHEETS["soil_profile_positions"]],
             skip_rows=2,
         )
+
         # Process soil profile positions
         soil_profile_positions = {}
 
@@ -467,6 +471,7 @@ class ExcelInputReader(BaseModel):
             skip_rows=2,
             col_dict=LOAD_COLS,
         )
+        check_list_of_dicts_for_duplicate_values(loads, "name")
 
         for line_dict in loads:
             line_dict["direction"] = INPUT_TO_SIDE.get(line_dict["direction"])
@@ -539,6 +544,9 @@ class ExcelInputReader(BaseModel):
                 line_dict[key] = INPUT_TO_BOOL.get(line_dict[key])
 
         grid_settings = group_dicts_by_key(grid_settings, group_by_key="name_set")
+        for grid_setting in grid_settings.values():
+            check_list_of_dicts_for_duplicate_values(grid_setting, "grid_setting_name")
+
         return grid_settings
 
     @staticmethod
@@ -608,7 +616,6 @@ class ExcelInputReader(BaseModel):
         return model_configs
 
 
-# TODO: De gehele validatie zou hier geborgd moeten zijn
 class RawInputToUserInputStructure:
     @staticmethod
     def convert(raw_input: RawUserInput) -> UserInputStructure:
@@ -764,9 +771,6 @@ class RawInputToUserInputStructure:
         }
 
         soils: list[Soil] = []
-
-        # Check that soil names are unique
-        check_list_of_dicts_for_duplicate_values(soil_list, "name")
 
         for soil_dict in soil_list:
             # Check that all the required keys are present

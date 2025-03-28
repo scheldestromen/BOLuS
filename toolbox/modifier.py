@@ -340,29 +340,31 @@ def create_d_stability_model(model: Model):
         else:
             dm.add_scenario(label=scenario.name, notes=scenario.notes, set_current=True)
 
-        for i_grid, grid_settings in enumerate(
-            scenario.grid_settings_set.grid_settings
-        ):
-            char_point_profile = scenario.stages[-1].geometry.char_point_profile
+        # Add the grid settings
+        if scenario.grid_settings_set is not None:
+            for i_grid, grid_settings in enumerate(
+                scenario.grid_settings_set.grid_settings
+            ):
+                char_point_profile = scenario.stages[-1].geometry.char_point_profile
 
-            if i_grid == 0:
-                # Overwrite existing default calculation
-                dm.scenarios[dm.current_scenario].Calculations[
-                    0
-                ].Label = grid_settings.grid_setting_name
-                analysis_method = grid_settings.to_geolib(
-                    char_points_profile=char_point_profile
-                )
-                dm.set_model(
-                    analysis_method=analysis_method, scenario_index=dm.current_scenario
-                )
-            else:
-                add_calculation_with_grid_settings(
-                    grid_settings=grid_settings,
-                    dm=dm,
-                    scenario_index=dm.current_scenario,
-                    char_points_profile=char_point_profile,
-                )
+                if i_grid == 0:
+                    # Overwrite existing default calculation
+                    dm.scenarios[dm.current_scenario].Calculations[
+                        0
+                    ].Label = grid_settings.grid_setting_name
+                    analysis_method = grid_settings.to_geolib(
+                        char_points_profile=char_point_profile
+                    )
+                    dm.set_model(
+                        analysis_method=analysis_method, scenario_index=dm.current_scenario
+                    )
+                else:
+                    add_calculation_with_grid_settings(
+                        grid_settings=grid_settings,
+                        dm=dm,
+                        scenario_index=dm.current_scenario,
+                        char_points_profile=char_point_profile,
+                    )
 
         for j, stage in enumerate(scenario.stages):
             if j == 0:
