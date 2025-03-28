@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from geolib.models.dstability.internal import OptionsType
 from geolib.soils import ShearStrengthModelTypePhreaticLevel
-
+from geolib.models.dstability.internal import PersistableShadingTypeEnum
 from excel_tool.input_reader import (ExcelInputReader, RawUserInput,
                                      RawInputToUserInputStructure,
                                      INPUT_TO_BOOL, INPUT_TO_CHAR_POINTS,
@@ -15,7 +15,7 @@ from excel_tool.input_reader import (ExcelInputReader, RawUserInput,
 from toolbox.geometry import CharPointType, Side, Point, SurfaceLineCollection, CharPointsProfileCollection, CharPoint
 from toolbox.model import Stage
 from toolbox.soils import SoilCollection, Soil
-from toolbox.subsoil import SoilProfileCollection, SoilProfile, SoilProfilePositionSet,SoilProfilePositionSetCollection, SoilProfilePosition
+from toolbox.subsoil import SoilProfileCollection, SoilProfile, SoilProfilePositionSet,SoilProfilePositionSetCollection, SoilProfilePosition, RevetmentProfileBlueprintCollection, RevetmentProfileBlueprint, RevetmentLayerBlueprint
 from toolbox.loads import LoadCollection, Load
 from toolbox.water import WaternetCollection, Waternet, HeadLine
 from toolbox.calculation_settings import SlipPlaneModel, GridSettingsSetCollection, GridSettingsSet, BishopBruteForce, \
@@ -47,7 +47,8 @@ class TestRawInputToUserInputStructure(TestCase):
             "grid_points_horizontal": 10,
             "grid_points_vertical": 11,
             "grid_points_per_m": 2,
-            "bottom_tangent_line": -8,
+            "tangent_line_position": CharPointType.DIKE_TOE_LAND_SIDE,
+            "tangent_line_offset": -1.0,
             "tangent_line_count": 12,
             "tangent_lines_per_m": 3,
             "move_grid": True,
@@ -67,6 +68,8 @@ class TestRawInputToUserInputStructure(TestCase):
             "grid_2_offset_vertical": 6.0,
             "grid_2_height": 7.0,
             "grid_2_width": 8.0,
+            "tangent_area_position": CharPointType.DIKE_TOE_LAND_SIDE,
+            "tangent_area_offset": -2.0,
             "top_tangent_area": 0.5,
             "height_tangent_area": 10.0,
             "search_mode": OptionsType.DEFAULT,
@@ -92,7 +95,10 @@ class TestRawInputToUserInputStructure(TestCase):
         self.raw_input = RawUserInput(
             settings={
                 "min_soil_profile_depth": 10.0, 
-                "execute_calculations": True
+                "execute_calculations": True,
+                "apply_waternet": True,
+                "calculate_l_coordinates": True,
+                "output_dir": None
                 },
             surface_lines={"Profile 1": [0, 0, 0, 1, 0, 1]},  # [x, y, z, x, y, z]
             char_points={
@@ -159,12 +165,25 @@ class TestRawInputToUserInputStructure(TestCase):
                 "saturated_weight": 18.0,
                 "strength_model_above": "Mohr-Coulomb",
                 "strength_model_below": "Mohr-Coulomb",
-                "c": 5.0,
-                "phi": 30.0,
-                "shear_stress_ratio_s": 0.25,
-                "strength_exponent_m": 0.8,
-                "pop": 10.0,
+                "probabilistic_strength_parameters": True,
+                "c_mean": 5.0,
+                "c_std": 0.0,
+                "phi_mean": 30.0,
+                "phi_std": 1.0,
+                "psi_mean": 1.0,
+                "psi_std": 0.0,
+                "shear_stress_ratio_s_mean": 0.25,
+                "shear_stress_ratio_s_std": 0.02,
+                "strength_exponent_m_mean": 0.8,
+                "strength_exponent_m_std": 0.0,
+                "probabilistic_pop": True,
+                "pop_mean": 10.0,
+                "pop_std": 1.0,
+                "correlation_c-phi": False,
+                "correlation_s-m": False,
                 "consolidation_traffic_load": 50,
+                "color": "#80336600",
+                "pattern": PersistableShadingTypeEnum.DIAGONAL_A,
             }],
             soil_profiles={
                 "Profile 1": [
@@ -180,6 +199,16 @@ class TestRawInputToUserInputStructure(TestCase):
                     "Soil Profile 1": None,
                     "Soil Profile 2": 20,
                 },
+            },
+            revetment_profile_blueprints={
+                "Grasbekleding": [
+                    {"revetment_profile_name": "Grasbekleding",
+                    "from_char_point": CharPointType.DIKE_CREST_LAND_SIDE,
+                    "to_char_point": CharPointType.DIKE_TOE_LAND_SIDE,
+                    "thickness": 0.5,
+                    "soil_type": "Clay",
+                    }
+                ]
             },
             loads=[{
                 "name": "Traffic",
@@ -213,8 +242,9 @@ class TestRawInputToUserInputStructure(TestCase):
                             "geometry_name": "Profile 1",
                             "soil_profile_position_name": "Calc 1",
                             "apply_state_points": True,
+                            "revetment_profile_name": "Grasbekleding",
                             "load_name": "Traffic",
-                            "evaluate": True
+                            "grid_settings_set_name": "Set 1",
                         }
                     ]
                 }]
@@ -228,6 +258,9 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertIsInstance(settings, GeneralSettings)
         self.assertEqual(settings.min_soil_profile_depth, 10.0)
         self.assertTrue(settings.execute_calculations)
+        self.assertTrue(settings.apply_waternet)
+        self.assertTrue(settings.calculate_l_coordinates)
+        self.assertEqual(settings.output_dir, None)
 
     def test_convert_surface_lines(self):
         """Test converting surface lines"""
@@ -268,11 +301,27 @@ class TestRawInputToUserInputStructure(TestCase):
                          ShearStrengthModelTypePhreaticLevel.MOHR_COULOMB)
         self.assertEqual(soil.gl_soil.shear_strength_model_below_phreatic_level,
                          ShearStrengthModelTypePhreaticLevel.MOHR_COULOMB)
+        self.assertTrue(soil.gl_soil.is_probabilistic)
+        self.assertFalse(soil.gl_soil.mohr_coulomb_parameters.cohesion.is_probabilistic)  # std set to 0, so should be deterministic
         self.assertEqual(soil.gl_soil.mohr_coulomb_parameters.cohesion.mean, 5.0)
+        self.assertEqual(soil.gl_soil.mohr_coulomb_parameters.cohesion.standard_deviation, 0.0)
+        self.assertTrue(soil.gl_soil.mohr_coulomb_parameters.friction_angle.is_probabilistic) # std has value, so should be probabilistic
         self.assertEqual(soil.gl_soil.mohr_coulomb_parameters.friction_angle.mean, 30.0)
+        self.assertEqual(soil.gl_soil.mohr_coulomb_parameters.friction_angle.standard_deviation, 1.0)
+        self.assertFalse(soil.gl_soil.mohr_coulomb_parameters.dilatancy_angle.is_probabilistic)
+        self.assertEqual(soil.gl_soil.mohr_coulomb_parameters.dilatancy_angle.mean, 1.0)
+        self.assertEqual(soil.gl_soil.mohr_coulomb_parameters.dilatancy_angle.standard_deviation, 0.0)
         self.assertEqual(soil.gl_soil.undrained_parameters.shear_strength_ratio.mean, 0.25)
+        self.assertEqual(soil.gl_soil.undrained_parameters.shear_strength_ratio.standard_deviation, 0.02)
+        self.assertTrue(soil.gl_soil.undrained_parameters.shear_strength_ratio.is_probabilistic)
+        self.assertFalse(soil.gl_soil.undrained_parameters.strength_increase_exponent.is_probabilistic)
         self.assertEqual(soil.gl_soil.undrained_parameters.strength_increase_exponent.mean, 0.8)
-        self.assertEqual(soil.pop, 10.0)
+        self.assertEqual(soil.gl_soil.undrained_parameters.strength_increase_exponent.standard_deviation, 0.0)
+        self.assertTrue(soil.probabilistic_pop)
+        self.assertEqual(soil.pop_mean, 10.0)
+        self.assertEqual(soil.pop_std, 1.0)
+        self.assertFalse(soil.gl_soil.mohr_coulomb_parameters.cohesion_and_friction_angle_correlated)
+        self.assertFalse(soil.gl_soil.undrained_parameters.shear_strength_ratio_and_shear_strength_exponent_correlated)
         self.assertEqual(soil.consolidation_traffic_load, 50.)
 
     def test_convert_soil_collection_duplicate_names(self):
@@ -324,6 +373,23 @@ class TestRawInputToUserInputStructure(TestCase):
         position = position_set.soil_profile_positions[1]
         self.assertEqual(position.profile_name, "Soil Profile 2")
         self.assertEqual(position.l_coord, 20)
+
+    def test_convert_revetment_profile_blueprint_collection(self):
+        """Test converting revetment profile blueprint collection"""
+
+        revetment_profile_blueprints = RawInputToUserInputStructure.convert_revetment_profile_blueprint_collection(
+            self.raw_input.revetment_profile_blueprints
+            )
+        self.assertIsInstance(revetment_profile_blueprints, RevetmentProfileBlueprintCollection)
+        self.assertEqual(len(revetment_profile_blueprints.profile_blueprints), 1)
+        revetment_profile_blueprint = revetment_profile_blueprints.profile_blueprints[0]
+        self.assertIsInstance(revetment_profile_blueprint, RevetmentProfileBlueprint)
+        self.assertEqual(revetment_profile_blueprint.name, "Grasbekleding")
+        revetment_layer = revetment_profile_blueprint.layer_blueprints[0]
+        self.assertIsInstance(revetment_layer, RevetmentLayerBlueprint)
+        self.assertEqual(revetment_layer.soil_type, "Clay")
+        self.assertEqual(revetment_layer.thickness, 0.5)
+        self.assertCountEqual(revetment_layer.char_point_types, (CharPointType.DIKE_CREST_LAND_SIDE, CharPointType.DIKE_TOE_LAND_SIDE))
 
     def test_convert_loads(self):
         """Test converting loads"""
@@ -418,7 +484,8 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertEqual(grid_setting.grid_points_horizontal, 10)
         self.assertEqual(grid_setting.grid_points_vertical, 11)
         self.assertEqual(grid_setting.grid_points_per_m, 2)
-        self.assertEqual(grid_setting.bottom_tangent_line, -8)
+        self.assertEqual(grid_setting.tangent_line_position, CharPointType.DIKE_TOE_LAND_SIDE)
+        self.assertEqual(grid_setting.tangent_line_offset, -1.0)
         self.assertEqual(grid_setting.tangent_line_count, 12)
         self.assertEqual(grid_setting.tangent_lines_per_m, 3)
         self.assertTrue(grid_setting.move_grid)
@@ -436,60 +503,19 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertIsInstance(scenario, ScenarioConfig)
         self.assertEqual(scenario.scenario_name, "Scenario 1")
         self.assertEqual(len(scenario.stages), 1)
+        self.assertEqual(scenario.grid_settings_set_name, "Set 1")
+
         stage = scenario.stages[0]
         self.assertIsInstance(stage, StageConfig)
         self.assertEqual(stage.stage_name, "Stage 1")
         self.assertTrue(stage.apply_state_points)
+        self.assertEqual(stage.geometry_name, "Profile 1")
+        self.assertEqual(stage.soil_profile_position_name, "Calc 1")
+        self.assertEqual(stage.revetment_profile_name, "Grasbekleding")
+        self.assertEqual(stage.load_name, "Traffic")
 
     def test_convert(self):
         """Integral test"""
 
         user_input_structure = RawInputToUserInputStructure.convert(self.raw_input)
         self.assertIsInstance(user_input_structure, UserInputStructure)
-
-
-# class TestInputMappings(TestCase):
-#     """Tests for input mapping dictionaries"""
-#
-#     def test_bool_mapping(self):
-#         """Test boolean value mapping"""
-#         self.assertTrue(INPUT_TO_BOOL["Ja"])
-#         self.assertFalse(INPUT_TO_BOOL["Nee"])
-#
-#     def test_char_points_mapping(self):
-#         """Test characteristic points mapping"""
-#         self.assertEqual(
-#             INPUT_TO_CHAR_POINTS["Kruin binnentalud"],
-#             CharPointType.DIKE_CREST_LAND_SIDE
-#         )
-#         self.assertEqual(
-#             INPUT_TO_CHAR_POINTS["Maaiveld buitenwaarts"],
-#             CharPointType.SURFACE_LEVEL_WATER_SIDE
-#         )
-#
-#     def test_side_mapping(self):
-#         """Test side mapping"""
-#         self.assertEqual(INPUT_TO_SIDE["Binnenwaarts"], Side.LAND_SIDE)
-#         self.assertEqual(INPUT_TO_SIDE["Buitenwaarts"], Side.WATER_SIDE)
-#
-#     def test_water_line_type_mapping(self):
-#         """Test water line type mapping"""
-#         self.assertEqual(
-#             INPUT_TO_WATER_LINE_TYPE["Stijghoogtelijn"],
-#             WaterLineType.HEADLINE
-#         )
-#         self.assertEqual(
-#             INPUT_TO_WATER_LINE_TYPE["Referentielijn"],
-#             WaterLineType.REFERENCE_LINE
-#         )
-#
-#     def test_slip_plane_model_mapping(self):
-#         """Test slip plane model mapping"""
-#         self.assertEqual(
-#             INPUT_TO_SLIP_PLANE_MODEL["Bishop"],
-#             SlipPlaneModel.BISHOP_BRUTE_FORCE
-#         )
-#         self.assertEqual(
-#             INPUT_TO_SLIP_PLANE_MODEL["Uplift Van"],
-#             SlipPlaneModel.UPLIFT_VAN_PARTICLE_SWARM
-#         )

@@ -28,8 +28,8 @@ class TestModifierAddSoilCollection(TestCase):
     def setUp(self):
         self.soil_collection = SoilCollection(
             soils=[
-                Soil(gl_soil=GLSoil(code="Klei"), pop=20),
-                Soil(gl_soil=GLSoil(code="Zand"), pop=None),
+                Soil(gl_soil=GLSoil(code="Klei"), pop_mean=20, probabilistic_pop=False),
+                Soil(gl_soil=GLSoil(code="Zand"), pop_mean=None, probabilistic_pop=False),
             ]
         )
 
@@ -87,8 +87,8 @@ class TestModifierAddStatePoints(TestCase):
     def setUp(self):
         self.soil_collection = SoilCollection(
             soils=[
-                Soil(gl_soil=GLSoil(code="Klei"), pop=20),
-                Soil(gl_soil=GLSoil(code="Zand"), pop=None),
+                Soil(gl_soil=GLSoil(code="Klei"), pop_mean=20, probabilistic_pop=False),
+                Soil(gl_soil=GLSoil(code="Zand"), pop_mean=None, probabilistic_pop=False),
             ]
         )
         self.subsoil = Subsoil(
@@ -102,7 +102,7 @@ class TestModifierAddStatePoints(TestCase):
 
     def test_add_state_points(self):
         # Setup test
-        state_points = [StatePoint(x=0.5, z=0.5, pop=20)]
+        state_points = [StatePoint(x=0.5, z=0.5, pop_mean=20, probabilistic_pop=False)]
         dm = DStabilityModel()
         add_soil_collection(self.soil_collection, dm)
         set_subsoil(subsoil=self.subsoil, dm=dm, scenario_index=0, stage_index=0)
@@ -112,7 +112,7 @@ class TestModifierAddStatePoints(TestCase):
 
         self.assertEqual(len(dm.datastructure.states[0].StatePoints), len(state_points))
         added_state_point = dm.datastructure.states[0].StatePoints[0]
-        self.assertEqual(added_state_point.Stress.Pop, state_points[0].pop)
+        self.assertEqual(added_state_point.Stress.Pop, state_points[0].pop_mean)
         self.assertEqual(added_state_point.Point.X, state_points[0].x)
         self.assertEqual(added_state_point.Point.Z, state_points[0].z)
 

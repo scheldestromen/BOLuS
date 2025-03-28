@@ -1,4 +1,4 @@
-from unittest import TestCase
+from unittest import TestCase, main
 
 from excel_tool.input_reader import RawInputToUserInputStructure
 from toolbox.water import (HeadLine, ReferenceLine, WaterLineType,

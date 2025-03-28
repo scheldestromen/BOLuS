@@ -1,9 +1,8 @@
-from typing import Optional
+from typing import Optional, Self
 
 from geolib.soils.soil import Soil as GLSoil
 from geolib.models.dstability.internal import PersistableShadingTypeEnum
-from pydantic import BaseModel
-
+from pydantic import BaseModel, model_validator
 
 class Soil(BaseModel):
     """Represents a soil type.
@@ -29,6 +28,15 @@ class Soil(BaseModel):
     color: Optional[str] = None
     pattern: Optional[PersistableShadingTypeEnum] = None
 
+    @model_validator(mode="after")
+    def required_fields(self) -> Self:
+        if self.pop_mean is not None and self.probabilistic_pop is None:
+            self.probabilistic_pop = False
+            
+        if self.probabilistic_pop is True and self.pop_std is None:
+            raise ValueError("pop_std must be provided if probabilistic_pop is True")
+        
+        return self
 
 class SoilCollection(BaseModel):
     """Represents a collection of soil types.

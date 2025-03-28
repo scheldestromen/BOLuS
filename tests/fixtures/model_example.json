@@ -13,7 +13,7 @@
                         "cohesion": {
                             "is_probabilistic": false,
                             "mean": null,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -24,7 +24,7 @@
                         "dilatancy_angle": {
                             "is_probabilistic": false,
                             "mean": null,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -35,7 +35,7 @@
                         "friction_angle": {
                             "is_probabilistic": false,
                             "mean": null,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -57,11 +57,16 @@
                         "is_delta_angle_automatically_calculated": null,
                         "cohesion_and_friction_angle_correlated": null
                     },
+                    "sigma_tau_parameters": {
+                        "sigma_tau_table": null,
+                        "probabilistic_sigma_tau_table": null,
+                        "sigma_tau_table_variation_coefficient": null
+                    },
                     "undrained_parameters": {
                         "shear_strength_ratio": {
-                            "is_probabilistic": false,
+                            "is_probabilistic": true,
                             "mean": 0.3,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": 0.005,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -69,11 +74,11 @@
                             "low_design_value": null,
                             "high_design_value": null
                         },
-                        "shear_strength_ratio_and_shear_strength_exponent_correlated": null,
+                        "shear_strength_ratio_and_shear_strength_exponent_correlated": true,
                         "strength_increase_exponent": {
-                            "is_probabilistic": false,
+                            "is_probabilistic": true,
                             "mean": 0.9,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": 0.05,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -462,7 +467,7 @@
                     "shear_strength_model_above_phreatic_level": "SHANSEP",
                     "shear_strength_model_below_phreatic_level": "SHANSEP",
                     "is_drained": null,
-                    "is_probabilistic": null,
+                    "is_probabilistic": true,
                     "earth_pressure_coefficients": {
                         "earth_pressure_coefficients_type": 1,
                         "active": null,
@@ -494,9 +499,13 @@
                     },
                     "shell_factor": null
                 },
-                "pop": 15.0,
+                "pop_mean": 15.0,
+                "pop_std": null,
+                "probabilistic_pop": false,
                 "ocr": null,
-                "consolidation_traffic_load": 70
+                "consolidation_traffic_load": 70,
+                "color": "#80EEBB88",
+                "pattern": "HorizontalA"
             },
             {
                 "gl_soil": {
@@ -508,7 +517,7 @@
                         "cohesion": {
                             "is_probabilistic": false,
                             "mean": null,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -519,7 +528,7 @@
                         "dilatancy_angle": {
                             "is_probabilistic": false,
                             "mean": null,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -530,7 +539,7 @@
                         "friction_angle": {
                             "is_probabilistic": false,
                             "mean": null,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -552,11 +561,16 @@
                         "is_delta_angle_automatically_calculated": null,
                         "cohesion_and_friction_angle_correlated": null
                     },
+                    "sigma_tau_parameters": {
+                        "sigma_tau_table": null,
+                        "probabilistic_sigma_tau_table": null,
+                        "sigma_tau_table_variation_coefficient": null
+                    },
                     "undrained_parameters": {
                         "shear_strength_ratio": {
                             "is_probabilistic": false,
                             "mean": 0.25,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -568,7 +582,7 @@
                         "strength_increase_exponent": {
                             "is_probabilistic": false,
                             "mean": 0.85,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -957,7 +971,7 @@
                     "shear_strength_model_above_phreatic_level": "SHANSEP",
                     "shear_strength_model_below_phreatic_level": "SHANSEP",
                     "is_drained": null,
-                    "is_probabilistic": null,
+                    "is_probabilistic": false,
                     "earth_pressure_coefficients": {
                         "earth_pressure_coefficients_type": 1,
                         "active": null,
@@ -989,9 +1003,13 @@
                     },
                     "shell_factor": null
                 },
-                "pop": 8.0,
+                "pop_mean": 8.0,
+                "pop_std": 1.0,
+                "probabilistic_pop": true,
                 "ocr": null,
-                "consolidation_traffic_load": 50
+                "consolidation_traffic_load": 50,
+                "color": "#80336600",
+                "pattern": "DiagonalA"
             },
             {
                 "gl_soil": {
@@ -1001,9 +1019,9 @@
                     "color": "grey",
                     "mohr_coulomb_parameters": {
                         "cohesion": {
-                            "is_probabilistic": false,
-                            "mean": 0.0,
-                            "standard_deviation": 0.0,
+                            "is_probabilistic": true,
+                            "mean": 2.0,
+                            "standard_deviation": 0.1,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -1013,8 +1031,8 @@
                         },
                         "dilatancy_angle": {
                             "is_probabilistic": false,
-                            "mean": null,
-                            "standard_deviation": 0.0,
+                            "mean": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -1023,9 +1041,9 @@
                             "high_design_value": null
                         },
                         "friction_angle": {
-                            "is_probabilistic": false,
+                            "is_probabilistic": true,
                             "mean": 30.0,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": 3.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -1045,13 +1063,18 @@
                             "high_design_value": null
                         },
                         "is_delta_angle_automatically_calculated": null,
-                        "cohesion_and_friction_angle_correlated": null
+                        "cohesion_and_friction_angle_correlated": true
+                    },
+                    "sigma_tau_parameters": {
+                        "sigma_tau_table": null,
+                        "probabilistic_sigma_tau_table": null,
+                        "sigma_tau_table_variation_coefficient": null
                     },
                     "undrained_parameters": {
                         "shear_strength_ratio": {
                             "is_probabilistic": false,
                             "mean": null,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -1063,7 +1086,7 @@
                         "strength_increase_exponent": {
                             "is_probabilistic": false,
                             "mean": null,
-                            "standard_deviation": 0.0,
+                            "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
                             "low_characteristic_value": null,
@@ -1452,7 +1475,7 @@
                     "shear_strength_model_above_phreatic_level": "Mohr_Coulomb",
                     "shear_strength_model_below_phreatic_level": "Mohr_Coulomb",
                     "is_drained": null,
-                    "is_probabilistic": null,
+                    "is_probabilistic": true,
                     "earth_pressure_coefficients": {
                         "earth_pressure_coefficients_type": 1,
                         "active": null,
@@ -1484,9 +1507,1021 @@
                     },
                     "shell_factor": null
                 },
-                "pop": null,
+                "pop_mean": null,
+                "pop_std": null,
+                "probabilistic_pop": false,
                 "ocr": null,
-                "consolidation_traffic_load": 100
+                "consolidation_traffic_load": 100,
+                "color": "#80FFCC00",
+                "pattern": "DotB"
+            },
+            {
+                "gl_soil": {
+                    "id": null,
+                    "name": "Kleibekleding",
+                    "code": "Kleibekleding",
+                    "color": "grey",
+                    "mohr_coulomb_parameters": {
+                        "cohesion": {
+                            "is_probabilistic": false,
+                            "mean": 10.0,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "dilatancy_angle": {
+                            "is_probabilistic": false,
+                            "mean": 0.0,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "friction_angle": {
+                            "is_probabilistic": false,
+                            "mean": 0.0,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "friction_angle_interface": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "is_delta_angle_automatically_calculated": null,
+                        "cohesion_and_friction_angle_correlated": null
+                    },
+                    "sigma_tau_parameters": {
+                        "sigma_tau_table": null,
+                        "probabilistic_sigma_tau_table": null,
+                        "sigma_tau_table_variation_coefficient": null
+                    },
+                    "undrained_parameters": {
+                        "shear_strength_ratio": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "shear_strength_ratio_and_shear_strength_exponent_correlated": null,
+                        "strength_increase_exponent": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "s_and_m_correlated": null,
+                        "undrained_shear_strength": null,
+                        "undrained_shear_strength_top": null,
+                        "undrained_shear_strength_bottom": null,
+                        "undrained_shear_strength_bearing_capacity_factor": null,
+                        "su_table": null,
+                        "probabilistic_su_table": null,
+                        "su_table_variation_coefficient": null
+                    },
+                    "bjerrum_parameters": {
+                        "input_type_is_comp_ratio": null,
+                        "reloading_ratio": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_compression_ratio": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "correlation_reload_primary_compression_ratio": null,
+                        "reloading_index": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_compression_index": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "coef_secondary_compression_Ca": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "reloading_swelling_RR": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "compression_ratio_CR": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "reloading_swelling_index_Cr": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "compression_index_Cc": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        }
+                    },
+                    "isotache_parameters": {
+                        "precon_isotache_type": null,
+                        "reloading_swelling_constant_a": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_compression_constant_b": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "secondary_compression_constant_c": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        }
+                    },
+                    "koppejan_parameters": {
+                        "precon_koppejan_type": null,
+                        "preconsolidation_pressure": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "soil_ap_as_approximation_by_Cp_Cs": false,
+                        "primary_Cp": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_Cp_point": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "secular_Cs": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "secular_Cs_point": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_Ap": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_Asec": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        }
+                    },
+                    "storage_parameters": {
+                        "vertical_permeability": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "permeability_horizontal_factor": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "horizontal_permeability": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "storage_type": null,
+                        "permeability_strain_type": {
+                            "is_probabilistic": false,
+                            "mean": 1000000000000000.0,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "vertical_consolidation_coefficient": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        }
+                    },
+                    "soil_weight_parameters": {
+                        "saturated_weight": 18.0,
+                        "unsaturated_weight": 18.0
+                    },
+                    "soil_classification_parameters": {
+                        "initial_void_ratio": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "min_void_ratio": null,
+                        "max_void_ratio": null,
+                        "porosity": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "relative_density": null,
+                        "d_50": null,
+                        "grain_type": 0
+                    },
+                    "soil_stiffness_parameters": {
+                        "emod_menard": null
+                    },
+                    "horizontal_behaviour": {
+                        "horizontal_behavior_type": null,
+                        "soil_elasticity": null,
+                        "soil_default_elasticity": null
+                    },
+                    "cone_resistance": {
+                        "max_cone_resistance_type": null,
+                        "max_cone_resistance": null
+                    },
+                    "use_tension": null,
+                    "use_probabilistic_defaults": false,
+                    "soil_type_settlement_by_vibrations": 1,
+                    "soil_type_nl": 1,
+                    "soil_state": {
+                        "use_equivalent_age": null,
+                        "equivalent_age": null,
+                        "state_points": null,
+                        "state_lines": null,
+                        "yield_stress_layer": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "ocr_layer": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "pop_layer": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "secondary_swelling_reduced": null,
+                        "secondary_swelling_factor": null,
+                        "unloading_stress_ratio": null
+                    },
+                    "shear_strength_model_above_phreatic_level": "Mohr_Coulomb",
+                    "shear_strength_model_below_phreatic_level": "Mohr_Coulomb",
+                    "is_drained": null,
+                    "is_probabilistic": false,
+                    "earth_pressure_coefficients": {
+                        "earth_pressure_coefficients_type": 1,
+                        "active": null,
+                        "neutral": null,
+                        "passive": null
+                    },
+                    "subgrade_reaction_parameters": {
+                        "modulus_subgrade_reaction_type": null,
+                        "lambda_type": null,
+                        "tangent_secant_1": null,
+                        "tangent_secant_2": null,
+                        "tangent_secant_3": null,
+                        "k_o_top": null,
+                        "k_1_top": null,
+                        "k_2_top": null,
+                        "k_3_top": null,
+                        "k_4_top": null,
+                        "k_o_bottom": null,
+                        "k_1_bottom": null,
+                        "k_2_bottom": null,
+                        "k_3_bottom": null,
+                        "k_4_bottom": null,
+                        "k_1_top_side": null,
+                        "k_2_top_side": null,
+                        "k_3_top_side": null,
+                        "k_1_bottom_side": null,
+                        "k_2_bottom_side": null,
+                        "k_3_bottom_side": null
+                    },
+                    "shell_factor": null
+                },
+                "pop_mean": null,
+                "pop_std": null,
+                "probabilistic_pop": false,
+                "ocr": null,
+                "consolidation_traffic_load": 50,
+                "color": "#80551144",
+                "pattern": "DiagonalC"
+            },
+            {
+                "gl_soil": {
+                    "id": null,
+                    "name": "Wegconstructie",
+                    "code": "Wegconstructie",
+                    "color": "grey",
+                    "mohr_coulomb_parameters": {
+                        "cohesion": {
+                            "is_probabilistic": false,
+                            "mean": 0.0,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "dilatancy_angle": {
+                            "is_probabilistic": false,
+                            "mean": 0.0,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "friction_angle": {
+                            "is_probabilistic": false,
+                            "mean": 30.0,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "friction_angle_interface": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "is_delta_angle_automatically_calculated": null,
+                        "cohesion_and_friction_angle_correlated": null
+                    },
+                    "sigma_tau_parameters": {
+                        "sigma_tau_table": null,
+                        "probabilistic_sigma_tau_table": null,
+                        "sigma_tau_table_variation_coefficient": null
+                    },
+                    "undrained_parameters": {
+                        "shear_strength_ratio": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "shear_strength_ratio_and_shear_strength_exponent_correlated": null,
+                        "strength_increase_exponent": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": null,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "s_and_m_correlated": null,
+                        "undrained_shear_strength": null,
+                        "undrained_shear_strength_top": null,
+                        "undrained_shear_strength_bottom": null,
+                        "undrained_shear_strength_bearing_capacity_factor": null,
+                        "su_table": null,
+                        "probabilistic_su_table": null,
+                        "su_table_variation_coefficient": null
+                    },
+                    "bjerrum_parameters": {
+                        "input_type_is_comp_ratio": null,
+                        "reloading_ratio": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_compression_ratio": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "correlation_reload_primary_compression_ratio": null,
+                        "reloading_index": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_compression_index": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "coef_secondary_compression_Ca": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "reloading_swelling_RR": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "compression_ratio_CR": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "reloading_swelling_index_Cr": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "compression_index_Cc": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        }
+                    },
+                    "isotache_parameters": {
+                        "precon_isotache_type": null,
+                        "reloading_swelling_constant_a": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_compression_constant_b": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "secondary_compression_constant_c": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        }
+                    },
+                    "koppejan_parameters": {
+                        "precon_koppejan_type": null,
+                        "preconsolidation_pressure": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "soil_ap_as_approximation_by_Cp_Cs": false,
+                        "primary_Cp": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_Cp_point": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "secular_Cs": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "secular_Cs_point": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_Ap": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "primary_Asec": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        }
+                    },
+                    "storage_parameters": {
+                        "vertical_permeability": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "permeability_horizontal_factor": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "horizontal_permeability": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "storage_type": null,
+                        "permeability_strain_type": {
+                            "is_probabilistic": false,
+                            "mean": 1000000000000000.0,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "vertical_consolidation_coefficient": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        }
+                    },
+                    "soil_weight_parameters": {
+                        "saturated_weight": 20.0,
+                        "unsaturated_weight": 20.0
+                    },
+                    "soil_classification_parameters": {
+                        "initial_void_ratio": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "min_void_ratio": null,
+                        "max_void_ratio": null,
+                        "porosity": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "relative_density": null,
+                        "d_50": null,
+                        "grain_type": 0
+                    },
+                    "soil_stiffness_parameters": {
+                        "emod_menard": null
+                    },
+                    "horizontal_behaviour": {
+                        "horizontal_behavior_type": null,
+                        "soil_elasticity": null,
+                        "soil_default_elasticity": null
+                    },
+                    "cone_resistance": {
+                        "max_cone_resistance_type": null,
+                        "max_cone_resistance": null
+                    },
+                    "use_tension": null,
+                    "use_probabilistic_defaults": false,
+                    "soil_type_settlement_by_vibrations": 1,
+                    "soil_type_nl": 1,
+                    "soil_state": {
+                        "use_equivalent_age": null,
+                        "equivalent_age": null,
+                        "state_points": null,
+                        "state_lines": null,
+                        "yield_stress_layer": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "ocr_layer": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "pop_layer": {
+                            "is_probabilistic": false,
+                            "mean": null,
+                            "standard_deviation": 0.0,
+                            "distribution_type": 2,
+                            "correlation_coefficient": null,
+                            "low_characteristic_value": null,
+                            "high_characteristic_value": null,
+                            "low_design_value": null,
+                            "high_design_value": null
+                        },
+                        "secondary_swelling_reduced": null,
+                        "secondary_swelling_factor": null,
+                        "unloading_stress_ratio": null
+                    },
+                    "shear_strength_model_above_phreatic_level": "Mohr_Coulomb",
+                    "shear_strength_model_below_phreatic_level": "Mohr_Coulomb",
+                    "is_drained": null,
+                    "is_probabilistic": false,
+                    "earth_pressure_coefficients": {
+                        "earth_pressure_coefficients_type": 1,
+                        "active": null,
+                        "neutral": null,
+                        "passive": null
+                    },
+                    "subgrade_reaction_parameters": {
+                        "modulus_subgrade_reaction_type": null,
+                        "lambda_type": null,
+                        "tangent_secant_1": null,
+                        "tangent_secant_2": null,
+                        "tangent_secant_3": null,
+                        "k_o_top": null,
+                        "k_1_top": null,
+                        "k_2_top": null,
+                        "k_3_top": null,
+                        "k_4_top": null,
+                        "k_o_bottom": null,
+                        "k_1_bottom": null,
+                        "k_2_bottom": null,
+                        "k_3_bottom": null,
+                        "k_4_bottom": null,
+                        "k_1_top_side": null,
+                        "k_2_top_side": null,
+                        "k_3_top_side": null,
+                        "k_1_bottom_side": null,
+                        "k_2_bottom_side": null,
+                        "k_3_bottom_side": null
+                    },
+                    "shell_factor": null
+                },
+                "pop_mean": null,
+                "pop_std": null,
+                "probabilistic_pop": false,
+                "ocr": null,
+                "consolidation_traffic_load": 100,
+                "color": "#80BB8800",
+                "pattern": "DotD"
             }
         ]
     },
@@ -2075,10 +3110,6 @@
                                 "soil_type": "Klei",
                                 "points": [
                                     [
-                                        95.0,
-                                        -4.0
-                                    ],
-                                    [
                                         55.0,
                                         -4.0
                                     ],
@@ -2111,12 +3142,28 @@
                                         6.22
                                     ],
                                     [
-                                        79.48,
-                                        6.3
+                                        77.98,
+                                        5.393402153402275
                                     ],
                                     [
-                                        80.48,
-                                        6.307
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
                                     ],
                                     [
                                         82.48,
@@ -2125,6 +3172,10 @@
                                     [
                                         95.0,
                                         1.859170370370372
+                                    ],
+                                    [
+                                        95.0,
+                                        -4.0
                                     ]
                                 ],
                                 "dm_layer_id": null
@@ -2486,6 +3537,52 @@
                                     ]
                                 ],
                                 "dm_layer_id": null
+                            },
+                            {
+                                "soil_type": "Kleibekleding",
+                                "points": [
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        77.98,
+                                        5.393402153402275
+                                    ],
+                                    [
+                                        77.98,
+                                        6.22
+                                    ],
+                                    [
+                                        79.48,
+                                        6.3
+                                    ],
+                                    [
+                                        80.48,
+                                        6.307
+                                    ],
+                                    [
+                                        82.48,
+                                        6.32
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
+                                    ]
+                                ],
+                                "dm_layer_id": null
                             }
                         ]
                     },
@@ -2493,52 +3590,72 @@
                         {
                             "x": 28.6855030931027,
                             "z": -1.7411238326909728,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 27.5,
                             "z": -5.0,
-                            "pop": 15.0
+                            "pop_mean": 15.0,
+                            "pop_std": null,
+                            "probabilistic_pop": false
                         },
                         {
                             "x": 27.5,
                             "z": -9.5,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
-                            "x": 76.10297557114833,
-                            "z": 0.1195929348871942,
-                            "pop": 8.0
+                            "x": 76.05546153643463,
+                            "z": 0.05313428642046207,
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 75.0,
                             "z": -4.5,
-                            "pop": 15.0
+                            "pop_mean": 15.0,
+                            "pop_std": null,
+                            "probabilistic_pop": false
                         },
                         {
                             "x": 75.0,
                             "z": -5.5,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 75.0,
                             "z": -9.5,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 137.01219530343457,
                             "z": -0.31482189499522834,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 135.0,
                             "z": -3.5,
-                            "pop": 15.0
+                            "pop_mean": 15.0,
+                            "pop_std": null,
+                            "probabilistic_pop": false
                         },
                         {
                             "x": 135.0,
                             "z": -7.25,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         }
                     ],
                     "load": null,
@@ -3181,10 +4298,6 @@
                                 "soil_type": "Klei",
                                 "points": [
                                     [
-                                        95.0,
-                                        -4.0
-                                    ],
-                                    [
                                         55.0,
                                         -4.0
                                     ],
@@ -3217,12 +4330,28 @@
                                         6.22
                                     ],
                                     [
-                                        79.48,
-                                        6.3
+                                        77.98,
+                                        5.393402153402275
                                     ],
                                     [
-                                        80.48,
-                                        6.307
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
                                     ],
                                     [
                                         82.48,
@@ -3231,6 +4360,10 @@
                                     [
                                         95.0,
                                         1.859170370370372
+                                    ],
+                                    [
+                                        95.0,
+                                        -4.0
                                     ]
                                 ],
                                 "dm_layer_id": null
@@ -3592,6 +4725,52 @@
                                     ]
                                 ],
                                 "dm_layer_id": null
+                            },
+                            {
+                                "soil_type": "Kleibekleding",
+                                "points": [
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        77.98,
+                                        5.393402153402275
+                                    ],
+                                    [
+                                        77.98,
+                                        6.22
+                                    ],
+                                    [
+                                        79.48,
+                                        6.3
+                                    ],
+                                    [
+                                        80.48,
+                                        6.307
+                                    ],
+                                    [
+                                        82.48,
+                                        6.32
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
+                                    ]
+                                ],
+                                "dm_layer_id": null
                             }
                         ]
                     },
@@ -3745,7 +4924,8 @@
                         "grid_2_offset_vertical": 0.5,
                         "grid_2_height": 3.0,
                         "grid_2_width": 5.0,
-                        "top_tangent_area": 0.0,
+                        "tangent_area_position": "dike_toe_land_side",
+                        "tangent_area_offset": -0.5,
                         "height_tangent_area": 10.0,
                         "search_mode": "Default"
                     },
@@ -3775,7 +4955,8 @@
                         "grid_2_offset_vertical": 0.5,
                         "grid_2_height": 3.0,
                         "grid_2_width": 10.0,
-                        "top_tangent_area": 0.0,
+                        "tangent_area_position": "dike_toe_land_side",
+                        "tangent_area_offset": -1.0,
                         "height_tangent_area": 10.0,
                         "search_mode": "Default"
                     },
@@ -3800,8 +4981,9 @@
                         "grid_points_horizontal": 20,
                         "grid_points_vertical": 20,
                         "grid_points_per_m": 2,
-                        "bottom_tangent_line": -10.0,
-                        "tangent_line_count": 20,
+                        "tangent_line_position": "dike_toe_land_side",
+                        "tangent_line_offset": -1.0,
+                        "tangent_line_count": 21,
                         "tangent_lines_per_m": 2,
                         "move_grid": true
                     }
@@ -4392,10 +5574,6 @@
                                 "soil_type": "Klei",
                                 "points": [
                                     [
-                                        95.0,
-                                        -4.0
-                                    ],
-                                    [
                                         55.0,
                                         -4.0
                                     ],
@@ -4428,12 +5606,28 @@
                                         6.22
                                     ],
                                     [
-                                        79.48,
-                                        6.3
+                                        77.98,
+                                        5.393402153402275
                                     ],
                                     [
-                                        80.48,
-                                        6.307
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
                                     ],
                                     [
                                         82.48,
@@ -4442,6 +5636,10 @@
                                     [
                                         95.0,
                                         1.859170370370372
+                                    ],
+                                    [
+                                        95.0,
+                                        -4.0
                                     ]
                                 ],
                                 "dm_layer_id": null
@@ -4803,6 +6001,52 @@
                                     ]
                                 ],
                                 "dm_layer_id": null
+                            },
+                            {
+                                "soil_type": "Kleibekleding",
+                                "points": [
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        77.98,
+                                        5.393402153402275
+                                    ],
+                                    [
+                                        77.98,
+                                        6.22
+                                    ],
+                                    [
+                                        79.48,
+                                        6.3
+                                    ],
+                                    [
+                                        80.48,
+                                        6.307
+                                    ],
+                                    [
+                                        82.48,
+                                        6.32
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
+                                    ]
+                                ],
+                                "dm_layer_id": null
                             }
                         ]
                     },
@@ -4810,52 +6054,72 @@
                         {
                             "x": 28.6855030931027,
                             "z": -1.7411238326909728,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 27.5,
                             "z": -5.0,
-                            "pop": 15.0
+                            "pop_mean": 15.0,
+                            "pop_std": null,
+                            "probabilistic_pop": false
                         },
                         {
                             "x": 27.5,
                             "z": -9.5,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
-                            "x": 76.10297557114833,
-                            "z": 0.1195929348871942,
-                            "pop": 8.0
+                            "x": 76.05546153643463,
+                            "z": 0.05313428642046207,
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 75.0,
                             "z": -4.5,
-                            "pop": 15.0
+                            "pop_mean": 15.0,
+                            "pop_std": null,
+                            "probabilistic_pop": false
                         },
                         {
                             "x": 75.0,
                             "z": -5.5,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 75.0,
                             "z": -9.5,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 137.01219530343457,
                             "z": -0.31482189499522834,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         },
                         {
                             "x": 135.0,
                             "z": -3.5,
-                            "pop": 15.0
+                            "pop_mean": 15.0,
+                            "pop_std": null,
+                            "probabilistic_pop": false
                         },
                         {
                             "x": 135.0,
                             "z": -7.25,
-                            "pop": 8.0
+                            "pop_mean": 8.0,
+                            "pop_std": 1.0,
+                            "probabilistic_pop": true
                         }
                     ],
                     "load": null,
@@ -5498,10 +6762,6 @@
                                 "soil_type": "Klei",
                                 "points": [
                                     [
-                                        95.0,
-                                        -4.0
-                                    ],
-                                    [
                                         55.0,
                                         -4.0
                                     ],
@@ -5534,12 +6794,28 @@
                                         6.22
                                     ],
                                     [
-                                        79.48,
-                                        6.3
+                                        77.98,
+                                        5.393402153402275
                                     ],
                                     [
-                                        80.48,
-                                        6.307
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
                                     ],
                                     [
                                         82.48,
@@ -5548,6 +6824,10 @@
                                     [
                                         95.0,
                                         1.859170370370372
+                                    ],
+                                    [
+                                        95.0,
+                                        -4.0
                                     ]
                                 ],
                                 "dm_layer_id": null
@@ -5906,6 +7186,52 @@
                                     [
                                         95.0,
                                         -9.5
+                                    ]
+                                ],
+                                "dm_layer_id": null
+                            },
+                            {
+                                "soil_type": "Kleibekleding",
+                                "points": [
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        77.98,
+                                        5.393402153402275
+                                    ],
+                                    [
+                                        77.98,
+                                        6.22
+                                    ],
+                                    [
+                                        79.48,
+                                        6.3
+                                    ],
+                                    [
+                                        80.48,
+                                        6.307
+                                    ],
+                                    [
+                                        82.48,
+                                        6.32
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
                                     ]
                                 ],
                                 "dm_layer_id": null
@@ -6612,10 +7938,6 @@
                                 "soil_type": "Klei",
                                 "points": [
                                     [
-                                        95.0,
-                                        -4.0
-                                    ],
-                                    [
                                         55.0,
                                         -4.0
                                     ],
@@ -6648,12 +7970,28 @@
                                         6.22
                                     ],
                                     [
-                                        79.48,
-                                        6.3
+                                        77.98,
+                                        5.393402153402275
                                     ],
                                     [
-                                        80.48,
-                                        6.307
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
                                     ],
                                     [
                                         82.48,
@@ -6662,6 +8000,10 @@
                                     [
                                         95.0,
                                         1.859170370370372
+                                    ],
+                                    [
+                                        95.0,
+                                        -4.0
                                     ]
                                 ],
                                 "dm_layer_id": null
@@ -7023,6 +8365,52 @@
                                     ]
                                 ],
                                 "dm_layer_id": null
+                            },
+                            {
+                                "soil_type": "Kleibekleding",
+                                "points": [
+                                    [
+                                        82.34426212313699,
+                                        5.519100803978893
+                                    ],
+                                    [
+                                        80.48539987681707,
+                                        5.507018199377813
+                                    ],
+                                    [
+                                        79.5041159010096,
+                                        5.500149211547161
+                                    ],
+                                    [
+                                        78.1031977907631,
+                                        5.425433579000681
+                                    ],
+                                    [
+                                        77.98,
+                                        5.393402153402275
+                                    ],
+                                    [
+                                        77.98,
+                                        6.22
+                                    ],
+                                    [
+                                        79.48,
+                                        6.3
+                                    ],
+                                    [
+                                        80.48,
+                                        6.307
+                                    ],
+                                    [
+                                        82.48,
+                                        6.32
+                                    ],
+                                    [
+                                        82.48,
+                                        5.470737901185477
+                                    ]
+                                ],
+                                "dm_layer_id": null
                             }
                         ]
                     },
@@ -7171,8 +8559,9 @@
                         "grid_points_horizontal": 10,
                         "grid_points_vertical": 10,
                         "grid_points_per_m": 1,
-                        "bottom_tangent_line": -9.0,
-                        "tangent_line_count": 10,
+                        "tangent_line_position": "dike_toe_water_side",
+                        "tangent_line_offset": -1.0,
+                        "tangent_line_count": 11,
                         "tangent_lines_per_m": 1,
                         "move_grid": true
                     }

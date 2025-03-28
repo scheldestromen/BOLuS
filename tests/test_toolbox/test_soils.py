@@ -22,6 +22,7 @@ class TestSoil(TestCase):
         )
         self.gl_soil.mohr_coulomb_parameters.cohesion.mean = 5.0
         self.gl_soil.mohr_coulomb_parameters.friction_angle.mean = 30.0
+        self.gl_soil.mohr_coulomb_parameters.dilatancy_angle.mean = 0.
         self.gl_soil.undrained_parameters.shear_strength_ratio.mean = 0.25
         self.gl_soil.undrained_parameters.strength_increase_exponent.mean = 0.8
 
@@ -29,14 +30,12 @@ class TestSoil(TestCase):
         """Test creating a basic soil with all required attributes"""
         soil = Soil(
             gl_soil=GLSoil(name="test_soil", code="test_soil"),
-            pop=10.0,
-            ocr=2.0,
+            pop_mean=10.0,
             consolidation_traffic_load=50,
         )
 
         self.assertEqual(soil.gl_soil.name, "test_soil")
-        self.assertEqual(soil.pop, 10.0)
-        self.assertEqual(soil.ocr, 2.0)
+        self.assertEqual(soil.pop_mean, 10.0)
         self.assertEqual(soil.consolidation_traffic_load, 50)
 
 
@@ -54,8 +53,8 @@ class TestSoilCollection(TestCase):
         gl_soil2.code = "soil2"
 
         self.soils = [
-            Soil(gl_soil=gl_soil1, pop=10.0, consolidation_traffic_load=50),
-            Soil(gl_soil=gl_soil2, pop=15.0, consolidation_traffic_load=75),
+            Soil(gl_soil=gl_soil1, pop_mean=10.0, consolidation_traffic_load=50),
+            Soil(gl_soil=gl_soil2, pop_mean=15.0, consolidation_traffic_load=75),
         ]
         self.collection = SoilCollection(name="test_collection", soils=self.soils)
 
@@ -70,7 +69,7 @@ class TestSoilCollection(TestCase):
         """Test retrieving a soil by name"""
         soil = self.collection.get_by_name("soil1")
         self.assertEqual(soil.gl_soil.name, "soil1")
-        self.assertEqual(soil.pop, 10.0)
+        self.assertEqual(soil.pop_mean, 10.0)
 
     def test_get_by_name_not_found(self):
         """Test that getting a non-existent soil raises an error"""

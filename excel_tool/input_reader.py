@@ -236,7 +236,6 @@ CALCULATION_COLS = {
     "revetment_profile_name": "Bekledingsprofiel",
     "load_name": "Belasting",
     "grid_settings_set_name": "Glijvlakinstellingen",
-    "evaluate": "Berekenen",
 }
 
 INPUT_TO_BOOL = {
@@ -815,7 +814,7 @@ class RawInputToUserInputStructure:
                 gl_soil=gl_soil,
                 pop_mean=soil_dict["pop_mean"],
                 pop_std=soil_dict["pop_std"],
-                probabilistic_pop=soil_dict["probabilistic_pop"],
+                probabilistic_pop=soil_dict["probabilistic_pop"] if soil_dict["probabilistic_pop"] else False,
                 consolidation_traffic_load=soil_dict["consolidation_traffic_load"],
                 color=soil_dict["color"],
                 pattern=soil_dict["pattern"],
