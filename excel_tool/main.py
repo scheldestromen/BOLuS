@@ -12,7 +12,7 @@ from toolbox.model_creator import input_to_models
 from excel_tool.input_reader import ExcelInputReader, RawInputToUserInputStructure
 
 INPUT_FILE_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "Invoer D-Stability tool.xlsx"
+    os.path.dirname(os.path.abspath(__file__)), "Invoer BOLuS.xlsx"
 )
 
 

@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 # Filter to suppress only the specific warning about Data Validation extension
 warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed", 
-                      category=UserWarning, module="openpyxl.worksheet._reader")
+                      category=UserWarning, module="openpyxl.worksheet._read_only")
 
 from toolbox.geometry import (CharPointsProfileCollection,
                               CharPointType, Side,
