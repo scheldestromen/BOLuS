@@ -1,4 +1,4 @@
-from shapely import Point, Polygon, MultiPolygon, GeometryCollection
+from shapely import GeometryCollection, MultiPolygon, Point, Polygon
 
 
 def geometry_to_polygons(geometry):
@@ -26,7 +26,9 @@ def geometry_to_polygons(geometry):
     return polygons
 
 
-def determine_point_in_polygon(polygon: Polygon, shift: float = 0.01) -> tuple[float, float]:
+def determine_point_in_polygon(
+    polygon: Polygon, shift: float = 0.01
+) -> tuple[float, float]:
     """Determines a point in a polygon.
 
     By default the polygon centroid is used. If the centroid is not
@@ -50,19 +52,26 @@ def determine_point_in_polygon(polygon: Polygon, shift: float = 0.01) -> tuple[f
         return centroid.coords[0]
 
     # If not: get the nearest point on the polygon boundary
-    distance = polygon.exterior.project(centroid)  # Distance along the line to the nearest point
-    nearest_point = polygon.exterior.interpolate(distance)  # Get the nearest point geometry
+    distance = polygon.exterior.project(
+        centroid
+    )  # Distance along the line to the nearest point
+    nearest_point = polygon.exterior.interpolate(
+        distance
+    )  # Get the nearest point geometry
 
     # Determine unity vector to the nearest point
     dx = nearest_point.x - centroid.x
     dy = nearest_point.y - centroid.y
-    length = (dx ** 2 + dy ** 2) ** 0.5
+    length = (dx**2 + dy**2) ** 0.5
     unit_vector = (dx / length, dy / length)
 
-    new_point_coord = (nearest_point.x + unit_vector[0] * shift, nearest_point.y + unit_vector[1] * shift)
+    new_point_coord = (
+        nearest_point.x + unit_vector[0] * shift,
+        nearest_point.y + unit_vector[1] * shift,
+    )
     new_point = Point(new_point_coord)
 
     if polygon.contains(new_point):
         return new_point_coord
 
-    raise ValueError('Could not determine point in polygon')
+    raise ValueError("Could not determine point in polygon")

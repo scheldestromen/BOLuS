@@ -1,7 +1,9 @@
 from pathlib import Path
 
 
-def get_files_by_extension(directory: str, file_ext: str, search_sub_dir: bool = False) -> list[dict[str, str]]:
+def get_files_by_extension(
+    directory: str, file_ext: str, search_sub_dir: bool = False
+) -> list[dict[str, str]]:
     """
     Searches through a directory for files with the specified file extension.
 
