@@ -47,7 +47,7 @@ def add_soil_collection(
     
     The soils in the soil_collection can have a color. it is assumed that the color.
     The color must contain the opacity such that the format is #AARRGGBB in which 
-    A is the opacity.
+    AA is the opacity.
 
     Args:
         soil_collection: The soil_collection to add to the DStabilityModel

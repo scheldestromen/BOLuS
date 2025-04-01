@@ -48,7 +48,7 @@ INPUT_SHEETS = {
     "soil_profile_positions": "Bodemopbouw",
     "revetment_profile_blueprints": "Bekleding",
     "loads": "Belasting",
-    "hydraulic_pressure": "Waterspanningsschematisatie",
+    "hydraulic_pressure": "Waterspanningen",
     "grid_settings": "Gridinstellingen",
     "model_configs": "Berekeningen",
 }
@@ -235,7 +235,7 @@ CALCULATION_COLS = {
     "apply_state_points": "State points toepassen",
     "revetment_profile_name": "Bekledingsprofiel",
     "load_name": "Belasting",
-    "grid_settings_set_name": "Glijvlakinstellingen",
+    "grid_settings_set_name": "Gridinstellingen",
 }
 
 INPUT_TO_BOOL = {

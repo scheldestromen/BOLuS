@@ -17,6 +17,9 @@ class Soil(BaseModel):
         probabilistic_pop (bool): Whether the Pre-overburden pressure value is probabilistic
         ocr (float): The over-consolidation ratio (not implemented)
         consolidation_traffic_load (int): Percentage [0 - 100%] of consolidation traffic load
+        color (str): The color of the soil. The color must contain the opacity such that the format is #AARRGGBB in which 
+          AA is the opacity.
+        pattern (PersistableShadingTypeEnum): The pattern of the soil
     """
 
     gl_soil: GLSoil
