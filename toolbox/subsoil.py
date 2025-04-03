@@ -77,6 +77,7 @@ class SoilProfilePositionSet(BaseModel):
         else:
             raise ValueError(f"Could not find soil profile position with name '{name}'")
 
+
 class SoilProfilePositionSetCollection(BaseModel):
     """Collection of soil profile positions
 
@@ -94,7 +95,6 @@ class SoilProfilePositionSetCollection(BaseModel):
             return position_set
         else:
             raise ValueError(f"Could not find soil profile position set with name '{name}'")
-
 
 
 class SoilProfileCollection(BaseModel):

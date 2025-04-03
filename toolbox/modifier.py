@@ -332,7 +332,7 @@ def create_d_stability_model(model: Model):
 
     # Add the scenarios
     for i, scenario in enumerate(model.scenarios):
-        # By default, a first stage is created by GEOLib
+        # By default, a first scenario is created by GEOLib
         if i == 0:
             dm.scenarios[0].Label = scenario.name
             dm.scenarios[0].Notes = scenario.notes
@@ -367,6 +367,7 @@ def create_d_stability_model(model: Model):
                     )
 
         for j, stage in enumerate(scenario.stages):
+            # By default, a first stage is created by GEOLib
             if j == 0:
                 dm.scenarios[dm.current_scenario].Stages[0].Label = stage.name
                 dm.scenarios[dm.current_scenario].Stages[0].Notes = stage.notes

@@ -46,6 +46,10 @@ INPUT_SHEETS = {
     "soil_params": "Sterkteparameters",
     "soil_profiles": "Bodemprofielen",
     "soil_profile_positions": "Bodemopbouw",
+    "water_levels": "Waterstanden",
+    "water_level_sets": "Waterstandsets",
+    "offset_methods": "Offset methodes",
+    "waternet_scenarios": "Waterspanningsscenario's",
     "revetment_profile_blueprints": "Bekleding",
     "loads": "Belasting",
     "hydraulic_pressure": "Waterspanningen",
@@ -153,6 +157,8 @@ SOIL_PROFILE_COLS = {
     "soil_type": "Grondsoort",
     "top": "Bovenkant",
 }
+
+WATER_LEVEL_LOCATION_NAME_COL = "Naam locatie"
 
 LOAD_COLS = {
     "name": "Naam belasting",
@@ -317,6 +323,7 @@ class RawUserInput(BaseModel):
     soil_params: list[dict[str, float | str | None]]
     soil_profiles: dict[str, list[dict[str, float | str]]]
     soil_profile_positions: dict[str, dict[str, float | None]]
+    water_levels: dict[str, dict[str | None, float | None]]
     revetment_profile_blueprints: dict[str, list[dict[str, str | float]]]
     loads: list[dict]
     hydraulic_pressure: dict
@@ -340,6 +347,7 @@ class ExcelInputReader(BaseModel):
             soil_params=ExcelInputReader.parse_soil_params(workbook),
             soil_profiles=ExcelInputReader.parse_soil_profiles(workbook),
             soil_profile_positions=ExcelInputReader.parse_soil_profile_positions(workbook),
+            water_levels=ExcelInputReader.parse_water_levels(workbook),
             revetment_profile_blueprints=ExcelInputReader.parse_revetment_profile_blueprints(workbook),
             loads=ExcelInputReader.parse_loads(workbook),
             hydraulic_pressure=ExcelInputReader.parse_hydraulic_pressure(workbook),
@@ -445,6 +453,23 @@ class ExcelInputReader(BaseModel):
             soil_profile_positions[name] = positions
 
         return soil_profile_positions
+    
+    # TODO: Verder verwerken in RawInputToUserInputStructure en ook de andere niewue tabbladen
+    @staticmethod
+    def parse_water_levels(workbook: Any) -> dict[str, dict[str | None, float | None]]:
+        water_levels = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["water_levels"]],
+            header_row=2,
+            skip_rows=2,
+        )
+        water_level_dict = {
+            row[WATER_LEVEL_LOCATION_NAME_COL]: remove_key(row, WATER_LEVEL_LOCATION_NAME_COL) 
+            for row in water_levels
+            }
+        print(water_level_dict)
+
+        return water_level_dict
+
 
     @staticmethod
     def parse_revetment_profile_blueprints(workbook: Any) -> dict[str, list[dict[str, str | float]]]:     

@@ -6,6 +6,9 @@ from pydantic import BaseModel
 from typing_extensions import List
 
 
+# TODO: Overwegen om validatie methodes toe te voegen.
+#       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.
+
 class CharPointType(StrEnum):
     SURFACE_LEVEL_WATER_SIDE = auto()
     TOE_CANAL = auto()
@@ -215,7 +218,7 @@ class CharPointsProfile(ProfileLine):
         l_outward = self.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
         inward_positive = l_inward > l_outward  # Determine the direction of the l-axis
 
-        # Determine the start and end of the load
+        # Determine the sign based on the direction and the direction of the l-axis
         if (
             direction == Side.LAND_SIDE
             and inward_positive
