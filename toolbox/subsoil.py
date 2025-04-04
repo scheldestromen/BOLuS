@@ -17,6 +17,8 @@ from utils.geometry_utils import geometry_to_polygons
 #  - Eénmaal implementeren van get_by_name (indien a)
 #  - Eénmaal implementeren van check op dubbele namen
 
+# TODO: "Blueprint" is eigenlijk wat ik elders "Config" noem.
+
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
 

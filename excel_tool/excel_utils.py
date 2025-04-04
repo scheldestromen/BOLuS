@@ -52,7 +52,7 @@ def parse_row_instance(
             )
 
         else:
-            row_dict = {key: cell.value for key, cell in zip(header_list, row)}
+            row_dict = {key: cell.value for key, cell in zip(header_list, row) if key is not None}
             first_header = header_list[0]
 
         # If the first cell of the header is empty then we ignore the row

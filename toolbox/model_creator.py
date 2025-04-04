@@ -13,8 +13,9 @@ from toolbox.loads import LoadCollection
 from toolbox.model import Model, Scenario, Stage
 from toolbox.soils import SoilCollection
 from toolbox.state import create_state_points_from_subsoil
-from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection, RevetmentProfile
+from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
 from toolbox.water import WaternetCollection
+from toolbox.water_creater import WaterLevelCollection, WaternetConfigCollection, WaternetOffsetMethodCollection
 
 
 class GeneralSettings(BaseModel):
@@ -74,6 +75,7 @@ class ModelConfig(BaseModel):
     scenarios: list[ScenarioConfig]
 
 
+# TODO: Hier zit nu zowel de waternetcollection als de WaternetConfigCollection. Hoe dit netjes aan te pakken in de workflow?
 class UserInputStructure(BaseModel):
     """Represents the user-inputted data.
 
@@ -90,6 +92,9 @@ class UserInputStructure(BaseModel):
     soils: SoilCollection
     soil_profiles: SoilProfileCollection
     soil_profile_positions: SoilProfilePositionSetCollection
+    water_levels: WaterLevelCollection
+    waternet_configs: WaternetConfigCollection
+    offset_methods: WaternetOffsetMethodCollection
     revetment_profile_blueprints: RevetmentProfileBlueprintCollection
     loads: LoadCollection
     waternets: WaternetCollection
@@ -164,7 +169,7 @@ def create_stage(
         calc_name=calc_name,
         scenario_name=scenario_name,
         stage_name=stage_config.stage_name,
-    ) if input_structure.settings.apply_waternet else None  # TODO: Tijdelijke oplossing voor implementatie waterspanningen
+    ) if input_structure.settings.apply_waternet else None
 
     load = (
         input_structure.loads.get_by_name(stage_config.load_name)

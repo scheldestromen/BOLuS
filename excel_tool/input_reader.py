@@ -25,6 +25,7 @@ from toolbox.soils import SoilCollection, Soil
 from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
     SoilProfilePositionSet, SoilProfilePositionSetCollection, RevetmentLayerBlueprint, RevetmentProfileBlueprint, RevetmentProfileBlueprintCollection
 from toolbox.water import WaterLineType, WaternetCollection, HeadLine, ReferenceLine, Waternet
+from toolbox.water_creater import WaterLevelCollection, RefLevelType, OffsetType, HeadLineConfig, WaterLevelConfig, WaternetConfigCollection, WaternetConfig, WaternetOffsetMethodCollection, WaternetOffsetMethod, WaternetOffsetPoint
 from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
                                           SlipPlaneModel,
@@ -47,9 +48,9 @@ INPUT_SHEETS = {
     "soil_profiles": "Bodemprofielen",
     "soil_profile_positions": "Bodemopbouw",
     "water_levels": "Waterstanden",
-    "water_level_sets": "Waterstandsets",
+    "water_level_configs": "Waterspanningsscenario's",
     "offset_methods": "Offset methodes",
-    "waternet_scenarios": "Waterspanningsscenario's",
+    "head_line_configs": "Stijghoogtes",
     "revetment_profile_blueprints": "Bekleding",
     "loads": "Belasting",
     "hydraulic_pressure": "Waterspanningen",
@@ -159,6 +160,21 @@ SOIL_PROFILE_COLS = {
 }
 
 WATER_LEVEL_LOCATION_NAME_COL = "Naam locatie"
+
+WATER_LEVEL_CONFIG_NAME_COL = "Naam waterspanningsscenario"
+
+OFFSET_METHODS_COLS = {
+    "name": "Naam methode",
+    "char_point_type": "Karakteristiek punt",
+    "ref_level": "Referentieniveau",
+    "offset_value": "Offset / Verhang"
+}
+
+HEAD_LINE_CONFIG_COLS = {
+    "name_waternet_scenario": "Naam waterspanningsscenario",
+    "name_head_line": "PL-lijn",
+    "offset_method_name": "Offset methode",
+}
 
 LOAD_COLS = {
     "name": "Naam belasting",
@@ -310,6 +326,12 @@ INPUT_TO_PATTERN = {
 
 NAME_PHREATIC_LINE = "Freatisch"
 
+INPUT_TO_REF_LEVEL_TYPE = {
+    "NAP": RefLevelType.NAP,
+    "Maaiveld": RefLevelType.SURFACE_LEVEL,
+    "Verhang t.o.v. voorgaand punt": RefLevelType.RELATED_TO_OTHER_POINT,
+}
+
 
 class RawUserInput(BaseModel):
     """Represents the raw user input"""
@@ -317,13 +339,16 @@ class RawUserInput(BaseModel):
     #  - Refactor, toelichting en type-hints uitwerken
     # TODO: Dit is wellicht een goede plek om de validatie van de input te doen.
 
-    settings: dict[str, Any]
+    settings: dict[str, str| float | None]
     surface_lines: dict[str, list[float]]
     char_points: dict[str, dict[str, float | None]]
     soil_params: list[dict[str, float | str | None]]
     soil_profiles: dict[str, list[dict[str, float | str]]]
     soil_profile_positions: dict[str, dict[str, float | None]]
-    water_levels: dict[str, dict[str | None, float | None]]
+    water_levels: dict[str, dict[str, float | None]]
+    water_level_configs: dict[str, dict[str, str | None]]
+    offset_methods: dict[str, list[dict[str, str | float | None]]]
+    head_line_configs: dict[str, list[dict[str, str]]]
     revetment_profile_blueprints: dict[str, list[dict[str, str | float]]]
     loads: list[dict]
     hydraulic_pressure: dict
@@ -348,6 +373,9 @@ class ExcelInputReader(BaseModel):
             soil_profiles=ExcelInputReader.parse_soil_profiles(workbook),
             soil_profile_positions=ExcelInputReader.parse_soil_profile_positions(workbook),
             water_levels=ExcelInputReader.parse_water_levels(workbook),
+            water_level_configs=ExcelInputReader.parse_water_level_configs(workbook),
+            offset_methods=ExcelInputReader.parse_offset_methods(workbook),
+            head_line_configs=ExcelInputReader.parse_head_line_configs(workbook),
             revetment_profile_blueprints=ExcelInputReader.parse_revetment_profile_blueprints(workbook),
             loads=ExcelInputReader.parse_loads(workbook),
             hydraulic_pressure=ExcelInputReader.parse_hydraulic_pressure(workbook),
@@ -454,23 +482,82 @@ class ExcelInputReader(BaseModel):
 
         return soil_profile_positions
     
-    # TODO: Verder verwerken in RawInputToUserInputStructure en ook de andere niewue tabbladen
     @staticmethod
-    def parse_water_levels(workbook: Any) -> dict[str, dict[str | None, float | None]]:
+    def parse_water_levels(workbook: Any) -> dict[str, dict[str, float | None]]:
         water_levels = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["water_levels"]],
             header_row=2,
             skip_rows=2,
         )
+        # Assign name as key and remove name from dict
         water_level_dict = {
             row[WATER_LEVEL_LOCATION_NAME_COL]: remove_key(row, WATER_LEVEL_LOCATION_NAME_COL) 
             for row in water_levels
-            }
-        print(water_level_dict)
+        }
 
         return water_level_dict
 
+    @staticmethod
+    def parse_water_level_configs(workbook: Any) -> dict[str, dict[str, str | None]]:
+        water_level_configs = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["water_level_configs"]],
+            header_row=2,
+            skip_rows=2,
+        )
+        # Assign name as key and remove name from dict
+        water_level_configs_dict = {
+            row[WATER_LEVEL_CONFIG_NAME_COL]: remove_key(row, WATER_LEVEL_CONFIG_NAME_COL)
+            for row in water_level_configs
+        }
 
+        return water_level_configs_dict
+
+    @staticmethod
+    def parse_offset_methods(workbook: Any) -> dict[str, list[dict[str, str | float]]]:
+        # Helper dict for mapping the ref_level_type to the offset_type
+        REF_LEVEL_TYPE_TO_OFFSET_TYPE = {
+            RefLevelType.NAP: OffsetType.VERTICAL,
+            RefLevelType.SURFACE_LEVEL: OffsetType.VERTICAL,
+            RefLevelType.FIXED_LEVEL: OffsetType.VERTICAL,
+            RefLevelType.RELATED_TO_OTHER_POINT: OffsetType.SLOPING,
+        }
+
+        offset_methods = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["offset_methods"]],
+            header_row=1,
+            skip_rows=2,
+            col_dict=OFFSET_METHODS_COLS,
+        )
+        for offset_method in offset_methods:
+            offset_method["char_point_type"] = INPUT_TO_CHAR_POINTS.get(offset_method["char_point_type"])
+           
+            # If ref_level is not in the input_to_ref_level_type dict, then it is a water level (FIXED_LEVEL)
+            if offset_method["ref_level"] not in INPUT_TO_REF_LEVEL_TYPE:
+                offset_method["ref_level_type"] = RefLevelType.FIXED_LEVEL
+                offset_method["ref_level_name"] = offset_method["ref_level"]
+            else:
+                offset_method["ref_level_type"] = INPUT_TO_REF_LEVEL_TYPE.get(offset_method["ref_level"])
+                offset_method["ref_level_name"] = None
+            offset_method.pop("ref_level")
+
+            offset_method["offset_type"] = REF_LEVEL_TYPE_TO_OFFSET_TYPE.get(offset_method["ref_level_type"])
+
+        offset_methods = group_dicts_by_key(offset_methods, group_by_key="name")
+
+        return offset_methods
+    
+    @staticmethod
+    def parse_head_line_configs(workbook: Any) -> dict[str, list[dict[str, str]]]:
+        head_line_configs = parse_row_instance(
+            sheet=workbook[INPUT_SHEETS["head_line_configs"]],
+            header_row=1,
+            skip_rows=2,
+            col_dict=HEAD_LINE_CONFIG_COLS,
+        )
+        head_line_configs = group_dicts_by_key(head_line_configs, group_by_key="name_waternet_scenario")
+
+        return head_line_configs
+        
     @staticmethod
     def parse_revetment_profile_blueprints(workbook: Any) -> dict[str, list[dict[str, str | float]]]:     
         revetment_profile_blueprints = parse_row_instance(
@@ -654,17 +741,23 @@ class RawInputToUserInputStructure:
 
         # TODO: Naam freatische lijn input maken (Instellingen), hier preprocessen en dan 
         #  meegeven aan waternets.
-        char_points = RawInputToUserInputStructure.convert_char_points(raw_input.char_points)
 
         return UserInputStructure(
             settings=RawInputToUserInputStructure.convert_settings(raw_input.settings),
             surface_lines=RawInputToUserInputStructure.convert_surface_lines(raw_input.surface_lines),
-            char_points=char_points,
+            char_points=RawInputToUserInputStructure.convert_char_points(raw_input.char_points),
             soils=RawInputToUserInputStructure.convert_soil_collection(raw_input.soil_params),
             soil_profiles=RawInputToUserInputStructure.convert_soil_profile_collection(raw_input.soil_profiles),
             soil_profile_positions=RawInputToUserInputStructure.convert_soil_profile_positions(
                 raw_input.soil_profile_positions
             ),
+            water_levels=WaterLevelCollection(water_levels=raw_input.water_levels),
+            waternet_configs=RawInputToUserInputStructure.convert_waternet_config_collection(
+                water_level_configs_dict=raw_input.water_level_configs,
+                head_line_configs_dict=raw_input.head_line_configs,
+                reference_line_configs_dict=None,  # TODO: implement
+            ),
+            offset_methods=RawInputToUserInputStructure.convert_offset_methods(raw_input.offset_methods),
             revetment_profile_blueprints=RawInputToUserInputStructure.convert_revetment_profile_blueprint_collection(raw_input.revetment_profile_blueprints),
             loads=RawInputToUserInputStructure.convert_loads(raw_input.loads),
             waternets=RawInputToUserInputStructure.convert_waternet_collection(
@@ -893,6 +986,60 @@ class RawInputToUserInputStructure:
 
         return soil_profile_position_collection
     
+    @staticmethod
+    def convert_waternet_config_collection(
+        water_level_configs_dict: dict[str, dict[str, str | None]],
+        head_line_configs_dict: dict[str, list[dict[str, str]]],
+        reference_line_configs_dict: None
+    ) -> WaternetConfigCollection:
+        hlc_scenario_names = list(head_line_configs_dict.keys())
+        wlc_scenario_names = list(water_level_configs_dict.keys())
+
+        # Beide moeten nu in allebei zitten - opzich prima, maar dan kan er geen 'overtollige info' staat
+        # TODO: Na implementatie van reference_line_configs, even opnieuw checken.
+        if set(hlc_scenario_names) != set(wlc_scenario_names):
+            union = set(hlc_scenario_names) | set(wlc_scenario_names)
+            intersection = set(hlc_scenario_names) & set(wlc_scenario_names)
+            difference = union - intersection
+
+            raise ValueError("The head line scenario names and the water level scenario names do not match."
+                             f"The following scenario names are not present in all input sheets:"
+                             f"{difference}")
+
+        waternet_configs: list[WaternetConfig] = []
+
+        for scenario_name in hlc_scenario_names:
+            head_line_configs = [
+                HeadLineConfig.model_validate(head_line_config) 
+                for head_line_config in head_line_configs_dict[scenario_name]
+            ]
+            water_level_config = WaterLevelConfig(
+                name_waternet_scenario=scenario_name, 
+                water_levels=water_level_configs_dict[scenario_name]
+            )
+            
+            waternet_config = WaternetConfig(
+                name=scenario_name,
+                water_level_config=water_level_config,
+                head_line_configs=head_line_configs,
+                reference_line_configs=[]
+            )
+            waternet_configs.append(waternet_config)
+
+        return WaternetConfigCollection(waternet_configs=waternet_configs)
+
+    @staticmethod
+    def convert_offset_methods(offset_methods_dict: dict[str, list[dict[str, str | float | None]]]) -> WaternetOffsetMethodCollection:
+        offset_methods: list[WaternetOffsetMethod] = []
+
+        for name, offset_method_dict in offset_methods_dict.items():
+            offset_points = [WaternetOffsetPoint.model_validate(op_dict) for op_dict in offset_method_dict]
+            offset_methods.append(
+                WaternetOffsetMethod(name_method=name, offset_points=offset_points)
+                )
+
+        return WaternetOffsetMethodCollection(offset_methods=offset_methods)
+
     @staticmethod
     def convert_revetment_profile_blueprint_collection(
         revetment_profile_dict: dict[str, list[dict[str, Any]]]
