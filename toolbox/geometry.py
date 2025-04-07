@@ -4,10 +4,12 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 from typing_extensions import List
-
+from shapely.geometry import LineString
 
 # TODO: Overwegen om validatie methodes toe te voegen.
 #       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.
+# TODO: Overwegen om validatie (b.v. l-coordinates) met Pydantic te doen ('after')
+#       Ook overwegen om l verplicht te maken, dan hoeven we de checks niet meer te doen.
 
 class CharPointType(StrEnum):
     SURFACE_LEVEL_WATER_SIDE = auto()
@@ -316,6 +318,86 @@ class Geometry(BaseModel):
     name: str
     surface_line: SurfaceLine
     char_point_profile: CharPointsProfile
+
+    # TODO: Unit tests
+    def get_intersection(
+            self, 
+            level: float, 
+            from_char_point: CharPointType = CharPointType.SURFACE_LEVEL_WATER_SIDE, 
+            to_char_point: CharPointType = CharPointType.SURFACE_LEVEL_LAND_SIDE, 
+            search_direction: Side = Side.LAND_SIDE
+        ) -> tuple[float, float] | None:
+        """Returns a 2D intersection point of the surface line and the given level.
+        A search area is defined by the two characteristic points. Intersections
+        outside this area are not considered. The search direction is the direction
+        direction is the direction in which to search for the intersection. If multiple
+        intersections are found, then the search direction determines which intersection
+        is returned. If the direction is Side.LAND_SIDE, then the point laying most Side.WATER_SIDE
+        point is returned.
+
+        The characteristic points should be defined.
+        
+        Args:
+            level: The level of the intersection
+            from_char_point: The characteristic point type to use for the start of the intersection.
+              By default, this is CharPointType.SURFACE_LEVEL_WATER_SIDE.
+            to_char_point: The characteristic point type to use for the end of the intersection.
+              By default, this is CharPointType.SURFACE_LEVEL_LAND_SIDE.
+            search_direction: The direction in which to search for the intersection.
+              By default, this is Side.LAND_SIDE.
+
+        Returns:
+            tuple[float, float]: The 2D intersection point based on the l- and z-coordinates
+            of the surface line.
+        """
+        
+        # Checks
+        self.surface_line.check_l_coordinates_present()
+        self.surface_line.check_l_coordinates_increasing()
+        self.char_point_profile.check_l_coordinates_present()
+        self.char_point_profile.check_l_coordinates_increasing()
+
+        # Get subsection of the surface line between the two characteristic points
+        from_point = self.char_point_profile.get_point_by_type(from_char_point)
+        to_point = self.char_point_profile.get_point_by_type(to_char_point)
+
+        points: list[Point] = []
+
+        for point in self.surface_line.points:
+            if point.l >= from_point.l and point.l <= to_point.l:
+                points.append(point)
+
+        # Get the intersection of the surface line and the given level
+        l_coords = [p.l for p in points]
+        min_l = min(l_coords)
+        max_l = max(l_coords)
+
+        shapely_surface_line = LineString([(p.l, p.z) for p in points])
+        shapely_level = LineString([(min_l, level), (max_l, level)])
+
+        intersection = shapely_surface_line.intersection(shapely_level)
+
+        if intersection.geom_type == 'MultiPoint':
+            intersection_points = list(intersection.geoms)
+        elif intersection.geom_type == 'Point':
+            intersection_points = [intersection]
+        else:
+            raise ValueError(f"Unexpected intersection type: {intersection.geom_type}")
+        
+        # Determine which the direction of the l-axis is
+        sign = self.char_point_profile.determine_l_direction_sign(search_direction)
+
+        # Get the intersection point
+        # If the l-axis is positive in the search direction, then the right 
+        # intersection point is the one with the minimum l-coordinate
+        if sign == 1:
+            intersection_point = min(intersection_points, key=lambda p: p.x)
+        # Otherwise, it is the intersection point with the maximum l-coordinate
+        else:
+            intersection_point = max(intersection_points, key=lambda p: p.x)
+
+        # Return the intersection point
+        return intersection_point.x, intersection_point.y
 
 
 def create_geometries(

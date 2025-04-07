@@ -278,6 +278,18 @@ def create_waternet(
             geometry=geometry,
             ref_levels=water_level_set
         )
+
+        if head_line_config.is_phreatic:
+            intersection = geometry.get_intersection(
+                level=head_line.z[0],  # With the offset method, the first point is the most outward
+                from_char_point=CharPointType.DIKE_CREST_WATER_SIDE,
+                to_char_point=CharPointType.SURFACE_LEVEL_WATER_SIDE,
+                search_direction=Side.WATER_SIDE
+            )
+            if intersection is not None:
+                head_line.l.append(intersection[0])
+                head_line.z.append(intersection[1])
+        
         head_lines.append(head_line)
     
     for ref_line_config in waternet_config.reference_line_configs:
