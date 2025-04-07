@@ -13,11 +13,10 @@ from excel_tool.input_reader import (ExcelInputReader, RawUserInput,
                                      INPUT_TO_SLIP_PLANE_MODEL,
                                      WaterLineType)
 from toolbox.geometry import CharPointType, Side, Point, SurfaceLineCollection, CharPointsProfileCollection, CharPoint
-from toolbox.model import Stage
 from toolbox.soils import SoilCollection, Soil
 from toolbox.subsoil import SoilProfileCollection, SoilProfile, SoilProfilePositionSet,SoilProfilePositionSetCollection, SoilProfilePosition, RevetmentProfileBlueprintCollection, RevetmentProfileBlueprint, RevetmentLayerBlueprint
 from toolbox.loads import LoadCollection, Load
-from toolbox.water import WaternetCollection, Waternet, HeadLine
+from toolbox.water import Waternet, HeadLine
 from toolbox.calculation_settings import SlipPlaneModel, GridSettingsSetCollection, GridSettingsSet, BishopBruteForce, \
     UpliftVanParticleSwarm
 from toolbox.model_creator import GeneralSettings, ModelConfig, StageConfig, ScenarioConfig, UserInputStructure

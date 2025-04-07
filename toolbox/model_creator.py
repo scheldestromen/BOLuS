@@ -14,8 +14,8 @@ from toolbox.model import Model, Scenario, Stage
 from toolbox.soils import SoilCollection
 from toolbox.state import create_state_points_from_subsoil
 from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
-from toolbox.water import WaternetCollection
-from toolbox.water_creater import WaterLevelCollection, WaternetConfigCollection, WaternetOffsetMethodCollection
+# from toolbox.water import WaternetCollection
+from toolbox.water_creater import WaterLevelCollection, WaternetConfigCollection, HeadLineOffsetMethodCollection, create_waternet
 
 
 class GeneralSettings(BaseModel):
@@ -42,6 +42,7 @@ class StageConfig(BaseModel):
     stage_name: str
     geometry_name: str
     soil_profile_position_name: str
+    waternet_scenario_name: str
     revetment_profile_name: Optional[str]
     apply_state_points: bool
     load_name: Optional[str]
@@ -94,10 +95,10 @@ class UserInputStructure(BaseModel):
     soil_profile_positions: SoilProfilePositionSetCollection
     water_levels: WaterLevelCollection
     waternet_configs: WaternetConfigCollection
-    offset_methods: WaternetOffsetMethodCollection
+    headline_offset_methods: HeadLineOffsetMethodCollection
     revetment_profile_blueprints: RevetmentProfileBlueprintCollection
     loads: LoadCollection
-    waternets: WaternetCollection
+    # waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection
     model_configs: list[ModelConfig]
     
@@ -164,12 +165,22 @@ def create_stage(
             revetment_profile=revetment_profile,
             surface_line=surface_line,
         )
+    waternet_config = input_structure.waternet_configs.get_by_name(
+        stage_config.waternet_scenario_name
+    )
 
-    waternet = input_structure.waternets.get_waternet(
-        calc_name=calc_name,
-        scenario_name=scenario_name,
-        stage_name=stage_config.stage_name,
-    ) if input_structure.settings.apply_waternet else None
+    waternet = create_waternet(
+        geometry=geometry,
+        waternet_config=waternet_config,
+        water_level_collection=input_structure.water_levels,
+        headline_offset_method_collection=input_structure.headline_offset_methods,
+    )
+
+    # waternet = input_structure.waternets.get_waternet(
+    #     calc_name=calc_name,
+    #     scenario_name=scenario_name,
+    #     stage_name=stage_config.stage_name,
+    # ) if input_structure.settings.apply_waternet else None
 
     load = (
         input_structure.loads.get_by_name(stage_config.load_name)

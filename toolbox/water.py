@@ -44,50 +44,45 @@ class Waternet(BaseModel):
     """Represents the waternet for a stage in a D-Stability calculation
 
     Attributes:
-        calc_name (str): Name of the calculation it belongs to
-        scenario_name (str): Name of the scenario it belongs to
-        stage_name (str): Name of the stage it belongs to
         head_lines (list[HeadLine]): List of HeadLine
         ref_lines (list[ReferenceLine]): List of ReferenceLine
     """
 
-    calc_name: str
-    scenario_name: str
-    stage_name: str
     head_lines: list[HeadLine]
     ref_lines: list[ReferenceLine]
 
 
-class WaternetCollection(BaseModel):
-    waternets: list[Waternet]
+# TODO: Omschrijven naar WaternetExceptionCollection - en toevoegen WaternetException/HeadLineException/ReferenceLineException ?
+# class WaternetCollection(BaseModel):
+#     waternets: list[Waternet]
 
-    def get_waternet(
-        self, calc_name: str, scenario_name: str, stage_name: str
-    ) -> Waternet:
-        """Returns the waternet with the given calc_name, scenario_name and stage_name
+#     def get_waternet(
+#         self, calc_name: str, scenario_name: str, stage_name: str
+#     ) -> Waternet:
+#         """Returns the waternet with the given calc_name, scenario_name and stage_name
 
-        Args:
-            calc_name: The name of the calculation
-            scenario_name: The name of the scenario
-            stage_name: The name of the stage
+#         Args:
+#             calc_name: The name of the calculation
+#             scenario_name: The name of the scenario
+#             stage_name: The name of the stage
 
-        Returns:
-            The waternet with the given calc_name, scenario_name and stage_name"""
+#         Returns:
+#             The waternet with the given calc_name, scenario_name and stage_name"""
 
-        waternet = next(
-            (
-                waternet
-                for waternet in self.waternets
-                if waternet.calc_name == calc_name
-                and waternet.scenario_name == scenario_name
-                and waternet.stage_name == stage_name
-            ),
-            None,
-        )
-        if waternet:
-            return waternet
+#         waternet = next(
+#             (
+#                 waternet
+#                 for waternet in self.waternets
+#                 if waternet.calc_name == calc_name
+#                 and waternet.scenario_name == scenario_name
+#                 and waternet.stage_name == stage_name
+#             ),
+#             None,
+#         )
+#         if waternet:
+#             return waternet
 
-        raise ValueError(
-            f"Could not find waternet with calc_name {calc_name}, scenario_name {scenario_name} "
-            f"and stage_name {stage_name}"
-        )
+#         raise ValueError(
+#             f"Could not find waternet with calc_name {calc_name}, scenario_name {scenario_name} "
+#             f"and stage_name {stage_name}"
+#         )

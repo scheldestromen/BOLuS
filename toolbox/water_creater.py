@@ -3,10 +3,10 @@ from dataclasses import field
 from enum import StrEnum, auto
 from typing import Optional, Self
 
-from toolbox.geometry import CharPointType
+from toolbox.geometry import CharPointType, CharPoint
 from toolbox.geometry import Geometry
 from toolbox.geometry import Side
-from toolbox.water import HeadLine, Waternet
+from toolbox.water import HeadLine, ReferenceLine, Waternet
 
 
 # TODO: Idee: Om flexibiliteit te houden - naast het genereren van de waternets - zou ik 
@@ -37,17 +37,30 @@ class WaterLevelCollection(BaseModel):
                 }
             }"""
     
-    water_levels: dict[str, dict[str, float]]
+    water_levels: dict[str, dict[str, float | None]]
+
+    def get_by_name(self, name: str) -> dict[str, float | None]:
+        water_level_dict = self.water_levels.get(name)
+
+        if water_level_dict is None:
+            raise ValueError(f"Water level with name '{name}' not found")
+
+        return water_level_dict
 
 
-class WaternetMethodType(StrEnum):
+class HeadLineMethodType(StrEnum):
+    """
+    Enum defining the type of headline method.
+    Currently, only the OFFSETS method is implemented."""	
+
     OFFSETS = auto()
 
 
 class WaterLevelConfig(BaseModel):
     """
     A WaterLevelConfig is the connection between the generalized water level variables
-    used in the head_line_configs and the water levels defined in a WaterLevelCollection.
+    used in the head_line_configs and the names of the actual water levels that should 
+    be used, as they are defined in the WaterLevelCollection.
 
     For example:
         Two generalized water level variables could be defined: 
@@ -59,6 +72,7 @@ class WaterLevelConfig(BaseModel):
         - 'polder level'
 
         The WaterLevelConfig could be defined as follows:
+
             WaterLevelConfig(
                 name_waternet_scenario='daily conditions',
                 water_levels={
@@ -73,13 +87,14 @@ class WaterLevelConfig(BaseModel):
 
 class HeadLineConfig(BaseModel):
     name_head_line: str
-    waternet_method: WaternetMethodType = WaternetMethodType.OFFSETS
-    offset_method_name: Optional[str] = None
+    is_phreatic: bool
+    head_line_method_type: HeadLineMethodType = HeadLineMethodType.OFFSETS
+    head_line_method_name: Optional[str] = None
 
     @model_validator(mode='after')
-    def validate_offset_method(self) -> Self:
-        if self.waternet_method == WaternetMethodType.OFFSETS and self.offset_method_name is None:
-            raise ValueError(f"An offset method needs to be specified when the waternet method is {WaternetMethodType.OFFSETS}")
+    def validate_head_line_method(self) -> Self:
+        if self.head_line_method_type == HeadLineMethodType.OFFSETS and self.head_line_method_name is None:
+            raise ValueError(f"An offset method needs to be specified when the headline method is {HeadLineMethodType.OFFSETS}")
 
         return self
     
@@ -101,7 +116,7 @@ class WaternetConfig(BaseModel):
           These are the methods for creating the reference lines.
     """
 
-    name: str
+    name_waternet_scenario: str
     water_level_config: WaterLevelConfig
     head_line_configs: list[HeadLineConfig]
     reference_line_configs: list[ReferenceLineConfig] = field(default_factory=list)  # TODO: vervangen na implementatie
@@ -109,6 +124,14 @@ class WaternetConfig(BaseModel):
 
 class WaternetConfigCollection(BaseModel):
     waternet_configs: list[WaternetConfig]
+
+    def get_by_name(self, name: str) -> WaternetConfig:
+        waternet_config = next((config for config in self.waternet_configs if config.name_waternet_scenario == name), None)
+    
+        if waternet_config is None:
+            raise ValueError(f"Waternet config with name '{name}' not found")
+
+        return waternet_config
 
 
 class RefLevelType(StrEnum):
@@ -123,7 +146,7 @@ class OffsetType(StrEnum):
     SLOPING = auto()
 
 
-class WaternetOffsetPoint(BaseModel):
+class HeadLineOffsetPoint(BaseModel):
     char_point_type: CharPointType  # en CustomCharPoint in de toekomst (hoe te combineren?)
     ref_level_type: RefLevelType
     ref_level_name: Optional[str] = None
@@ -139,10 +162,11 @@ class WaternetOffsetPoint(BaseModel):
         return self
 
 
-class WaternetOffsetMethod(BaseModel):
+class HeadLineOffsetMethod(BaseModel):
     name_method: str
-    offset_points: list[WaternetOffsetPoint]
+    offset_points: list[HeadLineOffsetPoint]
 
+    # TODO: Refactor
     def create_head_line(
             self, 
             name_head_line: str,
@@ -150,13 +174,22 @@ class WaternetOffsetMethod(BaseModel):
             geometry: Geometry, 
             ref_levels: dict[str, float]  # key heeft de 'generalized' water level name
         ) -> HeadLine:
-        
 
         # We want to start with the most outward point, so the first point should be the most outward
         # If the outward is in the positive direction, then the first point is inward and we want to reverse the order of the points
         reverse = geometry.char_point_profile.determine_l_direction_sign(Side.WATER_SIDE) == 1  # presence of l-coordinates is also checked
 
-        char_points = [geometry.char_point_profile.get_point_by_type(offset_point.char_point_type) for offset_point in self.offset_points]
+        char_points: list[CharPoint] = []
+
+        for offset_point in self.offset_points:
+            try:
+                char_point = geometry.char_point_profile.get_point_by_type(offset_point.char_point_type)
+                char_points.append(char_point)
+
+            # If the character point is not present, skip it
+            except ValueError:
+                continue
+
         char_points = sorted(char_points, key=lambda p: p.l, reverse=reverse)
 
         l: list[float] = []
@@ -182,31 +215,31 @@ class WaternetOffsetMethod(BaseModel):
                 if i == 0:
                     raise ValueError(f"The head of the first outward point cannot be related to a previous point. "
                                      f"This is the case for the waternet '{self.name_method}'")
-                ref_level = char_points[i-1].z
+                ref_level = z[-1]
             
             else:
                 raise ValueError(f"Invalid reference level type '{offset_point.ref_level_type}'")
 
             if offset_point.offset_type == OffsetType.VERTICAL:
-                z = ref_level + offset_point.offset_value
+                z_i = ref_level + offset_point.offset_value
 
             elif offset_point.offset_type == OffsetType.SLOPING:
                 dist = abs(char_point.l - char_points[i-1].l)
-                z = ref_level - offset_point.offset_value * dist
+                z_i = ref_level - dist / offset_point.offset_value
 
             else:
                 raise ValueError(f"Invalid offset type '{offset_point.offset_type}'")
 
             l.append(char_point.l)
-            z.append(z)
+            z.append(z_i)
 
         return HeadLine(name=name_head_line, is_phreatic=is_phreatic, l=l, z=z)
 
 
-class WaternetOffsetMethodCollection(BaseModel):
-    offset_methods: list[WaternetOffsetMethod]
+class HeadLineOffsetMethodCollection(BaseModel):
+    offset_methods: list[HeadLineOffsetMethod]
 
-    def get_by_name(self, name_method: str) -> WaternetOffsetMethod:
+    def get_by_name(self, name_method: str) -> HeadLineOffsetMethod:
         offset_method = next((method for method in self.offset_methods if method.name_method == name_method), None)
 
         if offset_method is None:
@@ -216,11 +249,38 @@ class WaternetOffsetMethodCollection(BaseModel):
 
 
 def create_waternet(
+        geometry: Geometry,
         waternet_config: WaternetConfig,
-        water_levels: dict[str, float],
-        ) -> Waternet:
-    pass
+        water_level_collection: WaterLevelCollection,
+        headline_offset_method_collection: HeadLineOffsetMethodCollection,
+    ) -> Waternet:
 
-# TODO: Wat is logisch? Een WaternetCollection maken (dat moet dan ook op basis van ModelConfig i.v.m. de stage en scenario namen)
-#       of hier een functie om een Waternet en die aan te roepen in create_models?
-#       De methode met WaternetCollection lijkt me consistent met de huidige aanpak.
+    head_lines: list[HeadLine] = []
+    ref_lines: list[ReferenceLine] = []
+
+    # Get water levels - this is based on the geometry name since water levels are location bound
+    location_water_levels = water_level_collection.get_by_name(geometry.name)
+    water_level_set = {
+        k: location_water_levels[v] 
+        for k, v in waternet_config.water_level_config.water_levels.items() 
+        if v is not None
+    }
+    
+    for head_line_config in waternet_config.head_line_configs:
+        if head_line_config.head_line_method_type == HeadLineMethodType.OFFSETS:
+            method = headline_offset_method_collection.get_by_name(head_line_config.head_line_method_name)
+        else:
+            raise ValueError(f"Invalid headline method type '{head_line_config.head_line_method_type}'")
+        
+        head_line = method.create_head_line(
+            name_head_line=head_line_config.name_head_line,
+            is_phreatic=head_line_config.is_phreatic,
+            geometry=geometry,
+            ref_levels=water_level_set
+        )
+        head_lines.append(head_line)
+    
+    for ref_line_config in waternet_config.reference_line_configs:
+        pass
+
+    return Waternet(head_lines=head_lines, ref_lines=ref_lines)
