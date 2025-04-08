@@ -10,6 +10,7 @@ from shapely.geometry import LineString
 #       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.
 # TODO: Overwegen om validatie (b.v. l-coordinates) met Pydantic te doen ('after')
 #       Ook overwegen om l verplicht te maken, dan hoeven we de checks niet meer te doen.
+# TODO: Overwegen om logica in CharPointsProfile te checken (bv. volgorde en aanwezigheid punten)
 
 class CharPointType(StrEnum):
     SURFACE_LEVEL_WATER_SIDE = auto()
@@ -365,7 +366,7 @@ class Geometry(BaseModel):
 
         for point in self.surface_line.points:
             # Two conditions, accounting for two possible geometry orientations
-            
+
 
             if point.l >= from_point.l and point.l <= to_point.l:
                 points.append(point)
