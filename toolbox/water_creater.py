@@ -166,7 +166,60 @@ class HeadLineOffsetMethod(BaseModel):
     name_method: str
     offset_points: list[HeadLineOffsetPoint]
 
-    # TODO: Refactor
+    def _get_reference_level(
+        self, 
+        index: int,
+        offset_point: HeadLineOffsetPoint,
+        char_points: list[CharPoint], 
+        ref_levels: dict[str, float],
+        z: list[float],
+        geometry_name: str
+        ) -> float:
+
+        if offset_point.ref_level_type == RefLevelType.NAP:
+            ref_level = 0.
+
+        elif offset_point.ref_level_type == RefLevelType.FIXED_LEVEL:
+            ref_level = ref_levels.get(offset_point.ref_level_name)
+
+            if ref_level is None:
+                raise ValueError(f"Reference level '{offset_point.ref_level_name}' not found when creating the " 
+                                f"waternet '{self.name_method}' in combination with profile '{geometry_name}'")
+            
+        elif offset_point.ref_level_type == RefLevelType.SURFACE_LEVEL:
+            ref_level = char_points[index].z
+
+        elif offset_point.ref_level_type == RefLevelType.RELATED_TO_OTHER_POINT:
+            if index == 0:
+                raise ValueError(f"The head of the first outward point cannot be related to a previous point. "
+                                f"This is the case for the waternet '{self.name_method}'")
+            ref_level = z[-1]
+        
+        else:
+            raise ValueError(f"Invalid reference level type '{offset_point.ref_level_type}'")
+
+        return ref_level
+
+    def _determine_head_level(
+            self, 
+            index: int, 
+            offset_point: HeadLineOffsetPoint, 
+            char_points: list[CharPoint], 
+            ref_level: float
+        ) -> float:
+
+        if offset_point.offset_type == OffsetType.VERTICAL:
+            head_level = ref_level + offset_point.offset_value
+
+        elif offset_point.offset_type == OffsetType.SLOPING:
+            dist = abs(char_points[index].l - char_points[index - 1].l)
+            head_level = ref_level - dist / offset_point.offset_value
+
+        else:
+            raise ValueError(f"Invalid offset type '{offset_point.offset_type}'")
+            
+        return head_level
+
     def create_head_line(
             self, 
             name_head_line: str,
@@ -198,40 +251,24 @@ class HeadLineOffsetMethod(BaseModel):
         for i, char_point in enumerate(char_points):
             offset_point = next(p for p in self.offset_points if p.char_point_type == char_point.type)
 
-            if offset_point.ref_level_type == RefLevelType.NAP:
-                ref_level = 0.
+            ref_level = self._get_reference_level(
+                index=i,
+                offset_point=offset_point,
+                char_points=char_points,
+                ref_levels=ref_levels,
+                z=z,
+                geometry_name=geometry.name
+            )
 
-            elif offset_point.ref_level_type == RefLevelType.FIXED_LEVEL:
-                ref_level = ref_levels.get(offset_point.ref_level_name)
-
-                if ref_level is None:
-                    raise ValueError(f"Reference level '{offset_point.ref_level_name}' not found when creating the " 
-                                     f"waternet '{self.name_method}' in combination with profile '{geometry.name}'")
-                
-            elif offset_point.ref_level_type == RefLevelType.SURFACE_LEVEL:
-                ref_level = char_point.z
-
-            elif offset_point.ref_level_type == RefLevelType.RELATED_TO_OTHER_POINT:
-                if i == 0:
-                    raise ValueError(f"The head of the first outward point cannot be related to a previous point. "
-                                     f"This is the case for the waternet '{self.name_method}'")
-                ref_level = z[-1]
-            
-            else:
-                raise ValueError(f"Invalid reference level type '{offset_point.ref_level_type}'")
-
-            if offset_point.offset_type == OffsetType.VERTICAL:
-                z_i = ref_level + offset_point.offset_value
-
-            elif offset_point.offset_type == OffsetType.SLOPING:
-                dist = abs(char_point.l - char_points[i-1].l)
-                z_i = ref_level - dist / offset_point.offset_value
-
-            else:
-                raise ValueError(f"Invalid offset type '{offset_point.offset_type}'")
+            head_level = self._determine_head_level(
+                index=i,
+                offset_point=offset_point,
+                char_points=char_points,
+                ref_level=ref_level
+            )
 
             l.append(char_point.l)
-            z.append(z_i)
+            z.append(head_level)
 
         return HeadLine(name=name_head_line, is_phreatic=is_phreatic, l=l, z=z)
 
@@ -248,51 +285,119 @@ class HeadLineOffsetMethodCollection(BaseModel):
         return offset_method
 
 
-def create_waternet(
-        geometry: Geometry,
-        waternet_config: WaternetConfig,
-        water_level_collection: WaterLevelCollection,
-        headline_offset_method_collection: HeadLineOffsetMethodCollection,
-    ) -> Waternet:
+class WaternetCreator(BaseModel):
+    geometry: Geometry
+    waternet_config: WaternetConfig
+    water_level_collection: WaterLevelCollection
+    headline_offset_method_collection: HeadLineOffsetMethodCollection
+    _outward_intersection: Optional[tuple[float, float]] = None
+    _inward_intersection: Optional[tuple[float, float]] = None
 
-    head_lines: list[HeadLine] = []
-    ref_lines: list[ReferenceLine] = []
-
-    # Get water levels - this is based on the geometry name since water levels are location bound
-    location_water_levels = water_level_collection.get_by_name(geometry.name)
-    water_level_set = {
-        k: location_water_levels[v] 
-        for k, v in waternet_config.water_level_config.water_levels.items() 
-        if v is not None
-    }
-    
-    for head_line_config in waternet_config.head_line_configs:
-        if head_line_config.head_line_method_type == HeadLineMethodType.OFFSETS:
-            method = headline_offset_method_collection.get_by_name(head_line_config.head_line_method_name)
-        else:
-            raise ValueError(f"Invalid headline method type '{head_line_config.head_line_method_type}'")
+    def process_outward_intersection(self, head_line: HeadLine) -> HeadLine:
+        surface_level_outward = self.geometry.char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE)
+        water_level_outward = next(z for l, z in zip(head_line.l, head_line.z) if l == surface_level_outward.l)
         
-        head_line = method.create_head_line(
-            name_head_line=head_line_config.name_head_line,
-            is_phreatic=head_line_config.is_phreatic,
-            geometry=geometry,
-            ref_levels=water_level_set
+        self._outward_intersection = self.geometry.get_intersection(
+            level=water_level_outward,  # With the offset method, the first point is the most outward
+            from_char_point=CharPointType.DIKE_CREST_WATER_SIDE,
+            to_char_point=CharPointType.SURFACE_LEVEL_WATER_SIDE,
+            search_direction=Side.WATER_SIDE
         )
 
-        if head_line_config.is_phreatic:
-            intersection = geometry.get_intersection(
-                level=head_line.z[0],  # With the offset method, the first point is the most outward
-                from_char_point=CharPointType.DIKE_CREST_WATER_SIDE,
-                to_char_point=CharPointType.SURFACE_LEVEL_WATER_SIDE,
-                search_direction=Side.WATER_SIDE
-            )
-            if intersection is not None:
-                head_line.l.append(intersection[0])
-                head_line.z.append(intersection[1])
-        
-        head_lines.append(head_line)
-    
-    for ref_line_config in waternet_config.reference_line_configs:
-        pass
+        if self._outward_intersection is not None:
+            # Delete head line points between the intersection and the first point of the head line
+            l_outward = surface_level_outward.l
+            l_intersection = self._outward_intersection[0]
 
-    return Waternet(head_lines=head_lines, ref_lines=ref_lines)
+            # Two conditions, accounting for two possible geometry orientations
+            # The <=/>= is to prevent double points at the intersection
+            points = [(l, z) for l, z in zip(head_line.l, head_line.z) 
+                           if not (l_intersection <= l < l_outward
+                                   or l_intersection >= l > l_outward)]
+
+            head_line.l = [p[0] for p in points]
+            head_line.z = [p[1] for p in points]
+
+            # Add intersection point after deletion
+            head_line.l.append(self._outward_intersection[0])
+            head_line.z.append(self._outward_intersection[1])
+
+        return head_line
+
+    def process_inward_intersection(self, head_line: HeadLine) -> HeadLine:
+        surface_level_inward = self.geometry.char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_LAND_SIDE)
+        water_level_inward = next(z for l, z in zip(head_line.l, head_line.z) if l == surface_level_inward.l)
+        print(water_level_inward)
+
+        # If there is no free water surface, then we leave the head line as is
+        if surface_level_inward.z >= water_level_inward:
+            return head_line
+        
+        # Get the intersection point most inward (LAND_SIDE)
+        self._inward_intersection = self.geometry.get_intersection(
+            level=water_level_inward,  # With the offset method, the last point is the most inward
+            from_char_point=CharPointType.SURFACE_LEVEL_LAND_SIDE,
+            to_char_point=CharPointType.DIKE_CREST_LAND_SIDE,
+            search_direction=Side.WATER_SIDE
+        )
+        print(self._inward_intersection)
+
+        if self._inward_intersection is not None:
+            # Delete head line points between the intersection and the last point of the head line
+            l_inward = surface_level_inward.l
+            l_intersection = self._inward_intersection[0]
+
+            # Two conditions, accounting for two possible geometry orientations
+            # The <=/>= is to prevent double points at the intersection
+            points = [(l, z) for l, z in zip(head_line.l, head_line.z) 
+                           if not (l_intersection <= l < l_inward
+                                   or l_intersection >= l > l_inward)]
+
+            head_line.l = [p[0] for p in points]
+            head_line.z = [p[1] for p in points]
+
+            # Add intersection point after deletion
+            head_line.l.append(self._inward_intersection[0])
+            head_line.z.append(self._inward_intersection[1])
+
+        return head_line
+
+    def create_waternet(self) -> Waternet:
+        head_lines: list[HeadLine] = []
+        ref_lines: list[ReferenceLine] = []
+
+        # Get water levels - this is based on the geometry name since water levels are location bound
+        location_water_levels = self.water_level_collection.get_by_name(self.geometry.name)
+        water_level_set = {
+            k: location_water_levels[v] 
+            for k, v in self.waternet_config.water_level_config.water_levels.items()
+            if v is not None
+        }
+        
+        for head_line_config in self.waternet_config.head_line_configs:
+            # Get the method to create the head line
+            if head_line_config.head_line_method_type == HeadLineMethodType.OFFSETS:
+                method = self.headline_offset_method_collection.get_by_name(head_line_config.head_line_method_name)
+            else:
+                raise ValueError(f"Invalid headline method type '{head_line_config.head_line_method_type}'")
+            
+            # Create the head line
+            head_line = method.create_head_line(
+                name_head_line=head_line_config.name_head_line,
+                is_phreatic=head_line_config.is_phreatic,
+                geometry=self.geometry,
+                ref_levels=water_level_set
+            )
+
+            # Add the point where the phreatic line intersects the outer slope (if so)
+            if head_line_config.is_phreatic:
+                head_line = self.process_outward_intersection(head_line)
+                head_line = self.process_inward_intersection(head_line)
+            
+            head_lines.append(head_line)
+    
+        # Create the reference lines
+        for ref_line_config in self.waternet_config.reference_line_configs:
+            pass
+
+        return Waternet(head_lines=head_lines, ref_lines=ref_lines)

@@ -364,6 +364,9 @@ class Geometry(BaseModel):
         points: list[Point] = []
 
         for point in self.surface_line.points:
+            # Two conditions, accounting for two possible geometry orientations
+            
+
             if point.l >= from_point.l and point.l <= to_point.l:
                 points.append(point)
 
@@ -377,6 +380,7 @@ class Geometry(BaseModel):
 
         intersection = shapely_surface_line.intersection(shapely_level)
 
+        # TODO: Als het maaiveld een stukje gelijk loopt met het te snijden niveau, dan is het resultaat ook een stukje lijn -> Dan lijn exploderen tot punten.
         if intersection.geom_type == 'MultiPoint':
             intersection_points = list(intersection.geoms)
         elif intersection.geom_type == 'Point':
