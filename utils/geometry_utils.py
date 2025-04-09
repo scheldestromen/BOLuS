@@ -1,7 +1,10 @@
-from shapely import GeometryCollection, MultiPolygon, Point, Polygon
+from shapely import GeometryCollection, MultiPolygon, Point, Polygon, LineString
+from shapely.ops import orient
+from shapely import offset_curve
+from typing import Literal
 
 
-def geometry_to_polygons(geometry):
+def geometry_to_polygons(geometry) -> list[Polygon]:
     """
     Reduces any geometry or collection of geometries into a
     flat list of Shapely Polygons.
@@ -43,8 +46,8 @@ def determine_point_in_polygon(
             polygon in case the centroid cannot be used.
 
     Returns:
-        A tuple of (x, y) coordinates of the point lying inside the polygon
-    """
+        A tuple of (x, y) coordinates of the point lying inside the polygon"""
+    
     centroid = polygon.centroid
 
     # Check if centroid is within the polygon
@@ -75,3 +78,85 @@ def determine_point_in_polygon(
         return new_point_coord
 
     raise ValueError("Could not determine point in polygon")
+
+
+def get_polygon_top_side(polygon: Polygon) -> LineString:
+    """
+    Returns the top side of a polygon as a LineString.
+
+    The top side of a polygon is defined as the line part that 
+    starts with the lowest x coordinate and ends with the highest x coordinate.
+
+    Args:
+        polygon: A Shapely Polygon
+
+    Returns:
+        A Shapely LineString"""
+
+    # Orient the polygon so that the points are in clockwise order
+    orient_polygon = orient(polygon, sign=-1)
+
+    # Get the points of the polygon from the exterior - skip the last point (same as first point)
+    poly_points = [(p[0], p[1]) for p in list(orient_polygon.exterior.coords)][:-1]
+
+    # Determine the outer x-coordinates
+    x_min = min([p[0] for p in poly_points])
+    x_max = max([p[0] for p in poly_points])
+
+    # Get the points on the x_min line and sort them by y-coordinate
+    x_min_points = sorted([p for p in poly_points if p[0] == x_min], key=lambda p: p[1])
+    x_max_points = sorted([p for p in poly_points if p[0] == x_max], key=lambda p: p[1])
+
+    # Get the highest point on x_min and x_max
+    top_start = x_min_points[-1]
+    top_end = x_max_points[-1]
+
+    # Get the index of the top start
+    i_start = poly_points.index(top_start)
+
+    # Sort the points so that the top start is the first in the list
+    poly_points = poly_points[i_start:] + poly_points[:i_start]
+
+    # Get the index of the top end
+    i_end = poly_points.index(top_end)
+
+    # Now get the points from the top start to the top end
+    top_side_points = poly_points[: i_end + 1]
+
+    # Create the top side
+    top_side = LineString(top_side_points)
+
+    return top_side
+
+
+def offset_line(line: LineString, offset: float, above_or_below: Literal["above", "below"]) -> LineString:
+    """Offsets a line by a given distance.
+
+    Args:
+        line: A Shapely LineString
+        offset: The distance to offset the line
+        above_or_below: Whether to offset the line above or below the line. This
+          is determined by looking at the maximum y-coordinate (vertical axis) of the line.
+
+    Returns: 
+        A Shapely LineString"""
+    
+    offset_line_strings = [
+        offset_curve(line, distance=offset)
+        for offset in [offset, -offset]
+    ] 
+    offset_lines_coords = [
+        [(p[0], p[1]) for p in line.coords]
+        for line in offset_line_strings
+    ]           
+
+    # Select the higer or lower line - depending on the above_or_below argument
+    if above_or_below == "above":
+        offset_line_coords = max(offset_lines_coords, key=lambda lst: max(t[1] for t in lst))
+    else:
+        offset_line_coords = min(offset_lines_coords, key=lambda lst: min(t[1] for t in lst))
+
+    # Make a LineString from the coordinates
+    offset_line = LineString(offset_line_coords)
+
+    return offset_line

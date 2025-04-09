@@ -175,6 +175,10 @@ HEAD_LINE_CONFIG_COLS = {
     "name_head_line": "PL-lijn",
     "is_phreatic": "Freatisch",
     "head_line_method_name": "Offset methode",
+    "apply_minimal_surface_line_offset": "Minimale offset met het maaiveld toepassen",
+    "minimal_surface_line_offset": "Waarde minimale offset",
+    "minimal_offset_from_point": "Minimale offset van punt",
+    "minimal_offset_to_point": "Minimale offset tot punt",
 }
 
 LOAD_COLS = {
@@ -340,6 +344,7 @@ class RawUserInput(BaseModel):
     # TODO: Dit beter toelichten? Deze hoort hier eigenlijk niet thuis. Dit is niet specifiek Excel-gerelateerd.
     #  - Refactor, toelichting en type-hints uitwerken
     # TODO: Dit is wellicht een goede plek om de validatie van de input te doen.
+    # TODO: De type hints zijn wel een beetje overdreven. Overwegen om dit naar Any te zetten
 
     settings: dict[str, str| float | None]
     surface_lines: dict[str, list[float]]
@@ -350,7 +355,7 @@ class RawUserInput(BaseModel):
     water_levels: dict[str, dict[str, float | None]]
     water_level_configs: dict[str, dict[str, str | None]]
     headline_offset_methods: dict[str, list[dict[str, str | float | None]]]
-    head_line_configs: dict[str, list[dict[str, str | bool]]]
+    head_line_configs: dict[str, list[dict[str, str | bool | float | CharPointType | None]]]
     revetment_profile_blueprints: dict[str, list[dict[str, str | float]]]
     loads: list[dict]
     hydraulic_pressure: dict
@@ -549,15 +554,18 @@ class ExcelInputReader(BaseModel):
         return headline_offset_methods
     
     @staticmethod
-    def parse_head_line_configs(workbook: Any) -> dict[str, list[dict[str, str]]]:
+    def parse_head_line_configs(workbook: Any) -> dict[str, list[dict[str, str | bool | float | CharPointType]]]:
         head_line_configs = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["head_line_configs"]],
-            header_row=1,
-            skip_rows=2,
+            header_row=2,
+            skip_rows=4,
             col_dict=HEAD_LINE_CONFIG_COLS,
         )
         for head_line_config in head_line_configs:
             head_line_config["is_phreatic"] = INPUT_TO_BOOL.get(head_line_config["is_phreatic"])
+            head_line_config["apply_minimal_surface_line_offset"] = INPUT_TO_BOOL.get(head_line_config["apply_minimal_surface_line_offset"])
+            head_line_config["minimal_offset_from_point"] = INPUT_TO_CHAR_POINTS.get(head_line_config["minimal_offset_from_point"])
+            head_line_config["minimal_offset_to_point"] = INPUT_TO_CHAR_POINTS.get(head_line_config["minimal_offset_to_point"])
 
         head_line_configs = group_dicts_by_key(head_line_configs, group_by_key="name_waternet_scenario")
 
@@ -994,7 +1002,7 @@ class RawInputToUserInputStructure:
     @staticmethod
     def convert_waternet_config_collection(
         water_level_configs_dict: dict[str, dict[str, str | None]],
-        head_line_configs_dict: dict[str, list[dict[str, str]]],
+        head_line_configs_dict: dict[str, list[dict[str, str | bool | float | CharPointType]]],
         reference_line_configs_dict: None
     ) -> WaternetConfigCollection:
         hlc_scenario_names = list(head_line_configs_dict.keys())

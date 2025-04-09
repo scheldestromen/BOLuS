@@ -2,14 +2,17 @@ from pydantic import BaseModel, model_validator
 from dataclasses import field
 from enum import StrEnum, auto
 from typing import Optional, Self
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, LineString
 from shapely.ops import unary_union
 
 from toolbox.geometry import CharPointType, CharPoint
 from toolbox.geometry import Geometry
 from toolbox.geometry import Side
 from toolbox.water import HeadLine, ReferenceLine, Waternet
+from utils.geometry_utils import get_polygon_top_side, offset_line
 
+# TODO: TEMP
+import matplotlib.pyplot as plt
 
 # TODO: Idee: Om flexibiliteit te houden - naast het genereren van de waternets - zou ik 
 #       een WaternetExceptions o.i.d. kunnen maken waarin specifieke correcties zijn opgegeven.
@@ -95,6 +98,10 @@ class HeadLineConfig(BaseModel):
     is_phreatic: bool
     head_line_method_type: HeadLineMethodType = HeadLineMethodType.OFFSETS
     head_line_method_name: Optional[str] = None
+    apply_minimal_surface_line_offset: Optional[bool] = None
+    minimal_surface_line_offset: Optional[float] = None
+    minimal_offset_from_point: Optional[CharPointType] = None
+    minimal_offset_to_point: Optional[CharPointType] = None
 
     @model_validator(mode='after')
     def validate_head_line_method(self) -> Self:
@@ -102,7 +109,23 @@ class HeadLineConfig(BaseModel):
             raise ValueError(f"An offset method needs to be specified when the headline method is {HeadLineMethodType.OFFSETS}")
 
         return self
-    
+
+    @model_validator(mode='after')
+    def validate_minimal_surface_line_offset(self) -> Self:
+        if self.apply_minimal_surface_line_offset and not self.is_phreatic:
+            raise ValueError("A minimal surface line offset can only be applied to a phreatic line")
+
+        if self.apply_minimal_surface_line_offset:
+            if self.minimal_surface_line_offset is None:
+                raise ValueError("A value for the minimal surface line offset needs to "
+                                 "be specified when the apply_minimal_surface_line_offset is True")
+
+            if self.minimal_offset_from_point is None or self.minimal_offset_to_point is None:
+                raise ValueError("Two characteristic points need to be specified when "
+                                 "applying a minimal offset of the phreatic line from the surface line")
+            
+        return self
+
 class ReferenceLineConfig(BaseModel):
     pass
 
@@ -290,12 +313,13 @@ class HeadLineOffsetMethodCollection(BaseModel):
         return offset_method
 
 
+# TODO: Heroverwegen private methods, volgens mij is dat niet nodig
 class WaternetCreator(BaseModel):
     geometry: Geometry
     waternet_config: WaternetConfig
     water_level_collection: WaterLevelCollection
     headline_offset_method_collection: HeadLineOffsetMethodCollection
-    settings: WaternetSettings
+    settings: WaternetSettings = WaternetSettings() # TODO: Invoer maken - voor nu standaard op True
     _outward_intersection: Optional[tuple[float, float]] = None
     _inward_intersection: Optional[tuple[float, float]] = None
 
@@ -321,12 +345,11 @@ class WaternetCreator(BaseModel):
                            if not (l_intersection <= l < l_outward
                                    or l_intersection >= l > l_outward)]
 
+            points.append(self._outward_intersection)
+            points.sort(key=lambda p: p[0])
+
             head_line.l = [p[0] for p in points]
             head_line.z = [p[1] for p in points]
-
-            # Add intersection point after deletion
-            head_line.l.append(self._outward_intersection[0])
-            head_line.z.append(self._outward_intersection[1])
 
         return head_line
 
@@ -357,17 +380,23 @@ class WaternetCreator(BaseModel):
                            if not (l_intersection <= l < l_inward
                                    or l_intersection >= l > l_inward)]
 
+            points.append(self._inward_intersection)
+            points.sort(key=lambda p: p[0])
+
             head_line.l = [p[0] for p in points]
             head_line.z = [p[1] for p in points]
 
-            # Add intersection point after deletion
-            head_line.l.append(self._inward_intersection[0])
-            head_line.z.append(self._inward_intersection[1])
-
         return head_line
 
-    def _maximize_phreatic_line_to_surface_level(self, head_line: HeadLine) -> HeadLine:
-        """Maximizes the phreatic line to the surface level.
+    def _apply_minimal_surface_line_offset_to_phreatic_line(
+            self, 
+            head_line: HeadLine, 
+            offset: float,
+            from_char_point_type: CharPointType,
+            to_char_point_type: CharPointType
+        ) -> HeadLine:
+        # TODO: Aanpassen
+        """Applies a minimal surface line offset to the phreatic line.
         
         If the phreatic line lies above the surface level, then the phreatic line is set 
         to the surface level. This is to prevent an unrealistic phreatic line. However,
@@ -401,22 +430,45 @@ class WaternetCreator(BaseModel):
         """
        
         # Get the surface line from the geometry
-        surface_line = self.geometry.surface_line
-        surface_line_l = [p.l for p in surface_line.points]
-        surface_line_z = [p.z for p in surface_line.points]
+        surface_line_points = [(p.l, p.z) for p in self.geometry.surface_line.points]
+
+        # If there is an offset, then offset the surface line
+        if offset != 0.:
+            surface_line_string = LineString(surface_line_points)
+            surface_line_string_offset = offset_line(
+                line=surface_line_string, 
+                offset=offset, 
+                above_or_below="below"
+            )
+            surface_line_points = [(p[0], p[1]) for p in surface_line_string_offset.coords]
         
-        # Determine the bottom of the polygon (good as long as it is below every point)
-        polygon_bottom = min(surface_line_z + head_line.z) - 1.
+        # Extract the l and z coordinates
+        surface_line_l = [p[0] for p in surface_line_points]
+        surface_line_z = [p[1] for p in surface_line_points]
+        
+        # Determine the bounds of the surface line and phreatic line together
+        z_min = min(surface_line_z + head_line.z)
+        z_max = max(surface_line_z + head_line.z)
+
+        # Determine the bounds of the helper polygons (slightly larger)
+        polygon_bottom = z_min - 1.
+        polygon_top = z_max + 1.
 
         # Make shapely polygon of the surface line
-        surf_points = [
-            (surface_line_l[0], polygon_bottom),
-            *list(zip(surface_line_l, surface_line_z)),
-            (surface_line_l[-1], polygon_bottom)
+        surface_line_points = [
+                (surface_line_l[0], polygon_bottom),
+                *list(zip(surface_line_l, surface_line_z)),
+                (surface_line_l[-1], polygon_bottom)
         ]
-        surface_line_polygon = Polygon(surf_points)
+        surface_line_polygon = Polygon(surface_line_points)
 
-        # Modify the surface line polygon as a work-around to exclude the ditch
+        # Create a polygon of the phreatic line
+        phreatic_points = [(l, z) for l, z in zip(head_line.l, head_line.z)]
+        phreatic_points = [(phreatic_points[0][0], polygon_bottom)] + phreatic_points + [(phreatic_points[-1][0], polygon_bottom)]
+        phreatic_polygon = Polygon(phreatic_points)
+
+        # Create a non-correction zone for the ditch, if there is one
+        non_correction_zone_ditch = None
         char_point_types = [cp.type for cp in self.geometry.char_point_profile.points]
 
         # Only do it if both ditch starts are present - otherwise the ditch is not well defined
@@ -429,29 +481,44 @@ class WaternetCreator(BaseModel):
             head_ditch_land_side = next(z for l, z in zip(head_line.l, head_line.z) if l == l_ditch_land_side)
             head_ditch_water_side = next(z for l, z in zip(head_line.l, head_line.z) if l == l_ditch_water_side)
 
-            # Create a polygon of the ditch
+            # Get the min and the max to make it orientation independent
+            l_ditch_min = min(l_ditch_land_side, l_ditch_water_side)
+            l_ditch_max = max(l_ditch_land_side, l_ditch_water_side)
+
+            # Create a non-correction zone polygon for the ditch
+            # The +0.001 and -0.001 makes the zone slightly smaller
+            # This is to get a proper order of the phreatic points later on
             ditch_points = [
-                (l_ditch_land_side, polygon_bottom), 
-                (l_ditch_land_side, head_ditch_land_side), 
-                (l_ditch_water_side, head_ditch_water_side), 
-                (l_ditch_water_side, polygon_bottom),
+                (l_ditch_min, polygon_bottom), 
+                (l_ditch_min, head_ditch_land_side), 
+                (l_ditch_max, head_ditch_water_side), 
+                (l_ditch_max, polygon_bottom),
             ]
-            ditch_polygon = Polygon(ditch_points)
+            non_correction_zone_ditch = Polygon(ditch_points)
 
-            # Make a union of the surface line polygon and the ditch helper-polygon
-            surface_line_polygon = unary_union([surface_line_polygon, ditch_polygon])
-    
-        # Create a polygon of the phreatic line
-        phreatic_points = [
-            (l, z) for l, z in zip(head_line.l, head_line.z)
-            if l not in surface_line_l
-        ]
-        phreatic_points = [(phreatic_points[0], polygon_bottom)] + phreatic_points + [(phreatic_points[-1], polygon_bottom)]
-        phreatic_polygon = Polygon(phreatic_points)
-         
+        # Determine the bounds where the correction should be applied
+        # There are two pairs of bounds:
+        # - The inputted bounds (from_char_point_type and to_char_point_type)
+        # - The bounds determined by the intersection points of the free water surface (if present)
 
-        # Determine the part where the correction should be applied
-        # First, check if there are free water surfaces (outward and inward)
+        # We make polygons for both zones and check if there is an overlap
+        from_char_point = self.geometry.char_point_profile.get_point_by_type(from_char_point_type).l
+        to_char_point = self.geometry.char_point_profile.get_point_by_type(to_char_point_type).l
+
+        # Get the min and the max to make it orientation independent
+        l_input_min = min(from_char_point, to_char_point)
+        l_input_max = max(from_char_point, to_char_point)
+
+        # Create a polygon of the inputted bounds
+        correction_zone_input = Polygon([
+            (l_input_min, polygon_bottom),
+            (l_input_min, polygon_top),
+            (l_input_max, polygon_top),
+            (l_input_max, polygon_bottom),
+        ])
+
+        # Create a polygon of the bounds determined by the intersection points of the free water surface (if present)
+        # If there is no intersection, then the natural bounds are used (outer most points)
         if self._outward_intersection is None:
             outward_bound = self.geometry.char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
         else:
@@ -462,80 +529,56 @@ class WaternetCreator(BaseModel):
         else:
             inward_bound = self._inward_intersection[0]
         
-        # Make shapely polygon of the surface line
-        # TODO: HIER GEBLEVEN
+        # Get the min and the max to make it orientation independent
+        l_intersection_min = min(outward_bound, inward_bound)
+        l_intersection_max = max(outward_bound, inward_bound)
 
+        # Create the correctoin zone polygon for the intersection points with the free water surface
+        correction_zone_intersects = Polygon([
+            (l_intersection_min, polygon_bottom),
+            (l_intersection_min, polygon_top),
+            (l_intersection_max, polygon_top),
+            (l_intersection_max, polygon_bottom),
+        ])
+
+        # Determine the intersection of the two polygons
+        correction_zone = correction_zone_input.intersection(correction_zone_intersects)
+
+        # If there is no overlap, then we leave the head line as is
+        if not isinstance(correction_zone, Polygon):
+            return head_line
+
+        # Create a bounding box of the surface line and phreatic line
+        bbox = Polygon([
+            (surface_line_l[0], polygon_bottom),
+            (surface_line_l[0], polygon_top),
+            (surface_line_l[-1], polygon_top),
+            (surface_line_l[-1], polygon_bottom),
+        ])
+
+        # Create a non-correction zone by subtracting the correction zone from the bounding box
+        non_correction_zone = bbox.difference(correction_zone)  # -> is eighter a Polygon or a MultiPolygon
+
+        # If there is a non-correction zone for the ditch, then we merge it with the non-correction zone
+        if non_correction_zone_ditch is not None:
+            non_correction_zone = unary_union([non_correction_zone, non_correction_zone_ditch])
+
+        # Merge the non-correction zone and the surface line polygon
+        correction_polygon = unary_union([non_correction_zone, surface_line_polygon])
+
+        # Determine the intersection of the correction polygon and the phreatic polygon
+        phreatic_polygon_corrected = phreatic_polygon.intersection(correction_polygon)
+
+        if isinstance(phreatic_polygon_corrected, Polygon):
+            # Extract the coordinates of the corrected phreatic line
+            phreatic_line_string = get_polygon_top_side(phreatic_polygon_corrected)
+        else:
+            raise ValueError("Something went wrong when maximizing the phreatic line to the surface level")
         
-        if not phreatic_points:
-            return head_line  # No points to correct
-        
-        # Filter the surface line points that are within the correction range
-        # Add points at the boundaries if they don't exist
-        surface_points = []
-        
-        # Add start boundary point if needed
-        if start_l not in surface_line_l:
-            # Interpolate z value at start_l
-            for i in range(len(surface_line_l) - 1):
-                if surface_line_l[i] <= start_l <= surface_line_l[i + 1]:
-                    ratio = (start_l - surface_line_l[i]) / (surface_line_l[i + 1] - surface_line_l[i])
-                    z_start = surface_line_z[i] + ratio * (surface_line_z[i + 1] - surface_line_z[i])
-                    surface_points.append((start_l, z_start))
-                    break
-        
-        # Add all surface points within range
-        for l, z in zip(surface_line_l, surface_line_z):
-            if start_l <= l <= end_l:
-                surface_points.append((l, z))
-        
-        # Add end boundary point if needed
-        if end_l not in surface_line_l:
-            # Interpolate z value at end_l
-            for i in range(len(surface_line_l) - 1):
-                if surface_line_l[i] <= end_l <= surface_line_l[i + 1]:
-                    ratio = (end_l - surface_line_l[i]) / (surface_line_l[i + 1] - surface_line_l[i])
-                    z_end = surface_line_z[i] + ratio * (surface_line_z[i + 1] - surface_line_z[i])
-                    surface_points.append((end_l, z_end))
-                    break
-        
-        # Sort points by l-coordinate
-        surface_points.sort(key=lambda p: p[0])
-        phreatic_points.sort(key=lambda p: p[0])
-        
-        # Create the corrected phreatic line
-        corrected_phreatic_points = []
-        
-        for l, z in phreatic_points:
-            # Find the surface level at this l-coordinate
-            surface_z = None
-            for i in range(len(surface_points) - 1):
-                if surface_points[i][0] <= l <= surface_points[i + 1][0]:
-                    ratio = (l - surface_points[i][0]) / (surface_points[i + 1][0] - surface_points[i][0])
-                    surface_z = surface_points[i][1] + ratio * (surface_points[i + 1][1] - surface_points[i][1])
-                    break
-            
-            if surface_z is not None:
-                # Take the minimum of phreatic line and surface level
-                corrected_z = min(z, surface_z)
-                corrected_phreatic_points.append((l, corrected_z))
-            else:
-                corrected_phreatic_points.append((l, z))
-        
-        # Update the phreatic line with the corrected points
-        # First, keep the points outside the correction range
-        new_l = [l for l, z in zip(head_line.l, head_line.z) if l < start_l or l > end_l]
-        new_z = [z for l, z in zip(head_line.l, head_line.z) if l < start_l or l > end_l]
-        
-        # Add the corrected points
-        for l, z in corrected_phreatic_points:
-            new_l.append(l)
-            new_z.append(z)
-        
-        # Sort by l-coordinate
-        sorted_points = sorted(zip(new_l, new_z), key=lambda p: p[0])
-        head_line.l = [p[0] for p in sorted_points]
-        head_line.z = [p[1] for p in sorted_points]
-        
+        phreatic_points = [(p[0], p[1]) for p in phreatic_line_string.coords]
+        head_line.l = [p[0] for p in phreatic_points]
+        head_line.z = [p[1] for p in phreatic_points]
+
         return head_line
 
     def create_waternet(self) -> Waternet:
@@ -571,12 +614,17 @@ class WaternetCreator(BaseModel):
                 head_line = self._process_inward_intersection(head_line)
             
             # As last - maximize the headline to the surface level if requested
-            if head_line_config.is_phreatic and self.settings.maximize_phreatic_line_to_surface_level:
-                head_line = self._maximize_head_line_to_surface_level(head_line)
+            if head_line_config.is_phreatic and head_line_config.apply_minimal_surface_line_offset:
+                head_line = self._apply_minimal_surface_line_offset_to_phreatic_line(
+                    head_line=head_line, 
+                    offset=head_line_config.minimal_surface_line_offset,
+                    from_char_point_type=head_line_config.minimal_offset_from_point, 
+                    to_char_point_type=head_line_config.minimal_offset_to_point
+                )
 
             head_lines.append(head_line)
     
-        # Create the reference lines
+        # Create the reference lines 
         for ref_line_config in self.waternet_config.reference_line_configs:
             pass
 

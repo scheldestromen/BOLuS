@@ -366,8 +366,6 @@ class Geometry(BaseModel):
 
         for point in self.surface_line.points:
             # Two conditions, accounting for two possible geometry orientations
-
-
             if point.l >= from_point.l and point.l <= to_point.l:
                 points.append(point)
 
