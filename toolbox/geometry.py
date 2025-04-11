@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from typing_extensions import List
 from shapely.geometry import LineString
 
+from utils.geometry_utils import geometry_to_points
+
 # TODO: Overwegen om validatie methodes toe te voegen.
 #       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.
 # TODO: Overwegen om validatie (b.v. l-coordinates) met Pydantic te doen ('after')
@@ -378,14 +380,7 @@ class Geometry(BaseModel):
         shapely_level = LineString([(min_l, level), (max_l, level)])
 
         intersection = shapely_surface_line.intersection(shapely_level)
-
-        # TODO: Als het maaiveld een stukje gelijk loopt met het te snijden niveau, dan is het resultaat ook een stukje lijn -> Dan lijn exploderen tot punten.
-        if intersection.geom_type == 'MultiPoint':
-            intersection_points = list(intersection.geoms)
-        elif intersection.geom_type == 'Point':
-            intersection_points = [intersection]
-        else:
-            raise ValueError(f"Unexpected intersection type: {intersection.geom_type}")
+        intersection_points = geometry_to_points(intersection)
         
         # Determine which the direction of the l-axis is
         sign = self.char_point_profile.determine_l_direction_sign(search_direction)

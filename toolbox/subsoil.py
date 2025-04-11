@@ -24,7 +24,7 @@ class SoilLayer(BaseModel):
 
     soil_type: str
     top: float
-
+    is_aquifer: Optional[bool] = None
 
 class SoilProfile(BaseModel):
     """Representation of a 1D soil profile"""

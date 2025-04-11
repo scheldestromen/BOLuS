@@ -1,4 +1,4 @@
-from shapely import GeometryCollection, MultiPolygon, Point, Polygon, LineString
+from shapely import GeometryCollection, MultiPolygon, Point, Polygon, LineString, MultiLineString, MultiPoint, LinearRing
 from shapely.ops import orient
 from shapely import offset_curve
 from typing import Literal
@@ -27,6 +27,43 @@ def geometry_to_polygons(geometry) -> list[Polygon]:
             continue
 
     return polygons
+
+
+def geometry_to_points(geometry) -> list[Point]:
+    """
+    Reduces any Shapely geometry or Shapely collection of geometries into a
+    flat list of Shapely Points.
+    """
+    points = []
+    queue = [geometry]
+
+    while queue:
+        current = queue.pop(0)
+
+        # If the current geometry is a Point, add it to the list
+        if isinstance(current, Point):
+            points.append(current)
+
+        elif isinstance(current, LinearRing):
+            print([Point(x, y) for x, y in current.coords[:-1]])
+            points.extend([Point(x, y) for x, y in current.coords[:-1]])  # The last point is repeated
+
+        # If the current geometry is a line, add its points to the list
+        elif isinstance(current, LineString):
+            points.extend([Point(x, y) for x, y in current.coords])
+
+        # If the current geometry is a Polygon, add its exterior and interior rings to the queue
+        elif isinstance(current, Polygon):
+            queue.extend([current.exterior, *current.interiors])
+
+        # If the current geometry is a collection of geometries, add its geometries to the queue
+        elif isinstance(current, (GeometryCollection, MultiPolygon, MultiLineString, MultiPoint)):
+            queue.extend(current.geoms)
+
+        else:
+            raise ValueError(f"Unexpected geometry type: {type(current)}")
+
+    return points
 
 
 def determine_point_in_polygon(

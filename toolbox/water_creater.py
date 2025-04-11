@@ -62,6 +62,15 @@ class HeadLineMethodType(StrEnum):
     Currently, only the OFFSETS method is implemented."""	
 
     OFFSETS = auto()
+    
+class RefLineMethodType(StrEnum):
+    """
+    Enum defining the type of ref line method.
+    Currently, only the OFFSETS method is implemented."""
+
+    OFFSETS = auto()
+    AQUIFER = auto()
+    INTERMEDIATE_AQUIFER = auto()  # At least this is better than 'in-between sand layer'
 
 
 class WaterLevelConfig(BaseModel):
@@ -97,7 +106,7 @@ class HeadLineConfig(BaseModel):
     name_head_line: str
     is_phreatic: bool
     head_line_method_type: HeadLineMethodType = HeadLineMethodType.OFFSETS
-    head_line_method_name: Optional[str] = None
+    offset_method_name: Optional[str] = None
     apply_minimal_surface_line_offset: Optional[bool] = None
     minimal_surface_line_offset: Optional[float] = None
     minimal_offset_from_point: Optional[CharPointType] = None
@@ -105,7 +114,7 @@ class HeadLineConfig(BaseModel):
 
     @model_validator(mode='after')
     def validate_head_line_method(self) -> Self:
-        if self.head_line_method_type == HeadLineMethodType.OFFSETS and self.head_line_method_name is None:
+        if self.head_line_method_type == HeadLineMethodType.OFFSETS and self.offset_method_name is None:
             raise ValueError(f"An offset method needs to be specified when the headline method is {HeadLineMethodType.OFFSETS}")
 
         return self
@@ -127,7 +136,18 @@ class HeadLineConfig(BaseModel):
         return self
 
 class ReferenceLineConfig(BaseModel):
-    pass
+    name_ref_line: str
+    ref_line_method_type: RefLineMethodType
+    offset_method_name: Optional[str] = None
+    name_head_line_top: str
+    name_head_line_bottom: Optional[str] = None
+
+    @model_validator(mode='after')
+    def validate_ref_line_method(self) -> Self:
+        if self.ref_line_method_type == RefLineMethodType.OFFSETS and self.offset_method_name is None:
+            raise ValueError(f"An offset method needs to be specified when the ref line method is {RefLineMethodType.OFFSETS}")
+
+        return self
 
 
 class WaternetConfig(BaseModel):
@@ -141,14 +161,21 @@ class WaternetConfig(BaseModel):
         head_line_configs (list[HeadLineConfig]): The head line configurations.
           These are the methods for creating the head lines.
         reference_line_configs (list[ReferenceLineConfig]): The reference line configurations.
-          These are the methods for creating the reference lines.
+          These are the methods for creating the reference lines. This is optional 
+          if there are only phreatic lines.
     """
 
     name_waternet_scenario: str
     water_level_config: WaterLevelConfig
     head_line_configs: list[HeadLineConfig]
-    reference_line_configs: list[ReferenceLineConfig] = field(default_factory=list)  # TODO: vervangen na implementatie
+    reference_line_configs: Optional[list[ReferenceLineConfig]] = None  # Optional - if there is only a phreatic line
 
+    @model_validator(mode='after')
+    def waternet_config_validator(self) -> Self:
+        # TODO: 
+        #  - Zijn alle headlines toegekend?
+
+        return self
 
 class WaternetConfigCollection(BaseModel):
     waternet_configs: list[WaternetConfig]
@@ -596,7 +623,7 @@ class WaternetCreator(BaseModel):
         for head_line_config in self.waternet_config.head_line_configs:
             # Get the method to create the head line
             if head_line_config.head_line_method_type == HeadLineMethodType.OFFSETS:
-                method = self.headline_offset_method_collection.get_by_name(head_line_config.head_line_method_name)
+                method = self.headline_offset_method_collection.get_by_name(head_line_config.offset_method_name)
             else:
                 raise ValueError(f"Invalid headline method type '{head_line_config.head_line_method_type}'")
             
