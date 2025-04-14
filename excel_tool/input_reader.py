@@ -336,7 +336,7 @@ INPUT_TO_SEARCH_MODE = {
 
 INPUT_TO_PATTERN = {
     "Stip fijn": PersistableShadingTypeEnum.DOT_A,
-    "Sip matig": PersistableShadingTypeEnum.DOT_B,
+    "Stip matig": PersistableShadingTypeEnum.DOT_B,
     "Stip grof": PersistableShadingTypeEnum.DOT_C,
     "Stip zeer grof": PersistableShadingTypeEnum.DOT_D,
     "Horizontaal fijn": PersistableShadingTypeEnum.HORIZONTAL_A,

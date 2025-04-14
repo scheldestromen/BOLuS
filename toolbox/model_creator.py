@@ -42,7 +42,7 @@ class StageConfig(BaseModel):
     stage_name: str
     geometry_name: str
     soil_profile_position_name: str
-    waternet_scenario_name: str
+    waternet_scenario_name: Optional[str]
     revetment_profile_name: Optional[str]
     apply_state_points: bool
     load_name: Optional[str]
@@ -165,16 +165,21 @@ def create_stage(
             revetment_profile=revetment_profile,
             surface_line=surface_line,
         )
-    waternet_config = input_structure.waternet_configs.get_by_name(
-        stage_config.waternet_scenario_name
-    )
-    waternet_creator = WaternetCreator(
-        geometry=geometry,
-        waternet_config=waternet_config,
-        water_level_collection=input_structure.water_levels,
-        headline_offset_method_collection=input_structure.headline_offset_methods,
-    )
-    waternet = waternet_creator.create_waternet()
+
+    if input_structure.settings.apply_waternet:
+        waternet_config = input_structure.waternet_configs.get_by_name(
+            stage_config.waternet_scenario_name
+        )
+        waternet_creator = WaternetCreator(
+            geometry=geometry,
+            waternet_config=waternet_config,
+            water_level_collection=input_structure.water_levels,
+            headline_offset_method_collection=input_structure.headline_offset_methods,
+        )
+        waternet = waternet_creator.create_waternet()
+
+    else:
+        waternet = None
 
     # waternet = input_structure.waternets.get_waternet(
     #     calc_name=calc_name,
