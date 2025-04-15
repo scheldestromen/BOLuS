@@ -13,6 +13,9 @@ from utils.geometry_utils import geometry_to_points
 # TODO: Overwegen om validatie (b.v. l-coordinates) met Pydantic te doen ('after')
 #       Ook overwegen om l verplicht te maken, dan hoeven we de checks niet meer te doen.
 # TODO: Overwegen om logica in CharPointsProfile te checken (bv. volgorde en aanwezigheid punten)
+# TODO: Overwegen om de sortering op l-coordinates automatisch te doen bij bepalen (of aanmaken)
+#       Dat heeft meerwaarde voor de intuïtie.
+
 
 class CharPointType(StrEnum):
     SURFACE_LEVEL_WATER_SIDE = auto()

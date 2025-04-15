@@ -4,7 +4,7 @@ from utils.geometry_utils import (
     geometry_to_polygons,
     geometry_to_points,
     determine_point_in_polygon,
-    get_polygon_top_side,
+    get_polygon_top_or_bottom,
     offset_line
 )
 

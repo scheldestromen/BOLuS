@@ -117,15 +117,16 @@ def determine_point_in_polygon(
     raise ValueError("Could not determine point in polygon")
 
 
-def get_polygon_top_side(polygon: Polygon) -> LineString:
+def get_polygon_top_or_bottom(polygon: Polygon, top_or_bottom: Literal["top", "bottom"]) -> LineString:
     """
-    Returns the top side of a polygon as a LineString.
+    Returns the top or bottom side of a polygon as a LineString.
 
-    The top side of a polygon is defined as the line part that 
-    starts with the lowest x coordinate and ends with the highest x coordinate.
+    The top or bottom side of a polygon is defined as the line part that 
+    starts with the lowest or highest x coordinate and ends with the highest or lowest x coordinate.
 
     Args:
         polygon: A Shapely Polygon
+        top_or_bottom: Whether to get the top or bottom side of the polygon
 
     Returns:
         A Shapely LineString"""
@@ -145,25 +146,29 @@ def get_polygon_top_side(polygon: Polygon) -> LineString:
     x_max_points = sorted([p for p in poly_points if p[0] == x_max], key=lambda p: p[1])
 
     # Get the highest point on x_min and x_max
-    top_start = x_min_points[-1]
-    top_end = x_max_points[-1]
+    if top_or_bottom == "top":
+        start = x_min_points[-1]
+        end = x_max_points[-1]
+    else:
+        start = x_min_points[0]
+        end = x_max_points[0]
 
-    # Get the index of the top start
-    i_start = poly_points.index(top_start)
+    # Get the index of the start of the top or bottom side
+    i_start = poly_points.index(start)
 
-    # Sort the points so that the top start is the first in the list
+    # Sort the points so that the start is the first in the list
     poly_points = poly_points[i_start:] + poly_points[:i_start]
 
-    # Get the index of the top end
-    i_end = poly_points.index(top_end)
+    # Get the index of the end of the top or bottom side
+    i_end = poly_points.index(end)
 
-    # Now get the points from the top start to the top end
-    top_side_points = poly_points[: i_end + 1]
+    # Now get the points from the start to the end
+    side_points = poly_points[: i_end + 1]
 
-    # Create the top side
-    top_side = LineString(top_side_points)
+    # Create the top or bottom side
+    side = LineString(side_points)
 
-    return top_side
+    return side
 
 
 def offset_line(line: LineString, offset: float, above_or_below: Literal["above", "below"]) -> LineString:

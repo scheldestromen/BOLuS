@@ -25,7 +25,7 @@ from toolbox.soils import SoilCollection, Soil
 from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
     SoilProfilePositionSet, SoilProfilePositionSetCollection, RevetmentLayerBlueprint, RevetmentProfileBlueprint, RevetmentProfileBlueprintCollection
 from toolbox.water import WaterLineType, HeadLine, ReferenceLine
-from toolbox.water_creater import WaterLevelCollection, RefLevelType, OffsetType, HeadLineConfig, WaterLevelConfig, WaternetConfigCollection, WaternetConfig, HeadLineOffsetMethodCollection, HeadLineOffsetMethod, HeadLineOffsetPoint, ReferenceLineConfig, RefLineMethodType
+from toolbox.water_creater import WaterLevelCollection, RefLevelType, OffsetType, HeadLineConfig, WaterLevelConfig, WaternetConfigCollection, WaternetConfig, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint, ReferenceLineConfig, RefLineMethodType
 from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
                                           SlipPlaneModel,
@@ -1082,16 +1082,16 @@ class RawInputToUserInputStructure:
         return WaternetConfigCollection(waternet_configs=waternet_configs)
 
     @staticmethod
-    def convert_headline_offset_methods(headline_offset_methods_dict: dict[str, list[dict[str, str | float | None]]]) -> HeadLineOffsetMethodCollection:
-        headline_offset_methods: list[HeadLineOffsetMethod] = []
+    def convert_headline_offset_methods(headline_offset_methods_dict: dict[str, list[dict[str, str | float | None]]]) -> LineOffsetMethodCollection:
+        headline_offset_methods: list[LineOffsetMethod] = []
 
         for name, headline_offset_method_dict in headline_offset_methods_dict.items():
-            headline_offset_points = [HeadLineOffsetPoint.model_validate(op_dict) for op_dict in headline_offset_method_dict]
+            headline_offset_points = [LineOffsetPoint.model_validate(op_dict) for op_dict in headline_offset_method_dict]
             headline_offset_methods.append(
-                HeadLineOffsetMethod(name_method=name, offset_points=headline_offset_points)
+                LineOffsetMethod(name_method=name, offset_points=headline_offset_points)
                 )
 
-        return HeadLineOffsetMethodCollection(offset_methods=headline_offset_methods)
+        return LineOffsetMethodCollection(offset_methods=headline_offset_methods)
 
     @staticmethod
     def convert_revetment_profile_blueprint_collection(

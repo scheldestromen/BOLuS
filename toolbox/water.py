@@ -1,4 +1,5 @@
 from enum import StrEnum, auto
+from typing import Optional
 from pydantic import BaseModel
 
 
@@ -36,8 +37,8 @@ class ReferenceLine(BaseModel):
     name: str
     l: list[float]
     z: list[float]
-    head_line_top: str
-    head_line_bottom: str
+    head_line_top: Optional[str] = None
+    head_line_bottom: Optional[str] = None
 
 
 class Waternet(BaseModel):

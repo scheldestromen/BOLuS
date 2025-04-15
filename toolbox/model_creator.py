@@ -15,7 +15,7 @@ from toolbox.soils import SoilCollection
 from toolbox.state import create_state_points_from_subsoil
 from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
 # from toolbox.water import WaternetCollection
-from toolbox.water_creater import WaterLevelCollection, WaternetConfigCollection, HeadLineOffsetMethodCollection, WaternetCreator
+from toolbox.water_creater import WaterLevelCollection, WaternetConfigCollection, LineOffsetMethodCollection, WaternetCreator
 
 
 class GeneralSettings(BaseModel):
@@ -95,7 +95,7 @@ class UserInputStructure(BaseModel):
     soil_profile_positions: SoilProfilePositionSetCollection
     water_levels: WaterLevelCollection
     waternet_configs: WaternetConfigCollection
-    headline_offset_methods: HeadLineOffsetMethodCollection
+    headline_offset_methods: LineOffsetMethodCollection
     revetment_profile_blueprints: RevetmentProfileBlueprintCollection
     loads: LoadCollection
     # waternets: WaternetCollection
@@ -174,7 +174,7 @@ def create_stage(
             geometry=geometry,
             waternet_config=waternet_config,
             water_level_collection=input_structure.water_levels,
-            headline_offset_method_collection=input_structure.headline_offset_methods,
+            offset_method_collection=input_structure.headline_offset_methods,
         )
         waternet = waternet_creator.create_waternet()
 

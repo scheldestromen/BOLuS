@@ -270,8 +270,8 @@ def set_waternet(
             points=[GLPoint(x=l, z=z) for l, z in zip(ref_line.l, ref_line.z)],
             scenario_index=scenario_index,
             stage_index=stage_index,
-            top_head_line_id=head_line_id_dict[ref_line.head_line_top],
-            bottom_headline_id=head_line_id_dict[ref_line.head_line_bottom],
+            top_head_line_id=head_line_id_dict.get(ref_line.head_line_top),
+            bottom_headline_id=head_line_id_dict.get(ref_line.head_line_bottom),
         )
 
     return dm
