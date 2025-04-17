@@ -1,6 +1,6 @@
 from pydantic import BaseModel, model_validator
 from enum import StrEnum, auto
-from typing import Optional, Self
+from typing import Optional, Self, Any
 from shapely.geometry import Polygon, LineString
 from shapely.ops import unary_union
 
@@ -73,7 +73,7 @@ class RefLineMethodType(StrEnum):
 
     OFFSETS = auto()
     AQUIFER = auto()
-    INTERMEDIATE_AQUIFER = auto()  # At least this is better than 'in-between sand layer'
+    INTERMEDIATE_AQUIFER = auto()
 
 
 class WaterLevelConfig(BaseModel):
@@ -174,7 +174,7 @@ class WaternetConfig(BaseModel):
     name_waternet_scenario: str
     water_level_config: WaterLevelConfig
     head_line_configs: list[HeadLineConfig]
-    reference_line_configs: Optional[list[ReferenceLineConfig]] = None  # Optional - if there is only a phreatic line
+    reference_line_configs: Optional[list[ReferenceLineConfig]] = None  # Optional - if there is only a phreatic line - check? # TODO
 
     @model_validator(mode='after')
     def waternet_config_validator(self) -> Self:
@@ -349,7 +349,7 @@ class AquiferType(StrEnum):
 
 
 class Aquifer(BaseModel):
-    polygon: Polygon
+    points: list[tuple[float, float]]
     aquifer_type: AquiferType
 
 
@@ -386,8 +386,8 @@ def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aqui
         if not intersect:
             raise ValueError(
                 f"The aquifer layer of soil type '{soil_polygon.soil_type}' in geometry '{geometry.name}'"
-                f"is not valid. It is not defined from the start to the end of the surface line and does not intersect 
-                with the surface line. Please check your input."
+                f"is not valid. It is not defined from the start to the end of the surface line and does not intersect "
+                f"with the surface line. Please check your input."
             )
         
         # If there is an intersection, then we have a partial aquifer. For example one that crosses
@@ -406,18 +406,19 @@ def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aqui
     # Finally, we determine which aquifer is the deepest and assign the aquifer type
     # In case there are multiple with the same depth, both are assigned the type AQUIFER
     aq_z_mins = [polygon.bounds[1] for polygon in aquifer_polygons]
-    indices = [i for i, z in enumerate(aq_z_mins) if z == min(aq_z_mins)]
+    aq_z_min_indices = [i for i, z in enumerate(aq_z_mins) if z == min(aq_z_mins)]
 
     aquifers: list[Aquifer] = []
 
-    for index in indices:
-        polygon = aquifer_polygons.pop(index)
-        aquifer = Aquifer(polygon=polygon, aquifer_type=AquiferType.AQUIFER)
-        aquifers.append(aquifer)
-
     # Add the remaining aquifers as intermediate aquifers
-    for polygon in aquifer_polygons:
-        aquifer = Aquifer(polygon=polygon, aquifer_type=AquiferType.INTERMEDIATE_AQUIFER)
+    for i, polygon in enumerate(aquifer_polygons):
+        if i in aq_z_min_indices:
+            aq_type = AquiferType.AQUIFER
+        else:
+            aq_type = AquiferType.INTERMEDIATE_AQUIFER
+
+        polygon_points = [(p[0], p[1]) for p in polygon.exterior.coords[:-1]]  # skip last point
+        aquifer = Aquifer(points=polygon_points, aquifer_type=aq_type)
         aquifers.append(aquifer)
 
     return aquifers
@@ -451,8 +452,27 @@ class WaternetCreator(BaseModel):
     water_level_collection: WaterLevelCollection
     offset_method_collection: LineOffsetMethodCollection
     settings: WaternetSettings = WaternetSettings()  # TODO: Wordt nu niet gebruikt - herzien
+    subsoil: Optional[Subsoil] = None
     _outward_intersection: Optional[tuple[float, float]] = None
     _inward_intersection: Optional[tuple[float, float]] = None
+
+    @model_validator(mode='after')
+    def validate_subsoil(self) -> Self:
+        ref_line_configs = self.waternet_config.reference_line_configs
+
+        if ref_line_configs is not None:
+            aquifer_methods = [RefLineMethodType.AQUIFER, RefLineMethodType.INTERMEDIATE_AQUIFER]
+
+            if any(config.ref_line_method_type in aquifer_methods 
+                for config in ref_line_configs
+                ):
+                if self.subsoil is None:
+                    raise ValueError(
+                        "The subsoil is a required input when creating reference lines"
+                        "with the method 'AQUIFER' or 'INTERMEDIATE_AQUIFER'."
+                    )
+            
+        return self
 
     def _process_outward_intersection(self, head_line: HeadLine) -> HeadLine:
         surface_level_outward = self.geometry.char_point_profile.get_point_by_type(
@@ -621,8 +641,6 @@ class WaternetCreator(BaseModel):
             l_ditch_max = max(l_ditch_land_side, l_ditch_water_side)
 
             # Create a non-correction zone polygon for the ditch
-            # The +0.001 and -0.001 makes the zone slightly smaller
-            # This is to get a proper order of the phreatic points later on
             ditch_points = [
                 (l_ditch_min, polygon_bottom),
                 (l_ditch_min, head_ditch_land_side),
@@ -761,15 +779,28 @@ class WaternetCreator(BaseModel):
 
             head_lines.append(head_line)
 
-        # Create the reference lines 
-        for ref_line_config in self.waternet_config.reference_line_configs:
-            print(ref_line_config)
+        # Create the reference lines
+        ref_line_configs = self.waternet_config.reference_line_configs
 
-            if ref_line_config.ref_line_method_type == RefLineMethodType.OFFSETS:
-                method = self.offset_method_collection.get_by_name(ref_line_config.offset_method_name)
-            else:
-                continue
-                # raise ValueError(f"Invalid headline method type '{ref_line_config.ref_line_method_type}'")
+        # Check if there are any aquifer methods - then we need to get the aquifers from the subsoil
+        methods = [config.ref_line_method_type for config in ref_line_configs]
+        aquifer_methods = [RefLineMethodType.AQUIFER, RefLineMethodType.INTERMEDIATE_AQUIFER]
+
+        if any(method in aquifer_methods for method in methods):
+            aquifers = get_aquifers_from_subsoil(self.subsoil, self.geometry)
+
+        # TODO WVP methode:
+        #  - Ref. lijnen worden per aquifer gemaakt. Als er meer zijn, komen er meer reflijnen
+        #  - Als alleen 'Watervoerende laag' dan krijgen alle aquifers deze reflijnen
+        #  - Als er een 'Watervoerende tussenlaag' is dan krijgen de TZL's deze lijnen
+
+        # for ref_line_config in offset_configs:
+        #     method = self.offset_method_collection.get_by_name(ref_line_config.offset_method_name)
+        
+
+
+        # else:
+        #     raise ValueError(f"Invalid reference line method type '{ref_line_config.ref_line_method_type}'")
 
             # Create the reference line
             ref_line_l, ref_line_z = method.create_line(

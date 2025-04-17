@@ -172,6 +172,7 @@ def create_stage(
         )
         waternet_creator = WaternetCreator(
             geometry=geometry,
+            subsoil=subsoil,
             waternet_config=waternet_config,
             water_level_collection=input_structure.water_levels,
             offset_method_collection=input_structure.headline_offset_methods,
