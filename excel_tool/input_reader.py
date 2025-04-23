@@ -186,10 +186,12 @@ HEAD_LINE_CONFIG_COLS = {
 REF_LINE_CONFIG_COLS = {
     "name_waternet_scenario": "Naam waterspanningsscenario",
     "name_ref_line": "Naam referentielijn",
-    "ref_line_method_type": "Plaatsing referentielijn",
-    "offset_method_name": "Offset methode",
     "name_head_line_top": "PL-lijn bovenzijde",
     "name_head_line_bottom": "PL-lijn onderzijde",
+    "ref_line_method_type": "Plaatsing referentielijn",
+    "offset_method_name": "Offset methode",
+    "intrusion_from_ref_line": "Indringing vanaf referentielijn",
+    "intrusion_length": "Indringingslengte",
 }
 
 LOAD_COLS = {
@@ -597,8 +599,8 @@ class ExcelInputReader(BaseModel):
     def parse_ref_line_configs(workbook: Any) -> dict[str, list[dict[str, str | None]]]:
         ref_line_configs = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["ref_line_configs"]],
-            header_row=1,
-            skip_rows=3,
+            header_row=2,
+            skip_rows=4,
             col_dict=REF_LINE_CONFIG_COLS,
         )
         for ref_line_config in ref_line_configs:

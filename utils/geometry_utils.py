@@ -3,6 +3,8 @@ from shapely.ops import orient
 from shapely import offset_curve
 from typing import Literal
 
+import matplotlib.pyplot as plt
+
 
 def geometry_to_polygons(geometry) -> list[Polygon]:
     """
@@ -149,10 +151,13 @@ def get_polygon_top_or_bottom(polygon: Polygon, top_or_bottom: Literal["top", "b
     if top_or_bottom == "top":
         start = x_min_points[-1]
         end = x_max_points[-1]
+    
+    # Get the lowest point on x_min and x_max
+    # Start is now the lowest point on x_max, because the direction is clockwise
     else:
-        start = x_min_points[0]
-        end = x_max_points[0]
-
+        start = x_max_points[0]
+        end = x_min_points[0]
+        
     # Get the index of the start of the top or bottom side
     i_start = poly_points.index(start)
 
