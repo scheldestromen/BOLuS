@@ -3,7 +3,6 @@ Main module for excel_tool
 """
 
 import os
-import warnings
 from pathlib import Path
 
 from toolbox.geolib_utils import dm_batch_execute

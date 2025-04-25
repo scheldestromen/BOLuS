@@ -108,6 +108,7 @@ class WaterLevelConfig(BaseModel):
     water_levels: dict[str, str | None]
 
 
+# TODO: Eigenlijk zou dit een baseclass moeten zijn, en zou deze subclasses moeten maken, dan kunnen de validaties gedeeltelijk vervallen
 class HeadLineConfig(BaseModel):
     name_head_line: str
     is_phreatic: bool
@@ -162,6 +163,11 @@ class ReferenceLineConfig(BaseModel):
             if self.intrusion_length is None:
                 raise ValueError(f"An intrusion length needs to be specified when the reference line "
                                  f"placement method is {RefLineMethodType.INTRUSION}. This is not the case "
+                                 f"for the reference line '{self.name_ref_line}'")
+            
+            if self.intrusion_length == 0:
+                raise ValueError(f"The intrusion length cannot be 0 when the reference line "
+                                 f"placement method is {RefLineMethodType.INTRUSION}. This is the case "
                                  f"for the reference line '{self.name_ref_line}'")
 
             if  self.intrusion_from_ref_line is None:
@@ -410,8 +416,11 @@ def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aqui
             aquifer_polygons.append(polygon)
             continue
 
-        # If the aquifer NOT defined from start to end, and does not cross the surface line,
+        # If the aquifer is NOT defined from start to end, and does not cross the surface line,
         # then it is not a valid aquifer and an error should be raised
+
+        # TODO: Dit klopt niet. Zijkant kan schuin naar binnen lopen
+        #  -> Moet niet surface_line zijn maar volgens mij de omhullende van de subsoil, incl. zijkanten
         intersect = polygon.intersects(surface_line_line_string)
         if not intersect:
             raise ValueError(
@@ -420,8 +429,8 @@ def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aqui
                 f"with the surface line. Please check your input."
             )
         
-        # If there is an intersection, then we have a partial aquifer. For example one that crosses
-        # the ditch or the canal. In this case we only schematize aquifers that are present underneith
+        # If there is an intersection, then we have a partial aquifer. For example one that is crossed
+        # by the ditch or the canal. In this case we only schematize aquifers that are present underneith
         # the dike. We take the inner crest as a reference point. In case of the ditch, 
         # the aquifer part after the ditch is disregarded.
         l_inner_crest = geometry.char_point_profile.get_point_by_type(CharPointType.DIKE_CREST_LAND_SIDE).l
@@ -508,7 +517,69 @@ class LineFromAquiferMethod(BaseModel):
             ref_lines.append(ref_line)
 
         return ref_lines[0], ref_lines[1]
+    
+class LineIntrusionMethod(BaseModel):
+    @staticmethod
+    def get_ref_lines_by_name(name: str, ref_lines: list[ReferenceLine]) -> list[ReferenceLine]:
+        ref_lines = [
+            rl for rl in ref_lines 
+            if rl.name == name
+        ]
 
+        if len(ref_lines) == 0:
+            raise ValueError(f"The reference line '{name}' does not exist")
+        
+        return ref_lines
+    
+    @staticmethod
+    def select_appropriate_ref_line(
+        intrusion_from_ref_lines: list[ReferenceLine], 
+        ref_line_config: ReferenceLineConfig
+        ) -> ReferenceLine:
+        """Selects the appropriate reference line to apply the intrusion to.
+        This is based on the name of the reference line and the direction of the intrusion."""
+        
+        # If there is one, then we can use that
+        if len(intrusion_from_ref_lines) == 1:
+            intrusion_from_ref_line = intrusion_from_ref_lines[0]
+
+        # If there are multiple with the same name, then we need to find the one with the lowest and highest z
+        else:
+            # If positive, then we need to get the ref line with the highest z
+            if ref_line_config.intrusion_length > 0:
+                ref_z_maxs = [max(rl.z) for rl in intrusion_from_ref_lines]
+                i_ref_z_max = ref_z_maxs.index(max(ref_z_maxs))
+                intrusion_from_ref_line = intrusion_from_ref_lines[i_ref_z_max]
+
+            # If negative, then we need to get the ref line with the lowest z
+            else:
+                ref_z_mins = [min(rl.z) for rl in intrusion_from_ref_lines]
+                i_ref_z_min = ref_z_mins.index(min(ref_z_mins))
+                intrusion_from_ref_line = intrusion_from_ref_lines[i_ref_z_min]
+
+        return intrusion_from_ref_line
+	
+    @staticmethod
+    def create_line(
+        current_ref_lines: list[ReferenceLine], 
+        ref_line_config: ReferenceLineConfig
+        ) -> tuple[list[float], list[float]]:
+        """Creates a reference line based on the intrusion from another reference line."""
+
+        intrusion_from_ref_lines = LineIntrusionMethod.get_ref_lines_by_name(
+            name=ref_line_config.intrusion_from_ref_line, 
+            ref_lines=current_ref_lines
+            )
+
+        intrusion_from_ref_line = LineIntrusionMethod.select_appropriate_ref_line(
+            intrusion_from_ref_lines, ref_line_config
+            )
+        
+        ref_line_l = intrusion_from_ref_line.l
+        ref_line_z = [z + ref_line_config.intrusion_length for z in intrusion_from_ref_line.z]
+
+        return ref_line_l, ref_line_z
+    
 
 class WaternetCreator(BaseModel):
     """Factory for creating a single waternet"""
@@ -906,6 +977,31 @@ class WaternetCreator(BaseModel):
 
         return ref_lines
 
+    def create_ref_lines_intrusion_method(self, current_ref_lines: list[ReferenceLine]) -> list[ReferenceLine]:
+        ref_lines: list[ReferenceLine] = []
+        ref_line_configs = self.waternet_config.reference_line_configs
+
+        for ref_line_config in ref_line_configs:
+            if ref_line_config.ref_line_method_type == RefLineMethodType.INTRUSION:
+
+                # Create the reference line               
+                ref_line_l, ref_line_z = LineIntrusionMethod.create_line(
+                    current_ref_lines=current_ref_lines,
+                    ref_line_config=ref_line_config
+                )
+
+                ref_line = ReferenceLine(
+                    name=ref_line_config.name_ref_line,
+                    l=ref_line_l,
+                    z=ref_line_z,
+                    head_line_top=ref_line_config.name_head_line_top,
+                    head_line_bottom=ref_line_config.name_head_line_bottom
+                )
+
+                ref_lines.append(ref_line)
+
+        return ref_lines
+
     def create_waternet(self) -> Waternet:
         # Get water levels - this is based on the geometry name since water levels are location bound
         location_water_levels = self.water_level_collection.get_by_name(self.geometry.name)
@@ -924,5 +1020,6 @@ class WaternetCreator(BaseModel):
         ref_lines: list[ReferenceLine] = []
         ref_lines.extend(self.create_ref_lines_aquifers_method())
         ref_lines.extend(self.create_ref_lines_offset_method(water_level_set=water_level_set))
+        ref_lines.extend(self.create_ref_lines_intrusion_method(current_ref_lines=ref_lines))
 
         return Waternet(head_lines=head_lines, ref_lines=ref_lines)
