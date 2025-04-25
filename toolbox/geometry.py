@@ -336,9 +336,9 @@ class Geometry(BaseModel):
         """Returns a 2D intersection point of the surface line and the given level.
         A search area is defined by the two characteristic points. Intersections
         outside this area are not considered. The search direction is the direction
-        direction is the direction in which to search for the intersection. If multiple
-        intersections are found, then the search direction determines which intersection
-        is returned. If the direction is Side.LAND_SIDE, then the point laying most Side.WATER_SIDE
+        in which to search for the intersection. If multiple intersections are found,
+        then the search direction determines which intersection is returned. If the
+        direction is Side.LAND_SIDE, then the point laying most Side.WATER_SIDE
         point is returned.
 
         The characteristic points should be defined.
@@ -384,6 +384,9 @@ class Geometry(BaseModel):
 
         intersection = shapely_surface_line.intersection(shapely_level)
         intersection_points = geometry_to_points(intersection)
+
+        if len(intersection_points) == 0:
+            return None
         
         # Determine which the direction of the l-axis is
         sign = self.char_point_profile.determine_l_direction_sign(search_direction)

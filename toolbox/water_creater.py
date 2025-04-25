@@ -545,7 +545,6 @@ class WaternetCreator(BaseModel):
             CharPointType.SURFACE_LEVEL_WATER_SIDE)
         water_level_outward = next(z for l, z in zip(head_line.l, head_line.z) if l == surface_level_outward.l)
 
-        # TODO: Omgang met situatie waarbij geen snijpunt gevonden wordt.
         self._outward_intersection = self.geometry.get_intersection(
             level=water_level_outward,  # With the offset method, the first point is the most outward
             from_char_point=CharPointType.DIKE_CREST_WATER_SIDE,
