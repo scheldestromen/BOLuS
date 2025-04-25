@@ -149,7 +149,7 @@ class ReferenceLineConfig(BaseModel):
     name_head_line_bottom: Optional[str] = None
     ref_line_method_type: RefLineMethodType
     offset_method_name: Optional[str] = None
-    intrusion_from_ref_line: Optional[bool] = None
+    intrusion_from_ref_line: Optional[str] = None
     intrusion_length: Optional[float] = None
 
     @model_validator(mode='after')
@@ -545,6 +545,7 @@ class WaternetCreator(BaseModel):
             CharPointType.SURFACE_LEVEL_WATER_SIDE)
         water_level_outward = next(z for l, z in zip(head_line.l, head_line.z) if l == surface_level_outward.l)
 
+        # TODO: Omgang met situatie waarbij geen snijpunt gevonden wordt.
         self._outward_intersection = self.geometry.get_intersection(
             level=water_level_outward,  # With the offset method, the first point is the most outward
             from_char_point=CharPointType.DIKE_CREST_WATER_SIDE,
@@ -614,6 +615,7 @@ class WaternetCreator(BaseModel):
             to_char_point_type: CharPointType
     ) -> HeadLine:
         # TODO: Docstring Aanpassen
+        # TODO: wat als één van de charpunten niet bestaat? b.v. teensloot?
         """Applies a minimal surface line offset to the phreatic line.
         
         If the phreatic line lies above the surface level, then the phreatic line is set 

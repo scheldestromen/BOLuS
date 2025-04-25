@@ -26,6 +26,7 @@ class SoilLayer(BaseModel):
     top: float
     is_aquifer: Optional[bool] = None
 
+
 class SoilProfile(BaseModel):
     """Representation of a 1D soil profile"""
 
@@ -199,7 +200,6 @@ class Subsoil(BaseModel):
 
         return cls(soil_polygons=soil_polygons)
 
-
     def remove_soil_polygons(self, remove_polygons: list[SoilPolygon]) -> None:
         """Substracts a polygon from the subsoil. This is done by 'clipping' the subsoil
         polygon with the polygon to substract. This is needed for adding soil layers 
@@ -209,7 +209,8 @@ class Subsoil(BaseModel):
 
         Args:
             remove_polygons (list[SoilPolygon]): The polygons to remove"""
-        
+
+        # TODO: Invoer kan beter Shapely Polygon zijn? Dat is algemener
         # Create a new list to store the modified polygons
         new_soil_polygons: list[SoilPolygon] = []
         
@@ -429,7 +430,7 @@ class RevetmentProfileBlueprintCollection(BaseModel):
         else:
             raise ValueError(f"Could not find revetment profile blueprint with name '{name}'")
         
-# TODO: Toekennen van is_aquifer
+
 def subsoil_from_soil_profiles(
     surface_line: SurfaceLine,
     soil_profiles: list[SoilProfile],
@@ -516,11 +517,13 @@ def subsoil_from_soil_profiles(
             polygons = geometry_to_polygons(geometry)
 
             for polygon in polygons:
-                soil_polygon = SoilPolygon.from_shapely(
-                    soil_type=layer.soil_type, polygon=polygon
-                )
-                soil_polygon.is_aquifer = layer.is_aquifer
-                soil_polygons.append(soil_polygon)
+                # Check if polygon is not empty
+                if not polygon.is_empty:
+                    soil_polygon = SoilPolygon.from_shapely(
+                        soil_type=layer.soil_type, polygon=polygon
+                    )
+                    soil_polygon.is_aquifer = layer.is_aquifer
+                    soil_polygons.append(soil_polygon)
 
     subsoil = Subsoil(soil_polygons=soil_polygons)
 

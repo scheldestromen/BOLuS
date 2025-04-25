@@ -12,10 +12,6 @@ from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel, Soil as GLSoi
 from geolib.models.dstability.internal import PersistableShadingTypeEnum
 from pydantic import BaseModel
 
-# Filter to suppress only the specific warning about Data Validation extension
-warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed", 
-                      category=UserWarning, module="openpyxl.worksheet._read_only")
-
 from toolbox.geometry import (CharPointsProfileCollection,
                               CharPointType, Side,
                               SurfaceLine, SurfaceLineCollection,
@@ -23,9 +19,12 @@ from toolbox.geometry import (CharPointsProfileCollection,
 from toolbox.loads import LoadCollection, Load
 from toolbox.soils import SoilCollection, Soil
 from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
-    SoilProfilePositionSet, SoilProfilePositionSetCollection, RevetmentLayerBlueprint, RevetmentProfileBlueprint, RevetmentProfileBlueprintCollection
+    SoilProfilePositionSet, SoilProfilePositionSetCollection, RevetmentLayerBlueprint, RevetmentProfileBlueprint, \
+    RevetmentProfileBlueprintCollection
 from toolbox.water import WaterLineType, HeadLine, ReferenceLine
-from toolbox.water_creater import WaterLevelCollection, RefLevelType, OffsetType, HeadLineConfig, WaterLevelConfig, WaternetConfigCollection, WaternetConfig, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint, ReferenceLineConfig, RefLineMethodType
+from toolbox.water_creater import WaterLevelCollection, RefLevelType, OffsetType, HeadLineConfig, WaterLevelConfig, \
+    WaternetConfigCollection, WaternetConfig, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint, \
+    ReferenceLineConfig, RefLineMethodType
 from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
                                           SlipPlaneModel,
@@ -39,6 +38,11 @@ from utils.dict_utils import (group_dicts_by_key, list_to_nested_dict,
                               remove_key, check_for_missing_keys)
 from utils.list_utils import (check_list_of_dicts_for_duplicate_values,
                               unique_in_order)
+
+
+# Filter to suppress only the specific warning about Data Validation extension
+warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed",
+                        category=UserWarning, module=r"openpyxl(\.|$)")
 
 INPUT_SHEETS = {
     "settings": "Instellingen",
@@ -324,6 +328,7 @@ INPUT_TO_REF_LINE_METHOD_TYPE = {
     "Offset methode": RefLineMethodType.OFFSETS,
     "Watervoerende laag": RefLineMethodType.AQUIFER,
     "Watervoerende tussenlaag": RefLineMethodType.INTERMEDIATE_AQUIFER,
+    "Indringingslengte": RefLineMethodType.INTRUSION,
 }
 
 INPUT_TO_SLIP_PLANE_MODEL = {
@@ -365,7 +370,7 @@ class RawUserInput(BaseModel):
     # TODO: Dit is wellicht een goede plek om de validatie van de input te doen.
     # TODO: De type hints zijn wel een beetje overdreven. Overwegen om dit naar Any te zetten
 
-    settings: dict[str, str| float | None]
+    settings: dict[str, str | float | None]
     surface_lines: dict[str, list[float]]
     char_points: dict[str, dict[str, float | None]]
     soil_params: list[dict[str, float | str | None]]
@@ -375,7 +380,7 @@ class RawUserInput(BaseModel):
     water_level_configs: dict[str, dict[str, str | None]]
     headline_offset_methods: dict[str, list[dict[str, str | float | None]]]
     head_line_configs: dict[str, list[dict[str, str | bool | float | CharPointType | None]]]
-    ref_line_configs: dict[str, list[dict[str, str | None]]]
+    ref_line_configs: dict[str, list[dict[str, str | float | None]]]
     revetment_profile_blueprints: dict[str, list[dict[str, str | float]]]
     loads: list[dict]
     hydraulic_pressure: dict
@@ -438,7 +443,7 @@ class ExcelInputReader(BaseModel):
         surface_lines = parse_key_row(
             sheet=workbook[INPUT_SHEETS["surface_lines"]], skip_rows=1
         )
-        
+
         return surface_lines
 
     @staticmethod
@@ -465,11 +470,12 @@ class ExcelInputReader(BaseModel):
             skip_rows=3,
             col_dict=SOIL_COLS,
         )
-        check_list_of_dicts_for_duplicate_values(soil_params, "name") 
+        check_list_of_dicts_for_duplicate_values(soil_params, "name")
 
         for soil_param in soil_params:
             soil_param["pattern"] = INPUT_TO_PATTERN.get(soil_param["pattern"])
-            soil_param["probabilistic_strength_parameters"] = INPUT_TO_BOOL.get(soil_param["probabilistic_strength_parameters"])
+            soil_param["probabilistic_strength_parameters"] = INPUT_TO_BOOL.get(
+                soil_param["probabilistic_strength_parameters"])
             soil_param["probabilistic_pop"] = INPUT_TO_BOOL.get(soil_param["probabilistic_pop"])
             soil_param["correlation_c-phi"] = INPUT_TO_BOOL.get(soil_param["correlation_c-phi"])
             soil_param["correlation_s-m"] = INPUT_TO_BOOL.get(soil_param["correlation_s-m"])
@@ -492,7 +498,7 @@ class ExcelInputReader(BaseModel):
 
     @staticmethod
     def parse_soil_profile_positions(
-        workbook: Any,
+            workbook: Any,
     ) -> dict[str, dict[str, float | None]]:
         soil_profile_positions_raw = parse_key_row(
             sheet=workbook[INPUT_SHEETS["soil_profile_positions"]],
@@ -512,7 +518,7 @@ class ExcelInputReader(BaseModel):
             soil_profile_positions[name] = positions
 
         return soil_profile_positions
-    
+
     @staticmethod
     def parse_water_levels(workbook: Any) -> dict[str, dict[str, float | None]]:
         water_levels = parse_row_instance(
@@ -522,7 +528,7 @@ class ExcelInputReader(BaseModel):
         )
         # Assign name as key and remove name from dict
         water_level_dict = {
-            row[WATER_LEVEL_LOCATION_NAME_COL]: remove_key(row, WATER_LEVEL_LOCATION_NAME_COL) 
+            row[WATER_LEVEL_LOCATION_NAME_COL]: remove_key(row, WATER_LEVEL_LOCATION_NAME_COL)
             for row in water_levels
         }
 
@@ -560,23 +566,26 @@ class ExcelInputReader(BaseModel):
             col_dict=HEADLINE_OFFSET_METHODS_COLS,
         )
         for headline_offset_method in headline_offset_methods:
-            headline_offset_method["char_point_type"] = INPUT_TO_CHAR_POINTS.get(headline_offset_method["char_point_type"])
-           
+            headline_offset_method["char_point_type"] = INPUT_TO_CHAR_POINTS.get(
+                headline_offset_method["char_point_type"])
+
             # If ref_level is not in the input_to_ref_level_type dict, then it is a water level (FIXED_LEVEL)
             if headline_offset_method["ref_level"] not in INPUT_TO_REF_LEVEL_TYPE:
                 headline_offset_method["ref_level_type"] = RefLevelType.FIXED_LEVEL
                 headline_offset_method["ref_level_name"] = headline_offset_method["ref_level"]
             else:
-                headline_offset_method["ref_level_type"] = INPUT_TO_REF_LEVEL_TYPE.get(headline_offset_method["ref_level"])
+                headline_offset_method["ref_level_type"] = INPUT_TO_REF_LEVEL_TYPE.get(
+                    headline_offset_method["ref_level"])
                 headline_offset_method["ref_level_name"] = None
             headline_offset_method.pop("ref_level")
 
-            headline_offset_method["offset_type"] = REF_LEVEL_TYPE_TO_OFFSET_TYPE.get(headline_offset_method["ref_level_type"])
+            headline_offset_method["offset_type"] = REF_LEVEL_TYPE_TO_OFFSET_TYPE.get(
+                headline_offset_method["ref_level_type"])
 
         headline_offset_methods = group_dicts_by_key(headline_offset_methods, group_by_key="name")
 
         return headline_offset_methods
-    
+
     @staticmethod
     def parse_head_line_configs(workbook: Any) -> dict[str, list[dict[str, str | bool | float | CharPointType]]]:
         head_line_configs = parse_row_instance(
@@ -587,14 +596,17 @@ class ExcelInputReader(BaseModel):
         )
         for head_line_config in head_line_configs:
             head_line_config["is_phreatic"] = INPUT_TO_BOOL.get(head_line_config["is_phreatic"])
-            head_line_config["apply_minimal_surface_line_offset"] = INPUT_TO_BOOL.get(head_line_config["apply_minimal_surface_line_offset"])
-            head_line_config["minimal_offset_from_point"] = INPUT_TO_CHAR_POINTS.get(head_line_config["minimal_offset_from_point"])
-            head_line_config["minimal_offset_to_point"] = INPUT_TO_CHAR_POINTS.get(head_line_config["minimal_offset_to_point"])
+            head_line_config["apply_minimal_surface_line_offset"] = INPUT_TO_BOOL.get(
+                head_line_config["apply_minimal_surface_line_offset"])
+            head_line_config["minimal_offset_from_point"] = INPUT_TO_CHAR_POINTS.get(
+                head_line_config["minimal_offset_from_point"])
+            head_line_config["minimal_offset_to_point"] = INPUT_TO_CHAR_POINTS.get(
+                head_line_config["minimal_offset_to_point"])
 
         head_line_configs = group_dicts_by_key(head_line_configs, group_by_key="name_waternet_scenario")
 
         return head_line_configs
-    
+
     @staticmethod
     def parse_ref_line_configs(workbook: Any) -> dict[str, list[dict[str, str | None]]]:
         ref_line_configs = parse_row_instance(
@@ -604,15 +616,15 @@ class ExcelInputReader(BaseModel):
             col_dict=REF_LINE_CONFIG_COLS,
         )
         for ref_line_config in ref_line_configs:
-            ref_line_config["ref_line_method_type"] = INPUT_TO_REF_LINE_METHOD_TYPE.get(ref_line_config["ref_line_method_type"])
+            ref_line_config["ref_line_method_type"] = INPUT_TO_REF_LINE_METHOD_TYPE.get(
+                ref_line_config["ref_line_method_type"])
 
         ref_line_configs = group_dicts_by_key(ref_line_configs, group_by_key="name_waternet_scenario")
 
         return ref_line_configs
-    
-        
+
     @staticmethod
-    def parse_revetment_profile_blueprints(workbook: Any) -> dict[str, list[dict[str, str | float]]]:     
+    def parse_revetment_profile_blueprints(workbook: Any) -> dict[str, list[dict[str, str | float]]]:
         revetment_profile_blueprints = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["revetment_profile_blueprints"]],
             header_row=1,
@@ -621,13 +633,15 @@ class ExcelInputReader(BaseModel):
         )
 
         for revetment_profile_blueprint in revetment_profile_blueprints:
-            revetment_profile_blueprint["from_char_point"] = INPUT_TO_CHAR_POINTS.get(revetment_profile_blueprint["from_char_point"])
-            revetment_profile_blueprint["to_char_point"] = INPUT_TO_CHAR_POINTS.get(revetment_profile_blueprint["to_char_point"])
+            revetment_profile_blueprint["from_char_point"] = INPUT_TO_CHAR_POINTS.get(
+                revetment_profile_blueprint["from_char_point"])
+            revetment_profile_blueprint["to_char_point"] = INPUT_TO_CHAR_POINTS.get(
+                revetment_profile_blueprint["to_char_point"])
 
-        revetment_profile_blueprints = group_dicts_by_key(revetment_profile_blueprints, group_by_key="revetment_profile_name")
+        revetment_profile_blueprints = group_dicts_by_key(revetment_profile_blueprints,
+                                                          group_by_key="revetment_profile_name")
 
         return revetment_profile_blueprints
-    
 
     def parse_loads(workbook: Any):
         loads = parse_row_instance(
@@ -807,8 +821,10 @@ class RawInputToUserInputStructure:
                 head_line_configs_dict=raw_input.head_line_configs,
                 ref_line_configs_dict=raw_input.ref_line_configs,
             ),
-            headline_offset_methods=RawInputToUserInputStructure.convert_headline_offset_methods(raw_input.headline_offset_methods),
-            revetment_profile_blueprints=RawInputToUserInputStructure.convert_revetment_profile_blueprint_collection(raw_input.revetment_profile_blueprints),
+            headline_offset_methods=RawInputToUserInputStructure.convert_headline_offset_methods(
+                raw_input.headline_offset_methods),
+            revetment_profile_blueprints=RawInputToUserInputStructure.convert_revetment_profile_blueprint_collection(
+                raw_input.revetment_profile_blueprints),
             loads=RawInputToUserInputStructure.convert_loads(raw_input.loads),
             # waternets=RawInputToUserInputStructure.convert_waternet_collection(
             #     raw_input.hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE
@@ -826,7 +842,7 @@ class RawInputToUserInputStructure:
 
         Returns:
             The converted GeneralSettings"""
-        
+
         return GeneralSettings.model_validate(settings)
 
     @staticmethod
@@ -973,14 +989,18 @@ class RawInputToUserInputStructure:
                 "shear_stress_ratio_s_mean"
             ]
             gl_soil.undrained_parameters.shear_strength_ratio.standard_deviation = soil_dict["shear_stress_ratio_s_std"]
-            gl_soil.undrained_parameters.shear_strength_ratio.is_probabilistic = True if soil_dict["shear_stress_ratio_s_std"] else False
+            gl_soil.undrained_parameters.shear_strength_ratio.is_probabilistic = True if soil_dict[
+                "shear_stress_ratio_s_std"] else False
             gl_soil.undrained_parameters.strength_increase_exponent.mean = soil_dict[
                 "strength_exponent_m_mean"
             ]
-            gl_soil.undrained_parameters.strength_increase_exponent.standard_deviation = soil_dict["strength_exponent_m_std"]
-            gl_soil.undrained_parameters.strength_increase_exponent.is_probabilistic = True if soil_dict["strength_exponent_m_std"] else False
+            gl_soil.undrained_parameters.strength_increase_exponent.standard_deviation = soil_dict[
+                "strength_exponent_m_std"]
+            gl_soil.undrained_parameters.strength_increase_exponent.is_probabilistic = True if soil_dict[
+                "strength_exponent_m_std"] else False
             gl_soil.mohr_coulomb_parameters.cohesion_and_friction_angle_correlated = soil_dict["correlation_c-phi"]
-            gl_soil.undrained_parameters.shear_strength_ratio_and_shear_strength_exponent_correlated = soil_dict["correlation_s-m"]
+            gl_soil.undrained_parameters.shear_strength_ratio_and_shear_strength_exponent_correlated = soil_dict[
+                "correlation_s-m"]
 
             soil = Soil(
                 gl_soil=gl_soil,
@@ -994,7 +1014,7 @@ class RawInputToUserInputStructure:
             soils.append(soil)
 
         return SoilCollection(soils=soils)
-    
+
     @staticmethod
     def convert_soil_profile_collection(soil_profile_dict: dict[str, list]) -> SoilProfileCollection:
         """Parses the dictionary into a SoilProfileCollection
@@ -1035,12 +1055,12 @@ class RawInputToUserInputStructure:
         soil_profile_position_collection = SoilProfilePositionSetCollection(sets=sets)
 
         return soil_profile_position_collection
-    
+
     @staticmethod
     def convert_waternet_config_collection(
-        water_level_configs_dict: dict[str, dict[str, str | None]],
-        head_line_configs_dict: dict[str, list[dict[str, str | bool | float | CharPointType]]],
-        ref_line_configs_dict: dict[str, list[dict[str, str | None]]]
+            water_level_configs_dict: dict[str, dict[str, str | None]],
+            head_line_configs_dict: dict[str, list[dict[str, str | bool | float | CharPointType]]],
+            ref_line_configs_dict: dict[str, list[dict[str, str | None]]]
     ) -> WaternetConfigCollection:
         hlc_scenario_names = list(head_line_configs_dict.keys())
         wlc_scenario_names = list(water_level_configs_dict.keys())
@@ -1060,11 +1080,11 @@ class RawInputToUserInputStructure:
 
         for scenario_name in hlc_scenario_names:
             head_line_configs = [
-                HeadLineConfig.model_validate(head_line_config) 
+                HeadLineConfig.model_validate(head_line_config)
                 for head_line_config in head_line_configs_dict[scenario_name]
             ]
             water_level_config = WaterLevelConfig(
-                name_waternet_scenario=scenario_name, 
+                name_waternet_scenario=scenario_name,
                 water_levels=water_level_configs_dict[scenario_name]
             )
 
@@ -1072,7 +1092,7 @@ class RawInputToUserInputStructure:
                 ReferenceLineConfig.model_validate(ref_line_config)
                 for ref_line_config in ref_line_configs_dict[scenario_name]
             ]
-            
+
             waternet_config = WaternetConfig(
                 name_waternet_scenario=scenario_name,
                 water_level_config=water_level_config,
@@ -1084,26 +1104,28 @@ class RawInputToUserInputStructure:
         return WaternetConfigCollection(waternet_configs=waternet_configs)
 
     @staticmethod
-    def convert_headline_offset_methods(headline_offset_methods_dict: dict[str, list[dict[str, str | float | None]]]) -> LineOffsetMethodCollection:
+    def convert_headline_offset_methods(
+            headline_offset_methods_dict: dict[str, list[dict[str, str | float | None]]]) -> LineOffsetMethodCollection:
         headline_offset_methods: list[LineOffsetMethod] = []
 
         for name, headline_offset_method_dict in headline_offset_methods_dict.items():
-            headline_offset_points = [LineOffsetPoint.model_validate(op_dict) for op_dict in headline_offset_method_dict]
+            headline_offset_points = [LineOffsetPoint.model_validate(op_dict) for op_dict in
+                                      headline_offset_method_dict]
             headline_offset_methods.append(
                 LineOffsetMethod(name_method=name, offset_points=headline_offset_points)
-                )
+            )
 
         return LineOffsetMethodCollection(offset_methods=headline_offset_methods)
 
     @staticmethod
     def convert_revetment_profile_blueprint_collection(
-        revetment_profile_dict: dict[str, list[dict[str, Any]]]
-        ) -> RevetmentProfileBlueprintCollection:
+            revetment_profile_dict: dict[str, list[dict[str, Any]]]
+    ) -> RevetmentProfileBlueprintCollection:
         """Parses the dictionary into a RevetmentProfileBlueprintCollection
 
         Args:
             revetment_profile_dict: The dictionary to parse."""
-        
+
         revetment_profile_blueprints: list[RevetmentProfileBlueprint] = []
 
         for name, revetment_layer_list in revetment_profile_dict.items():
@@ -1133,15 +1155,15 @@ class RawInputToUserInputStructure:
         Args:
             loads_dicts: List with load dicts to parse. The keys should match
               the Load attributes."""
-        
+
         loads = [Load.model_validate(load_dict) for load_dict in loads_dicts]
 
         return LoadCollection(loads=loads)
-    
+
     # TODO: Wordt nu niet gebruikt (was voor omzetten rechtstreekse input waternets)
     @staticmethod
     def parse_head_lines(
-        lines: list[dict[str, Any]], name_phreatic_line: str
+            lines: list[dict[str, Any]], name_phreatic_line: str
     ) -> list[HeadLine]:
         """Parse the head lines from the dictionary
 
@@ -1236,7 +1258,7 @@ class RawInputToUserInputStructure:
             input_dict: The dictionary to parse. Should at least have the
               keys and values for the attributes needed for the specific
               slip plane model."""
-        
+
         slip_plane_model_to_class = {
             SlipPlaneModel.UPLIFT_VAN_PARTICLE_SWARM: UpliftVanParticleSwarm,
             SlipPlaneModel.BISHOP_BRUTE_FORCE: BishopBruteForce,
@@ -1258,7 +1280,7 @@ class RawInputToUserInputStructure:
 
         Args:
             grid_settings_dicts (dict): The dictionary to parse"""
-        
+
         grid_settings_sets: list[GridSettingsSet] = []
 
         for set_name, grid_settings_list in grid_settings_dicts.items():

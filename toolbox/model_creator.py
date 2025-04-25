@@ -156,7 +156,7 @@ def create_stage(
             stage_config.revetment_profile_name
         )
 
-        revetment_profile=revetment_profile_blueprint.create_revetment_profile(
+        revetment_profile = revetment_profile_blueprint.create_revetment_profile(
                 char_point_profile=geometry.char_point_profile
         )
 
