@@ -11,17 +11,14 @@ from toolbox.water import HeadLine, ReferenceLine, Waternet
 from toolbox.subsoil import Subsoil
 from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line
 
-# TODO: TEMP
-import matplotlib.pyplot as plt
-
-
 # TODO: Idee: Om flexibiliteit te houden - naast het genereren van de waternets - zou ik
 #       een WaternetExceptions o.i.d. kunnen maken waarin specifieke correcties zijn opgegeven.
 #       Deze correcties kunnen dan worden toegepast op de waternetten.
 
 # TODO: Opgeven van stijghoogte voor TZL verplicht maken indien deze aanwezig is!!
+#       Dit i.v.m. dubbelingen in de naam van de reflijnen. (belangrijk voor indrigingslengte)
 
-# TODO: Invoer maken - voor nu standaard op True
+# TODO: Invoer maken - voor nu standaard op True - Maar wordt ook niet gebruikt
 class WaternetSettings(BaseModel):
     maximize_phreatic_line_to_surface_level: bool = True
 
@@ -108,7 +105,6 @@ class WaterLevelConfig(BaseModel):
     water_levels: dict[str, str | None]
 
 
-# TODO: Eigenlijk zou dit een baseclass moeten zijn, en zou deze subclasses moeten maken, dan kunnen de validaties gedeeltelijk vervallen
 class HeadLineConfig(BaseModel):
     name_head_line: str
     is_phreatic: bool
@@ -144,6 +140,7 @@ class HeadLineConfig(BaseModel):
         return self
 
 
+# TODO: Eigenlijk zou dit een baseclass moeten zijn, en zou deze subclasses moeten maken, dan kunnen de validaties gedeeltelijk vervallen
 class ReferenceLineConfig(BaseModel):
     name_ref_line: str
     name_head_line_top: str
@@ -200,12 +197,12 @@ class WaternetConfig(BaseModel):
 
     @model_validator(mode='after')
     def validate_head_line_assignment(self) -> Self:
-        # TODO: 
+        # TODO:  #  - Zijn alle headlines toegekend aan een reflijn?
         return self
 
     @model_validator(mode='after')
     def validate_max_one_phreatic_line(self) -> Self:
-        #  - Zijn alle headlines toegekend aan een reflijn?
+       
         return self
 
     @model_validator(mode='after')
@@ -308,12 +305,52 @@ class LineOffsetMethod(BaseModel):
 
         elif offset_point.offset_type == OffsetType.SLOPING:
             dist = abs(char_points[index].l - char_points[index - 1].l)
-            head_level = ref_level - dist / offset_point.offset_value
+
+            # For a non-zero offset slope, the head level is determined by the offset slope
+            if offset_point.offset_value != 0:
+                head_level = ref_level - dist / offset_point.offset_value
+            # When the offset slope is 0, the head level is the same as the reference level
+            else:
+                head_level = ref_level
 
         else:
             raise ValueError(f"Invalid offset type '{offset_point.offset_type}'")
 
         return head_level
+
+    @staticmethod
+    def _add_outer_points_if_needed(
+        head_line_l: list[float], 
+        head_line_z: list[float], 
+        geometry: Geometry
+        ) -> tuple[list[float], list[float]]:
+        """For various steps in creating the waternets, it is necessary to have the head line 
+        defined at the start and end of the geometry. This function adds the outer points 
+        if they are not already present.
+        
+        Args:
+            head_line_l (list[float]): The l-coordinates of the head line
+            head_line_z (list[float]): The z-coordinates of the head line
+            geometry (Geometry): The geometry
+
+        Returns:
+            tuple[list[float], list[float]]: The head line including the outer points
+        """
+        
+        # If the head line is not defined at the start or end of the geometry, then we need to add an outer point
+        l_surface_level_land_side = geometry.char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_LAND_SIDE).l
+        l_surface_level_water_side = geometry.char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
+
+        # The head line is created such that the most outward point is the first point
+        if head_line_l[0] != l_surface_level_water_side:
+            head_line_l.insert(0, l_surface_level_water_side)
+            head_line_z.insert(0, head_line_z[0])
+
+        if head_line_l[-1] != l_surface_level_land_side:
+            head_line_l.append(l_surface_level_land_side)
+            head_line_z.append(head_line_z[-1])
+
+        return head_line_l, head_line_z
 
     def create_line(
             self,
@@ -359,6 +396,8 @@ class LineOffsetMethod(BaseModel):
 
             l.append(char_point.l)
             z.append(head_level)
+        
+        l, z = self._add_outer_points_if_needed(head_line_l=l, head_line_z=z, geometry=geometry)
 
         return l, z
 
@@ -387,10 +426,43 @@ class Aquifer(BaseModel):
 
 # TODO wordt niet gebruikt
 class GetAquifersFromSubsoil(BaseModel):
-    pass
+    @staticmethod
+    def _get_and_merge_aquifer_polygons(subsoil: Subsoil) -> list[Polygon]:
+        # Get the aquifers from the subsoil
+        soil_polygons = [sp for sp in subsoil.soil_polygons if sp.is_aquifer]
+        polygons = [sp.to_shapely() for sp in soil_polygons]
+
+        # unify attached aquifers
+        union = unary_union(polygons)
+        polygons = geometry_to_polygons(union)
+
+        return polygons
+    
+    @staticmethod
+    def _check_defined_from_start_to_end(polygon: Polygon, surf_start: float, surf_end: float) -> bool:
+        pass
+
+    @staticmethod
+    def _check_intersects_surface_line(polygon: Polygon, surface_line_line_string: LineString) -> bool:
+        pass
+
+    @staticmethod
+    def _check_underneath_inner_crest(polygon: Polygon, l_inner_crest: float) -> bool:
+        pass
+
+    @staticmethod
+    def get_aquifer_polygons(subsoil: Subsoil, geometry: Geometry) -> list[Polygon]:
+        pass
     
 
+# TODO: Refactor t.b.v. testbaarheid
 def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aquifer]:
+    """
+    Note that for subsoils with non-vertical sides, with a reverse trapazoidal shape,
+    on either of the sides, the aquifers may not be correctly detected. In this case 
+    an error is raised that the aquifer is not valid.
+    """
+
     # Get the aquifers from the subsoil
     aquifer_polygons: list[Polygon] = []
     soil_polygons = [sp for sp in subsoil.soil_polygons if sp.is_aquifer]
@@ -418,9 +490,6 @@ def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aqui
 
         # If the aquifer is NOT defined from start to end, and does not cross the surface line,
         # then it is not a valid aquifer and an error should be raised
-
-        # TODO: Dit klopt niet. Zijkant kan schuin naar binnen lopen
-        #  -> Moet niet surface_line zijn maar volgens mij de omhullende van de subsoil, incl. zijkanten
         intersect = polygon.intersects(surface_line_line_string)
         if not intersect:
             raise ValueError(
@@ -463,33 +532,32 @@ def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aqui
     return aquifers
 
 
+def shift_points_with_equal_l_values(points: list[list[float]]) -> list[list[float]]:
+    """D-Stability determines the order of the head line 
+    and reference line points based on its own logic, no matter in what order 
+    the points are given. Sometimes this does not result in the 
+    desired schematization.
+    
+    This function corrects for this by shifting the points with equal l-values
+    a small distance so that the order of the points is always correct."""
+    
+    # Determine in which direction to shift points
+    # if the points are sorted in the positive, then the shift should be negative
+    if points[0][0] < points[-1][0]:
+        sign = -1
+    # if the points are sorted in the negative, then the shift should be positive
+    else:
+        sign = 1
+
+    for point in points:
+        l_coords = [p[0] for p in points]
+
+        if l_coords.count(point[0]) > 1:
+            point[0] += sign * 0.001
+
+    return points
+
 class LineFromAquiferMethod(BaseModel):
-    @staticmethod
-    def shift_points_with_equal_l_values(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
-        """D-Stability determines the order of the head line 
-        and reference line points based on its own logic, no matter in what order 
-        the points are given. Sometimes this does not result in the 
-        desired schematization.
-        
-        This function corrects for this by shifting the points with equal l-values
-        a small distance so that the order of the points is always correct."""
-        
-        # Determine in which direction to shift points
-        # if the points are sorted in the positive, then the shift should be negative
-        if points[0][0] < points[-1][0]:
-            sign = -1
-        # if the points are sorted in the negative, then the shift should be positive
-        else:
-            sign = 1
-
-        for point in points:
-            l_coords = [p[0] for p in points]
-
-            if l_coords.count(point[0]) > 1:
-                point[0] += sign * 0.001
-
-        return points
-
     @staticmethod
     def create_lines(
         aquifer: Aquifer,
@@ -505,7 +573,7 @@ class LineFromAquiferMethod(BaseModel):
         for side in ["top", "bottom"]:
             line = get_polygon_top_or_bottom(polygon, side)
             points = [[p[0], p[1]] for p in line.coords]
-            points = LineFromAquiferMethod.shift_points_with_equal_l_values(points)
+            points = shift_points_with_equal_l_values(points)
 
             ref_line = ReferenceLine(
                 l=[p[0] for p in points], 
@@ -579,7 +647,124 @@ class LineIntrusionMethod(BaseModel):
         ref_line_z = [z + ref_line_config.intrusion_length for z in intrusion_from_ref_line.z]
 
         return ref_line_l, ref_line_z
+
+
+def correct_crossing_reference_lines(
+        top_ref_line: ReferenceLine, 
+        bottom_ref_line: ReferenceLine, 
+        soil_bottom: float
+        ) -> tuple[ReferenceLine, ReferenceLine]:
+    """Corrects the crossing of reference lines."""
+
+    max_z = max(max(top_ref_line.z), max(bottom_ref_line.z))
+
+    # Define a polygon where the upper reference line is the bottom of the polygon
+    top_ref_line_points = [(l, z) for l, z in zip(top_ref_line.l, top_ref_line.z)]
+    top_ref_line_polygon_top = Polygon(
+        [
+            (top_ref_line_points[0][0], max_z + 1.), 
+            *top_ref_line_points, 
+            (top_ref_line_points[-1][0], max_z + 1.)
+        ]
+    )   
     
+    # Define a polygon where the lower reference line is the top of the polygon
+    bottom_ref_line_points = [(l, z) for l, z in zip(bottom_ref_line.l, bottom_ref_line.z)]
+    bottom_ref_line_polygon_bottom = Polygon(
+        [
+            (bottom_ref_line_points[0][0], soil_bottom - 0.01), 
+            *bottom_ref_line_points, 
+            (bottom_ref_line_points[-1][0], soil_bottom - 0.01)
+        ]
+    )
+
+    # Intersect the two polygons. If there is an intersection, then the reference lines cross each other
+    intersection = top_ref_line_polygon_top.intersection(bottom_ref_line_polygon_bottom)
+    intersection_polygons = geometry_to_polygons(intersection)
+
+    # If the lines don't intersect (actually if they don't overlap, touching is allowed) - return the original lines
+    if len(intersection_polygons) == 0:
+        return top_ref_line, bottom_ref_line
+    
+    # Create a polygon where the lower reference line is the bottom of the polygon
+    bottom_ref_line_polygon_top = Polygon(
+        [
+            (bottom_ref_line_points[0][0], max_z + 1.), 
+            *bottom_ref_line_points, 
+            (bottom_ref_line_points[-1][0], max_z + 1.)
+        ]
+    )
+    
+    # In the following, the xxx_ref_line_polygon_top are altered for 
+    #  every part where the reference lines cross each other (overlap)
+    # For overlapping parts, a mask polygon is joined with both the ref polygons
+    #  such that the bottom of the polygons is situated just below the soil bottom
+    # The corrected ref_lines are determined by taking the bottom of the polygons
+    for polygon in intersection_polygons:
+        l_min = min(polygon.exterior.xy[0])
+        l_max = max(polygon.exterior.xy[0])
+
+        mask_polygon = Polygon([
+            (l_min, soil_bottom), 
+            (l_max, soil_bottom), 
+            (l_max, max_z + 1.), 
+            (l_min, max_z + 1.)
+            ]
+        )
+        bottom_ref_line_polygon_top = unary_union([bottom_ref_line_polygon_top, mask_polygon])
+        top_ref_line_polygon_top = unary_union([top_ref_line_polygon_top, mask_polygon])
+
+    if type(bottom_ref_line_polygon_top) != Polygon or type(top_ref_line_polygon_top) != Polygon:
+        raise ValueError("Something went wrong with correcting crossing reference lines"
+                            "that were modelled using an intrusion length")
+
+    # Get the bottom line of the polygons - This is the new ref line
+    bottom_ref_line_line_string = get_polygon_top_or_bottom(
+        polygon=bottom_ref_line_polygon_top,
+        top_or_bottom="bottom"
+        )
+    
+    top_ref_line_line_string = get_polygon_top_or_bottom(
+        polygon=top_ref_line_polygon_top,
+        top_or_bottom="bottom"
+        )
+    
+    # Sort in original order if needed
+    top_ref_line_coords = [list(coord) for coord in top_ref_line_line_string.coords]
+    top_ref_line_l_start = top_ref_line.l[0]
+
+    if top_ref_line_l_start != top_ref_line_coords[0][0]:
+        top_ref_line_coords = top_ref_line_coords[::-1]
+
+    bottom_ref_line_coords = [list(coord) for coord in bottom_ref_line_line_string.coords]
+    bottom_ref_line_l_start = bottom_ref_line.l[0]
+
+    if bottom_ref_line_l_start != bottom_ref_line_coords[0][0]:
+        bottom_ref_line_coords = bottom_ref_line_coords[::-1]
+
+    # Shift points with equal l-values such that a correct order is guaranteed
+    top_ref_line_coords = shift_points_with_equal_l_values(top_ref_line_coords)
+    bottom_ref_line_coords = shift_points_with_equal_l_values(bottom_ref_line_coords)
+
+    # Convert the line strings to reference lines
+    top_ref_line = ReferenceLine(
+        l=[coord[0] for coord in top_ref_line_coords],
+        z=[coord[1] for coord in top_ref_line_coords],
+        name=top_ref_line.name,
+        head_line_top=top_ref_line.head_line_top,
+        head_line_bottom=top_ref_line.head_line_bottom
+        )
+    
+    bottom_ref_line = ReferenceLine(
+        l=[coord[0] for coord in bottom_ref_line_coords],
+        z=[coord[1] for coord in bottom_ref_line_coords],
+        name=bottom_ref_line.name,
+        head_line_top=bottom_ref_line.head_line_top,
+        head_line_bottom=bottom_ref_line.head_line_bottom
+        )
+    
+    return top_ref_line, bottom_ref_line
+
 
 class WaternetCreator(BaseModel):
     """Factory for creating a single waternet"""
@@ -605,7 +790,7 @@ class WaternetCreator(BaseModel):
                 ):
                 if self.subsoil is None:
                     raise ValueError(
-                        "The subsoil is a required input when creating reference lines"
+                        "The subsoil is required input when creating reference lines"
                         "with the method 'AQUIFER' or 'INTERMEDIATE_AQUIFER'."
                     )
             
@@ -931,6 +1116,7 @@ class WaternetCreator(BaseModel):
         if aquifer_conf or intermediate_aquifer_conf:
             aquifers = get_aquifers_from_subsoil(self.subsoil, self.geometry)
 
+            # TODO: Aan te passen - TZL methode is verplicht bij aanwezigheid van tweede WVP
             # Create the reference lines per aquifer
             for aquifer in aquifers:
                 # If there is an intermediate aquifer and a method for it, then use that method
@@ -999,8 +1185,42 @@ class WaternetCreator(BaseModel):
                 )
 
                 ref_lines.append(ref_line)
+        
+        # Correct the crossing of reference lines
+
 
         return ref_lines
+
+    def correct_crossing_reference_lines(
+            self, 
+            aquifer_ref_lines: list[ReferenceLine],
+            offset_ref_lines: list[ReferenceLine],
+            intrusion_ref_lines: list[ReferenceLine]
+            ) -> tuple[list[ReferenceLine], list[ReferenceLine], list[ReferenceLine]]:
+        """Corrects the crossing of reference lines."""
+
+        # Get phreatic ref. line if present
+        phreatic_line_name = next(
+            (
+                config.name_head_line for config in self.waternet_config.head_line_configs
+                if config.is_phreatic
+            ), None)
+        
+        # TODO: Mogen er meerdere ref lijnen gerelateerd zijn aan de freatische lijn?
+        phreatic_ref_line = next(
+            (
+                ref_line for ref_line in aquifer_ref_lines + offset_ref_lines + intrusion_ref_lines
+                if ref_line.head_line_top == phreatic_line_name
+            ), None)
+        
+        
+        # Two scenarios:
+        # 1. With an intermediate aquifer
+        # 2. Without an intermediate aquifer
+
+        # Each scenario 
+
+        return aquifer_ref_lines, offset_ref_lines, intrusion_ref_lines
 
     def create_waternet(self) -> Waternet:
         # Get water levels - this is based on the geometry name since water levels are location bound
@@ -1017,9 +1237,16 @@ class WaternetCreator(BaseModel):
         head_lines = self.create_head_lines(water_level_set=water_level_set)
 
         # Create the reference lines
-        ref_lines: list[ReferenceLine] = []
-        ref_lines.extend(self.create_ref_lines_aquifers_method())
-        ref_lines.extend(self.create_ref_lines_offset_method(water_level_set=water_level_set))
-        ref_lines.extend(self.create_ref_lines_intrusion_method(current_ref_lines=ref_lines))
+        aquifer_ref_lines = self.create_ref_lines_aquifers_method()
+        offset_ref_lines = self.create_ref_lines_offset_method(water_level_set=water_level_set)
+        intrusion_ref_lines = self.create_ref_lines_intrusion_method(current_ref_lines=[*aquifer_ref_lines, *offset_ref_lines])
+
+        aquifer_ref_lines, offset_ref_lines, intrusion_ref_lines = self.correct_crossing_reference_lines(
+            aquifer_ref_lines=aquifer_ref_lines,
+            offset_ref_lines=offset_ref_lines,
+            intrusion_ref_lines=intrusion_ref_lines
+        )
+
+        ref_lines: list[ReferenceLine] = [*aquifer_ref_lines, *offset_ref_lines, *intrusion_ref_lines]
 
         return Waternet(head_lines=head_lines, ref_lines=ref_lines)
