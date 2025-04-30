@@ -1,6 +1,6 @@
 from pydantic import BaseModel, model_validator
 from enum import StrEnum, auto
-from typing import Optional, Self, Any
+from typing import Optional, Self, Literal
 from shapely.geometry import Polygon, LineString
 from shapely.ops import unary_union
 
@@ -17,10 +17,6 @@ from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons
 
 # TODO: Opgeven van stijghoogte voor TZL verplicht maken indien deze aanwezig is!!
 #       Dit i.v.m. dubbelingen in de naam van de reflijnen. (belangrijk voor indrigingslengte)
-
-# TODO: Invoer maken - voor nu standaard op True - Maar wordt ook niet gebruikt
-class WaternetSettings(BaseModel):
-    maximize_phreatic_line_to_surface_level: bool = True
 
 
 class WaterLevelCollection(BaseModel):
@@ -150,6 +146,8 @@ class ReferenceLineConfig(BaseModel):
     intrusion_from_ref_line: Optional[str] = None
     intrusion_length: Optional[float] = None
 
+    # TODO: Checken of er max. 1 reflijn per freatische lijn is (d.w.z. 1 reflijn die met boven/onderkant aan de freatische lijn is gekoppeld)
+    # TODO: Checken of iedere reflijn maximaal 1 gerelateerde indringingslijn heeft
     @model_validator(mode='after')
     def validate_ref_line_method(self) -> Self:
         if self.ref_line_method_type == RefLineMethodType.OFFSETS and self.offset_method_name is None:
@@ -652,7 +650,8 @@ class LineIntrusionMethod(BaseModel):
 def correct_crossing_reference_lines(
         top_ref_line: ReferenceLine, 
         bottom_ref_line: ReferenceLine, 
-        soil_bottom: float
+        soil_bottom: float,
+        correct_ref_line: Literal["top", "bottom", "both"]
         ) -> tuple[ReferenceLine, ReferenceLine]:
     """Corrects the crossing of reference lines."""
 
@@ -680,9 +679,9 @@ def correct_crossing_reference_lines(
 
     # Intersect the two polygons. If there is an intersection, then the reference lines cross each other
     intersection = top_ref_line_polygon_top.intersection(bottom_ref_line_polygon_bottom)
-    intersection_polygons = geometry_to_polygons(intersection)
+    intersection_polygons = geometry_to_polygons(intersection)  # points and lines are not included
 
-    # If the lines don't intersect (actually if they don't overlap, touching is allowed) - return the original lines
+    # If the lines don't intersect (actually if they don't 'overlap', touching is allowed) - return the original lines
     if len(intersection_polygons) == 0:
         return top_ref_line, bottom_ref_line
     
@@ -747,36 +746,35 @@ def correct_crossing_reference_lines(
     bottom_ref_line_coords = shift_points_with_equal_l_values(bottom_ref_line_coords)
 
     # Convert the line strings to reference lines
-    top_ref_line = ReferenceLine(
-        l=[coord[0] for coord in top_ref_line_coords],
-        z=[coord[1] for coord in top_ref_line_coords],
-        name=top_ref_line.name,
-        head_line_top=top_ref_line.head_line_top,
-        head_line_bottom=top_ref_line.head_line_bottom
-        )
+    if correct_ref_line == "top" or correct_ref_line == "both":
+        top_ref_line = ReferenceLine(
+            l=[coord[0] for coord in top_ref_line_coords],
+            z=[coord[1] for coord in top_ref_line_coords],
+            name=top_ref_line.name,
+            head_line_top=top_ref_line.head_line_top,
+            head_line_bottom=top_ref_line.head_line_bottom
+            )
     
-    bottom_ref_line = ReferenceLine(
-        l=[coord[0] for coord in bottom_ref_line_coords],
-        z=[coord[1] for coord in bottom_ref_line_coords],
-        name=bottom_ref_line.name,
-        head_line_top=bottom_ref_line.head_line_top,
-        head_line_bottom=bottom_ref_line.head_line_bottom
+    if correct_ref_line == "bottom" or correct_ref_line == "both":
+        bottom_ref_line = ReferenceLine(
+            l=[coord[0] for coord in bottom_ref_line_coords],
+            z=[coord[1] for coord in bottom_ref_line_coords],
+            name=bottom_ref_line.name,
+            head_line_top=bottom_ref_line.head_line_top,
+            head_line_bottom=bottom_ref_line.head_line_bottom
         )
     
     return top_ref_line, bottom_ref_line
 
 
-class WaternetCreator(BaseModel):
-    """Factory for creating a single waternet"""
+class WaternetCreatorInput(BaseModel):
+    """Input for the WaternetCreator"""
 
     geometry: Geometry
     waternet_config: WaternetConfig
     water_level_collection: WaterLevelCollection
     offset_method_collection: LineOffsetMethodCollection
-    settings: WaternetSettings = WaternetSettings()  # TODO: Wordt nu niet gebruikt - herzien
     subsoil: Optional[Subsoil] = None
-    _outward_intersection: Optional[tuple[float, float]] = None
-    _inward_intersection: Optional[tuple[float, float]] = None
 
     @model_validator(mode='after')
     def validate_subsoil(self) -> Self:
@@ -795,6 +793,14 @@ class WaternetCreator(BaseModel):
                     )
             
         return self
+
+
+class PhreaticLineModifier(BaseModel):
+    """Factory for modifying a head line representing a phreatic line"""
+
+    geometry: Geometry
+    outward_intersection: Optional[tuple[float, float]] = None
+    inward_intersection: Optional[tuple[float, float]] = None
 
     def process_outward_intersection_phreatic_line(self, head_line: HeadLine) -> HeadLine:
         surface_level_outward = self.geometry.char_point_profile.get_point_by_type(
@@ -1059,18 +1065,28 @@ class WaternetCreator(BaseModel):
 
         return head_line
 
+
+# TODO: Is dit wel een 'factory', als er objectspecifieke attributes zijn? 
+#       (geometry, _outward_intersection, _inward_intersection, waternet_config)
+# TODO: Freatische lijn correctie moet elders gebeuren. Functionaliteit is losstaand
+#       ook handig te gebruiken.
+class WaternetCreator(BaseModel):
+    """Factory for creating a single waternet"""
+
+    input: WaternetCreatorInput
+
     def create_head_lines(self, water_level_set: dict[str, float | None]) -> list[HeadLine]:
         head_lines: list[HeadLine] = []
 
-        for head_line_config in self.waternet_config.head_line_configs:
+        for head_line_config in self.input.waternet_config.head_line_configs:
             # Get the method to create the head line
             if head_line_config.head_line_method_type == HeadLineMethodType.OFFSETS:
-                method = self.offset_method_collection.get_by_name(head_line_config.offset_method_name)
+                method = self.input.offset_method_collection.get_by_name(head_line_config.offset_method_name)
             else:
                 raise ValueError(f"Invalid headline method type '{head_line_config.head_line_method_type}'")
 
             # Create the head line
-            head_line_l, head_line_z = method.create_line(geometry=self.geometry, ref_levels=water_level_set)
+            head_line_l, head_line_z = method.create_line(geometry=self.input.geometry, ref_levels=water_level_set)
             
             head_line = HeadLine(
                 name=head_line_config.name_head_line,
@@ -1081,17 +1097,18 @@ class WaternetCreator(BaseModel):
 
             # Add the point where the phreatic line intersects the surface line (if it does)
             if head_line_config.is_phreatic:
-                head_line = self.process_outward_intersection_phreatic_line(head_line)
-                head_line = self.process_inward_intersection_phreatic_line(head_line)
+                phreatic_line_modifier = PhreaticLineModifier(geometry=self.input.geometry)
+                head_line = phreatic_line_modifier.process_inward_intersection_phreatic_line(head_line)
+                head_line = phreatic_line_modifier.process_outward_intersection_phreatic_line(head_line)
 
-            # As last - maximize the headline to the surface level if requested
-            if head_line_config.is_phreatic and head_line_config.apply_minimal_surface_line_offset:
-                head_line = self.apply_minimal_surface_line_offset_to_phreatic_line(
-                    head_line=head_line,
-                    offset=head_line_config.minimal_surface_line_offset,
-                    from_char_point_type=head_line_config.minimal_offset_from_point,
-                    to_char_point_type=head_line_config.minimal_offset_to_point
-                )
+                # As last - maximize the headline to the surface level if requested
+                if head_line_config.apply_minimal_surface_line_offset:
+                    head_line = phreatic_line_modifier.apply_minimal_surface_line_offset_to_phreatic_line(
+                        head_line=head_line,
+                        offset=head_line_config.minimal_surface_line_offset,
+                        from_char_point_type=head_line_config.minimal_offset_from_point,
+                        to_char_point_type=head_line_config.minimal_offset_to_point
+                    )
 
             head_lines.append(head_line)
         
@@ -1099,7 +1116,7 @@ class WaternetCreator(BaseModel):
 
     def create_ref_lines_aquifers_method(self) -> list[ReferenceLine]:
         ref_lines: list[ReferenceLine] = []
-        ref_line_configs = self.waternet_config.reference_line_configs
+        ref_line_configs = self.input.waternet_config.reference_line_configs
         
         # Check if there are any aquifer methods - then we need to get the aquifers from the subsoil
         aquifer_conf = next(
@@ -1114,7 +1131,7 @@ class WaternetCreator(BaseModel):
             ), None)
 
         if aquifer_conf or intermediate_aquifer_conf:
-            aquifers = get_aquifers_from_subsoil(self.subsoil, self.geometry)
+            aquifers = get_aquifers_from_subsoil(self.input.subsoil, self.input.geometry)
 
             # TODO: Aan te passen - TZL methode is verplicht bij aanwezigheid van tweede WVP
             # Create the reference lines per aquifer
@@ -1138,15 +1155,15 @@ class WaternetCreator(BaseModel):
 
     def create_ref_lines_offset_method(self, water_level_set: dict[str, float | None]) -> list[ReferenceLine]:
         ref_lines: list[ReferenceLine] = []
-        ref_line_configs = self.waternet_config.reference_line_configs
+        ref_line_configs = self.input.waternet_config.reference_line_configs
         
         for ref_line_config in ref_line_configs:
             if ref_line_config.ref_line_method_type == RefLineMethodType.OFFSETS:
-                method = self.offset_method_collection.get_by_name(ref_line_config.offset_method_name)
+                method = self.input.offset_method_collection.get_by_name(ref_line_config.offset_method_name)
 
                 # Create the reference line
                 ref_line_l, ref_line_z = method.create_line(
-                    geometry=self.geometry,
+                    geometry=self.input.geometry,
                     ref_levels=water_level_set
                 )
 
@@ -1165,7 +1182,7 @@ class WaternetCreator(BaseModel):
 
     def create_ref_lines_intrusion_method(self, current_ref_lines: list[ReferenceLine]) -> list[ReferenceLine]:
         ref_lines: list[ReferenceLine] = []
-        ref_line_configs = self.waternet_config.reference_line_configs
+        ref_line_configs = self.input.waternet_config.reference_line_configs
 
         for ref_line_config in ref_line_configs:
             if ref_line_config.ref_line_method_type == RefLineMethodType.INTRUSION:
@@ -1191,29 +1208,59 @@ class WaternetCreator(BaseModel):
 
         return ref_lines
 
-    def correct_crossing_reference_lines(
+    def correct_intrusion_reference_lines(
             self, 
             aquifer_ref_lines: list[ReferenceLine],
             offset_ref_lines: list[ReferenceLine],
             intrusion_ref_lines: list[ReferenceLine]
             ) -> tuple[list[ReferenceLine], list[ReferenceLine], list[ReferenceLine]]:
-        """Corrects the crossing of reference lines."""
+        """Corrects the crossing of reference lines that are modelled with an intrusion method."""
+
+        # STAP 1: Freatisch met de eerste watervoerende laag
 
         # Get phreatic ref. line if present
         phreatic_line_name = next(
             (
-                config.name_head_line for config in self.waternet_config.head_line_configs
+                config.name_head_line for config in self.input.waternet_config.head_line_configs
                 if config.is_phreatic
             ), None)
         
-        # TODO: Mogen er meerdere ref lijnen gerelateerd zijn aan de freatische lijn?
-        phreatic_ref_line = next(
-            (
-                ref_line for ref_line in aquifer_ref_lines + offset_ref_lines + intrusion_ref_lines
-                if ref_line.head_line_top == phreatic_line_name
-            ), None)
+        # If there is a phreatic line, then we check if it has a ref. line
+        if phreatic_line_name is not None:
+            phreatic_ref_line = next(
+                (
+                    ref_line for ref_line in aquifer_ref_lines + offset_ref_lines + intrusion_ref_lines
+                    if (ref_line.head_line_top == phreatic_line_name or ref_line.head_line_bottom == phreatic_line_name)
+                ), None)
+        
+        else:
+            phreatic_ref_line = None
+        
+        # If there is a phreatic ref. line, then we check if it has a related intrusion ref. line
+        if phreatic_ref_line is not None:
+            intrusion_ref_line_name = next(
+                (
+                    config.name_ref_line for config in self.input.waternet_config.reference_line_configs
+                    if config.intrusion_from_ref_line == phreatic_ref_line.name
+                ), None)
+
+            # If there is an intrusion ref. line related to the phreatic ref. line, then we get it.
+            if intrusion_ref_line_name is not None:
+                intrusion_ref_line_related_to_phreatic = next(
+                    (
+                        ref_line for ref_line in intrusion_ref_lines if ref_line.name == intrusion_ref_line_name
+                    ), None)
+        # Ohterwise (no phreatic ref. line or related intrusion ref. line), set it to None
+        else:
+            intrusion_ref_line_related_to_phreatic = None
+
+        # Now we get the top most aquifer ref. line and see if it has a related intrusion ref. line
         
         
+
+        # Steps
+        # - How many aquifers with ref. lines are there?
+        # - Is there a phreatic ref. line?
         # Two scenarios:
         # 1. With an intermediate aquifer
         # 2. Without an intermediate aquifer
@@ -1224,12 +1271,12 @@ class WaternetCreator(BaseModel):
 
     def create_waternet(self) -> Waternet:
         # Get water levels - this is based on the geometry name since water levels are location bound
-        location_water_levels = self.water_level_collection.get_by_name(self.geometry.name)
+        location_water_levels = self.input.water_level_collection.get_by_name(self.input.geometry.name)
 
         # Rename the water levels to the generalized water level names
         water_level_set = {
             k: location_water_levels[v]
-            for k, v in self.waternet_config.water_level_config.water_levels.items()
+            for k, v in self.input.waternet_config.water_level_config.water_levels.items()
             if v is not None
         }
 
@@ -1241,11 +1288,11 @@ class WaternetCreator(BaseModel):
         offset_ref_lines = self.create_ref_lines_offset_method(water_level_set=water_level_set)
         intrusion_ref_lines = self.create_ref_lines_intrusion_method(current_ref_lines=[*aquifer_ref_lines, *offset_ref_lines])
 
-        aquifer_ref_lines, offset_ref_lines, intrusion_ref_lines = self.correct_crossing_reference_lines(
-            aquifer_ref_lines=aquifer_ref_lines,
-            offset_ref_lines=offset_ref_lines,
-            intrusion_ref_lines=intrusion_ref_lines
-        )
+        # aquifer_ref_lines, offset_ref_lines, intrusion_ref_lines = self.correct_crossing_reference_lines(
+        #     aquifer_ref_lines=aquifer_ref_lines,
+        #     offset_ref_lines=offset_ref_lines,
+        #     intrusion_ref_lines=intrusion_ref_lines
+        # )
 
         ref_lines: list[ReferenceLine] = [*aquifer_ref_lines, *offset_ref_lines, *intrusion_ref_lines]
 
