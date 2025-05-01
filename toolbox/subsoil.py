@@ -248,6 +248,11 @@ class Subsoil(BaseModel):
         # Replace the old list with the new one
         self.soil_polygons = new_soil_polygons
 
+    def get_bottom(self) -> float:
+        """Returns the minimim z-coordinate of the subsoil"""
+
+        return min(point[1] for polygon in self.soil_polygons for point in polygon.points)
+
 
 class RevetmentLayer(BaseModel):
     """Representation of a revetment layer. This is a layer at the surface level,

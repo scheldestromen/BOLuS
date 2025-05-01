@@ -11,12 +11,23 @@ from toolbox.water import HeadLine, ReferenceLine, Waternet
 from toolbox.subsoil import Subsoil
 from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line
 
+# TODO: Debugging
+import matplotlib.pyplot as plt
+
 # TODO: Idee: Om flexibiliteit te houden - naast het genereren van de waternets - zou ik
 #       een WaternetExceptions o.i.d. kunnen maken waarin specifieke correcties zijn opgegeven.
 #       Deze correcties kunnen dan worden toegepast op de waternetten.
 
 # TODO: Opgeven van stijghoogte voor TZL verplicht maken indien deze aanwezig is!!
 #       Dit i.v.m. dubbelingen in de naam van de reflijnen. (belangrijk voor indrigingslengte)
+
+NAME_DEEP_AQUIFER = "WVP"
+NAME_INTERMEDIATE_AQUIFER = "TZL"
+
+TOP_BOTTOM_TO_DUTCH = {
+    "top": "boven",
+    "bottom": "onder",
+}
 
 
 class WaterLevelCollection(BaseModel):
@@ -421,6 +432,7 @@ class Aquifer(BaseModel):
     points: list[tuple[float, float]]
     aquifer_type: AquiferType
     order_id: int
+    name_ref_line_original: Optional[str] = None
     name_ref_line_top: Optional[str] = None
     name_ref_line_bottom: Optional[str] = None
     name_ref_line_intrusion_top: Optional[str] = None
@@ -534,7 +546,7 @@ def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aqui
             aq_type = AquiferType.INTERMEDIATE_AQUIFER
 
         polygon_points = [(p[0], p[1]) for p in polygon.exterior.coords[:-1]]  # skip last point
-        aquifer = Aquifer(points=polygon_points, aquifer_type=aq_type, order_id=i + 1)
+        aquifer = Aquifer(points=polygon_points, aquifer_type=aq_type, order_id=i)
         aquifers.append(aquifer)
 
     return aquifers
@@ -578,6 +590,11 @@ class LineFromAquiferMethod(BaseModel):
 
         ref_lines: list[ReferenceLine] = []
 
+        if aquifer.order_id == 0:
+            name_ref_line_base = f"{ref_line_config.name_ref_line} ({NAME_DEEP_AQUIFER}"
+        else:
+            name_ref_line_base = f"{ref_line_config.name_ref_line} ({NAME_INTERMEDIATE_AQUIFER}{aquifer.order_id}"
+
         for side in ["top", "bottom"]:
             line = get_polygon_top_or_bottom(polygon, side)
             points = [[p[0], p[1]] for p in line.coords]
@@ -586,22 +603,37 @@ class LineFromAquiferMethod(BaseModel):
             ref_line = ReferenceLine(
                 l=[p[0] for p in points], 
                 z=[p[1] for p in points],
-                name=ref_line_config.name_ref_line,
+                name=f"{name_ref_line_base} {TOP_BOTTOM_TO_DUTCH[side]})",
                 head_line_top=ref_line_config.name_head_line_top,
                 head_line_bottom=ref_line_config.name_head_line_bottom
             )
             ref_lines.append(ref_line)
 
+        # Modify the aquifer name to have a unique name for top and bottom
+        aquifer.name_ref_line_original = ref_line_config.name_ref_line
+        aquifer.name_ref_line_top = f"{name_ref_line_base} {TOP_BOTTOM_TO_DUTCH['top']})"
+        aquifer.name_ref_line_bottom = f"{name_ref_line_base} {TOP_BOTTOM_TO_DUTCH['bottom']})"
+
         return ref_lines[0], ref_lines[1]
     
 class LineIntrusionMethod(BaseModel):
     @staticmethod
-    def get_ref_lines_by_name(name: str, ref_lines: list[ReferenceLine]) -> list[ReferenceLine]:
+    def get_ref_lines_by_name(name: str, ref_lines: list[ReferenceLine], aquifers: list[Aquifer] | None) -> list[ReferenceLine]:
+        names: list[str] = [name]
+
+        # The aquifer ref. lines names are altered (to have a unique name for top and bottom)
+        # the modified names are added based on the aquifers original names
+        if aquifers is not None:
+            names.extend([aq.name_ref_line_top for aq in aquifers if aq.name_ref_line_original == name])
+            names.extend([aq.name_ref_line_bottom for aq in aquifers if aq.name_ref_line_original == name])
+
+        # Get the reference lines that match the names
         ref_lines = [
             rl for rl in ref_lines 
-            if rl.name == name
+            if rl.name in names
         ]
-
+        
+        # Check if there are any reference lines that match the names
         if len(ref_lines) == 0:
             raise ValueError(f"The reference line '{name}' does not exist")
         
@@ -620,39 +652,45 @@ class LineIntrusionMethod(BaseModel):
         if len(intrusion_from_ref_lines) == 1:
             intrusion_from_ref_line = intrusion_from_ref_lines[0]
 
-        # If there are multiple with the same name - then it must be an aquifer ref. line.
+            return intrusion_from_ref_line
+
+        # # If there are multiple with the same name - then it must be an aquifer ref. line.
+        # # Check if the name is in the aquifers
+        # if aquifers is not None:
+        #     for ref_line_name in [rl.name for rl in intrusion_from_ref_lines]:
+        #         relavant_aquifers = [
+        #             aq for aq in aquifers 
+        #             if (aq.name_ref_line_top == ref_line_name
+        #                 or aq.name_ref_line_bottom == ref_line_name)
+        #             ]
+
+        #     if ref_line_config.intrusion_from_ref_line in aquifer_ref_line_names:
+        #         aquifers = [
+        #             aquifer for aquifer in aquifers
+        #             if aquifer.name_ref_line_top == ref_line_config.intrusion_from_ref_line
+        #             ]
+        #         # TODO: Errors samen voegen in één flow
+        #     else:
+        #         raise ValueError(f"Something went wrong with the intrusion from ref line '{ref_line_config.intrusion_from_ref_line}'."
+        #                             "There are multiple reference lines with the name '{ref_line_config.intrusion_from_ref_line}', "
+        #                             "but none of them is related to an aquifer.")
+
+        # else:
+        #     raise ValueError(f"Something went wrong with the intrusion from ref line '{ref_line_config.intrusion_from_ref_line}'."
+        #                         "There are multiple reference lines with the name '{ref_line_config.intrusion_from_ref_line}', "
+        #                         "but none of them is related to an aquifer.")
+
+        # If positive, then we need to get the ref line with the highest z
+        if ref_line_config.intrusion_length > 0:
+            ref_z_maxs = [max(rl.z) for rl in intrusion_from_ref_lines]
+            i_ref_z_max = ref_z_maxs.index(max(ref_z_maxs))
+            intrusion_from_ref_line = intrusion_from_ref_lines[i_ref_z_max]
+
+        # If negative, then we need to get the ref line with the lowest z
         else:
-            # Check if the name is in the aquifers
-            if aquifers is not None:
-                aquifer_ref_line_names = [aquifer.name_ref_line_top for aquifer in aquifers]
-
-                if ref_line_config.intrusion_from_ref_line in aquifer_ref_line_names:
-                    aquifers = [
-                        aquifer for aquifer in aquifers
-                        if aquifer.name_ref_line_top == ref_line_config.intrusion_from_ref_line
-                        ]
-                    # TODO: Errors samen voegen in één flow
-                else:
-                    raise ValueError(f"Something went wrong with the intrusion from ref line '{ref_line_config.intrusion_from_ref_line}'.
-                                     There are multiple reference lines with the name '{ref_line_config.intrusion_from_ref_line}', 
-                                     but none of them is related to an aquifer.")
-
-            else:
-                raise ValueError(f"Something went wrong with the intrusion from ref line '{ref_line_config.intrusion_from_ref_line}'.
-                                 There are multiple reference lines with the name '{ref_line_config.intrusion_from_ref_line}', 
-                                 but none of them is related to an aquifer.")
-
-            # If positive, then we need to get the ref line with the highest z
-            if ref_line_config.intrusion_length > 0:
-                ref_z_maxs = [max(rl.z) for rl in intrusion_from_ref_lines]
-                i_ref_z_max = ref_z_maxs.index(max(ref_z_maxs))
-                intrusion_from_ref_line = intrusion_from_ref_lines[i_ref_z_max]
-
-            # If negative, then we need to get the ref line with the lowest z
-            else:
-                ref_z_mins = [min(rl.z) for rl in intrusion_from_ref_lines]
-                i_ref_z_min = ref_z_mins.index(min(ref_z_mins))
-                intrusion_from_ref_line = intrusion_from_ref_lines[i_ref_z_min]
+            ref_z_mins = [min(rl.z) for rl in intrusion_from_ref_lines]
+            i_ref_z_min = ref_z_mins.index(min(ref_z_mins))
+            intrusion_from_ref_line = intrusion_from_ref_lines[i_ref_z_min]
 
         return intrusion_from_ref_line
 	
@@ -661,22 +699,49 @@ class LineIntrusionMethod(BaseModel):
         current_ref_lines: list[ReferenceLine], 
         ref_line_config: ReferenceLineConfig,
         aquifers: list[Aquifer] | None
-        ) -> tuple[list[float], list[float]]:
+        ) -> ReferenceLine:
         """Creates a reference line based on the intrusion from another reference line."""
 
+        # Get the reference line to apply the intrusion on by name
         intrusion_from_ref_lines = LineIntrusionMethod.get_ref_lines_by_name(
             name=ref_line_config.intrusion_from_ref_line, 
-            ref_lines=current_ref_lines
+            ref_lines=current_ref_lines,
+            aquifers=aquifers
             )
 
+        # There could be multiple reference lines with the same name (in case of an aquifer), 
+        # so we need to select the appropriate one
         intrusion_from_ref_line = LineIntrusionMethod.select_appropriate_ref_line(
             intrusion_from_ref_lines, ref_line_config, aquifers
             )
         
+        # Create the new reference line
         ref_line_l = intrusion_from_ref_line.l
         ref_line_z = [z + ref_line_config.intrusion_length for z in intrusion_from_ref_line.z]
 
-        return ref_line_l, ref_line_z
+        ref_line = ReferenceLine(
+            name=ref_line_config.name_ref_line,
+            l=ref_line_l,
+            z=ref_line_z,
+            head_line_top=ref_line_config.name_head_line_top,
+            head_line_bottom=ref_line_config.name_head_line_bottom
+        )
+
+        # Update aquifer property if there are any
+        if aquifers is not None:
+            aquifer = next(
+                (aq for aq in aquifers 
+                 if intrusion_from_ref_line.name in [aq.name_ref_line_top, aq.name_ref_line_bottom]),
+                None
+                )
+            # If the intrusion line is related to an aquifer, then update the aquifer property
+            if aquifer is not None:
+                if intrusion_from_ref_line.name == aquifer.name_ref_line_top:
+                    aquifer.name_ref_line_intrusion_top = ref_line_config.name_ref_line
+                else:
+                    aquifer.name_ref_line_intrusion_bottom = ref_line_config.name_ref_line
+
+        return ref_line
 
 
 def correct_crossing_reference_lines(
@@ -703,9 +768,9 @@ def correct_crossing_reference_lines(
     bottom_ref_line_points = [(l, z) for l, z in zip(bottom_ref_line.l, bottom_ref_line.z)]
     bottom_ref_line_polygon_bottom = Polygon(
         [
-            (bottom_ref_line_points[0][0], soil_bottom - 0.01), 
+            (bottom_ref_line_points[0][0], soil_bottom), # - 0.01
             *bottom_ref_line_points, 
-            (bottom_ref_line_points[-1][0], soil_bottom - 0.01)
+            (bottom_ref_line_points[-1][0], soil_bottom) # - 0.01
         ]
     )
 
@@ -714,7 +779,7 @@ def correct_crossing_reference_lines(
     intersection_polygons = geometry_to_polygons(intersection)  # points and lines are not included
 
     # If the lines don't intersect (actually if they don't 'overlap', touching is allowed) - return the original lines
-    if len(intersection_polygons) == 0:
+    if len(intersection_polygons) == 1 and intersection_polygons[0].is_empty:
         return top_ref_line, bottom_ref_line
     
     # Create a polygon where the lower reference line is the bottom of the polygon
@@ -736,8 +801,8 @@ def correct_crossing_reference_lines(
         l_max = max(polygon.exterior.xy[0])
 
         mask_polygon = Polygon([
-            (l_min, soil_bottom), 
-            (l_max, soil_bottom), 
+            (l_min, soil_bottom - 1.), 
+            (l_max, soil_bottom - 1.), 
             (l_max, max_z + 1.), 
             (l_min, max_z + 1.)
             ]
@@ -779,22 +844,12 @@ def correct_crossing_reference_lines(
 
     # Convert the line strings to reference lines
     if correct_ref_line == "top" or correct_ref_line == "both":
-        top_ref_line = ReferenceLine(
-            l=[coord[0] for coord in top_ref_line_coords],
-            z=[coord[1] for coord in top_ref_line_coords],
-            name=top_ref_line.name,
-            head_line_top=top_ref_line.head_line_top,
-            head_line_bottom=top_ref_line.head_line_bottom
-            )
+        top_ref_line.l = [coord[0] for coord in top_ref_line_coords]
+        top_ref_line.z = [coord[1] for coord in top_ref_line_coords]
     
     if correct_ref_line == "bottom" or correct_ref_line == "both":
-        bottom_ref_line = ReferenceLine(
-            l=[coord[0] for coord in bottom_ref_line_coords],
-            z=[coord[1] for coord in bottom_ref_line_coords],
-            name=bottom_ref_line.name,
-            head_line_top=bottom_ref_line.head_line_top,
-            head_line_bottom=bottom_ref_line.head_line_bottom
-        )
+        bottom_ref_line.l = [coord[0] for coord in bottom_ref_line_coords]
+        bottom_ref_line.z = [coord[1] for coord in bottom_ref_line_coords]
     
     return top_ref_line, bottom_ref_line
 
@@ -1179,13 +1234,7 @@ class WaternetCreator(BaseModel):
                     ref_line_config=config
                 )
                 ref_lines.extend([ref_line_top, ref_line_bottom])
-                
-                # Assign the name of the reference line to the aquifer
-                # Note that the name for top and bottom is the same - There is no 
-                # need to make a unique name for each at this point
-                aquifer.name_ref_line_top = config.name_ref_line
-                aquifer.name_ref_line_bottom = config.name_ref_line
-            
+                            
         return ref_lines
 
     def create_ref_lines_offset_method(self, water_level_set: dict[str, float | None]) -> list[ReferenceLine]:
@@ -1223,18 +1272,10 @@ class WaternetCreator(BaseModel):
             if ref_line_config.ref_line_method_type == RefLineMethodType.INTRUSION:
 
                 # Create the reference line               
-                ref_line_l, ref_line_z = LineIntrusionMethod.create_line(
+                ref_line = LineIntrusionMethod.create_line(
                     current_ref_lines=current_ref_lines,
                     ref_line_config=ref_line_config,
                     aquifers=self._aquifers
-                )
-
-                ref_line = ReferenceLine(
-                    name=ref_line_config.name_ref_line,
-                    l=ref_line_l,
-                    z=ref_line_z,
-                    head_line_top=ref_line_config.name_head_line_top,
-                    head_line_bottom=ref_line_config.name_head_line_bottom
                 )
 
                 ref_lines.append(ref_line)
@@ -1248,20 +1289,39 @@ class WaternetCreator(BaseModel):
                         aquifer = next(aquifer for aquifer in self._aquifers if aquifer.name_ref_line_top == ref_line_config.intrusion_from_ref_line)
                         aquifer.name_ref_line_intrusion_top = ref_line.name
         
-        # Correct the crossing of reference lines
-
-
         return ref_lines
 
-    def correct_intrusion_reference_lines(
+    def correct_crossing_reference_lines(
             self, 
             aquifer_ref_lines: list[ReferenceLine],
             offset_ref_lines: list[ReferenceLine],
-            intrusion_ref_lines: list[ReferenceLine]
+            intrusion_ref_lines: list[ReferenceLine],
             ) -> tuple[list[ReferenceLine], list[ReferenceLine], list[ReferenceLine]]:
-        """Corrects the crossing of reference lines that are modelled with an intrusion method."""
+        """Corrects the crossing of reference lines that are modelled with an intrusion method.
+        
+        Corrections are made in two zones:
+        - The zone between the phreatic line and the most shallow aquifer
+        - The zone between the phreatic line and the second watervoerende laag
+        """
 
-        # STAP 1: Freatisch met de eerste watervoerende laag
+        # Correcties freatische lijn en bovenste WVP:
+        # 1. Alleen Ref. freatisch -> Weg als snijpunt met bovenste WVP
+        # 2. Alleen indringingslijn bovenste WVP -> Weg als snijpunt met maaiveld
+        # 3. Ref. freatisch EN indringingslijn bovenste WVP -> Weg als snijpunt met elkaar
+        # 4. Ref. freatisch EN indringing Ref. freatisch EN indringingslijn bovenste WVP ->
+        #  4a. Indringingslagen weg als snijpunt met elkaar
+        #  4b. Indringing freatisch weg als snijpunt met bovenste WVP
+
+        # Correcties laatste TZL en onderste WVP (als aq > 1):
+        # 1. Alleen indringing Ref. TZL -> Weg als snijpunt met onderste WVP
+        # 2. Alleen indringingslijn onderste WVP -> Weg als snijpunt met TZL
+        # 3. Ref. TZL EN indringingslijn onderste WVP -> Weg als snijpunt met elkaar
+
+        # If there are no aquifers, then there are no intrusion ref. lines to correct
+        if self._aquifers is None:
+            return aquifer_ref_lines, offset_ref_lines, intrusion_ref_lines
+
+        # STEP 1: Get relevant ref. lines and aquifers
 
         # Get phreatic ref. line if present
         phreatic_line_name = next(
@@ -1274,7 +1334,7 @@ class WaternetCreator(BaseModel):
         if phreatic_line_name is not None:
             phreatic_ref_line = next(
                 (
-                    ref_line for ref_line in aquifer_ref_lines + offset_ref_lines + intrusion_ref_lines
+                    ref_line for ref_line in aquifer_ref_lines + offset_ref_lines + intrusion_ref_lines  # TODO: kan dit samengevoegd?
                     if (ref_line.head_line_top == phreatic_line_name or ref_line.head_line_bottom == phreatic_line_name)
                 ), None)
         
@@ -1295,12 +1355,73 @@ class WaternetCreator(BaseModel):
                     (
                         ref_line for ref_line in intrusion_ref_lines if ref_line.name == intrusion_ref_line_name
                     ), None)
+            else:
+                intrusion_ref_line_related_to_phreatic = None
         # Ohterwise (no phreatic ref. line or related intrusion ref. line), set it to None
         else:
             intrusion_ref_line_related_to_phreatic = None
 
         # Now we get the top most aquifer ref. line and see if it has a related intrusion ref. line
+        # The top most aquifer as the highest order_id
+        top_aquifer = max(self._aquifers, key=lambda x: x.order_id)
+        top_aquifer_ref_line_top = next(rl for rl in aquifer_ref_lines if rl.name == top_aquifer.name_ref_line_top)
+        top_aquifer_intrusion_ref_line_top = next(
+            (rl for rl in intrusion_ref_lines if rl.name == top_aquifer.name_ref_line_intrusion_top),
+            None
+            )
+        if self.input.waternet_config.name_waternet_scenario == 'Indringing WVP snijdt Ref. Fr.':
+            print(top_aquifer)
+            for rl in intrusion_ref_lines:
+                print(rl.name)
+                print(rl)
+
+        soil_bottom = self.input.subsoil.get_bottom()
+
+        # Zone 1 - Scenario 1: Phreatic ref. line and no intrusion lines
+        if (
+            phreatic_ref_line is not None 
+            and intrusion_ref_line_related_to_phreatic is None
+            and top_aquifer_intrusion_ref_line_top is None
+            ):
+            correct_crossing_reference_lines(
+                top_ref_line=phreatic_ref_line,
+                bottom_ref_line=top_aquifer_ref_line_top,
+                soil_bottom=soil_bottom,
+                correct_ref_line="top"
+            )
         
+        # Zone 1 - Scenario 2: Intrusion top aquifer, no freatic ref. line
+        elif (
+            phreatic_ref_line is None 
+            and top_aquifer_intrusion_ref_line_top is not None
+            ):
+            # TODO: Snijden met maaiveld
+            pass
+    
+        # Zone 1 - Scenario 3: Intrusion top aquifer, phreatic ref. line, no related intrusion phreatic ref. line
+        elif (
+            phreatic_ref_line is not None 
+            and intrusion_ref_line_related_to_phreatic is None
+            and top_aquifer_intrusion_ref_line_top is not None
+            ):
+            print('yes')
+            correct_crossing_reference_lines(
+                top_ref_line=phreatic_ref_line,
+                bottom_ref_line=top_aquifer_intrusion_ref_line_top,
+                soil_bottom=soil_bottom,
+                correct_ref_line="both"
+            )
+        
+        if self.input.waternet_config.name_waternet_scenario == 'Indringing WVP snijdt Ref. Fr.':
+            print(phreatic_ref_line)
+            print(intrusion_ref_line_related_to_phreatic)
+            print(top_aquifer_intrusion_ref_line_top)
+
+        # if top_aquifer.name_ref_line_top is not None:
+        #     top_aquifer_ref_line = next(
+        #         (
+        #             ref_line for ref_line in aquifer_ref_lines if ref_line.name == top_aquifer.name_ref_line_top
+        #         ), None)
         
 
         # Steps
@@ -1333,11 +1454,11 @@ class WaternetCreator(BaseModel):
         offset_ref_lines = self.create_ref_lines_offset_method(water_level_set=water_level_set)
         intrusion_ref_lines = self.create_ref_lines_intrusion_method(current_ref_lines=[*aquifer_ref_lines, *offset_ref_lines])
 
-        # aquifer_ref_lines, offset_ref_lines, intrusion_ref_lines = self.correct_crossing_reference_lines(
-        #     aquifer_ref_lines=aquifer_ref_lines,
-        #     offset_ref_lines=offset_ref_lines,
-        #     intrusion_ref_lines=intrusion_ref_lines
-        # )
+        aquifer_ref_lines, offset_ref_lines, intrusion_ref_lines = self.correct_crossing_reference_lines(
+            aquifer_ref_lines=aquifer_ref_lines,
+            offset_ref_lines=offset_ref_lines,
+            intrusion_ref_lines=intrusion_ref_lines,
+        )
 
         ref_lines: list[ReferenceLine] = [*aquifer_ref_lines, *offset_ref_lines, *intrusion_ref_lines]
 
