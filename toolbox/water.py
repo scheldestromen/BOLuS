@@ -24,7 +24,7 @@ class HeadLine(BaseModel):
 
 
 class ReferenceLine(BaseModel):
-    """Represents a reference line. Headline can be assigned to it.
+    """Represents a reference line. Headlines can be assigned to it.
 
     Attributes:
         name (str): Name (label) of the reference line
