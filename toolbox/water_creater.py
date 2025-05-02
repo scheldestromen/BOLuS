@@ -11,9 +11,6 @@ from toolbox.water import HeadLine, ReferenceLine, Waternet
 from toolbox.subsoil import Subsoil
 from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line
 
-# TODO: Debugging
-import matplotlib.pyplot as plt
-
 # TODO: Idee: Om flexibiliteit te houden - naast het genereren van de waternets - zou ik
 #       een WaternetExceptions o.i.d. kunnen maken waarin specifieke correcties zijn opgegeven.
 #       Deze correcties kunnen dan worden toegepast op de waternetten.
@@ -152,6 +149,7 @@ class HeadLineConfig(BaseModel):
 
 
 # TODO: Eigenlijk zou dit een baseclass moeten zijn, en zou deze subclasses moeten maken, dan kunnen de validaties gedeeltelijk vervallen
+#       (nice-to-have)
 class ReferenceLineConfig(BaseModel):
     name_ref_line: str
     name_head_line_top: str
@@ -161,9 +159,6 @@ class ReferenceLineConfig(BaseModel):
     intrusion_from_ref_line: Optional[str] = None
     intrusion_length: Optional[float] = None
 
-    # TODO: Checken of er max. 1 reflijn per freatische lijn is (d.w.z. 1 reflijn die met boven/onderkant aan de freatische lijn is gekoppeld)
-    # TODO: Checken of iedere reflijn maximaal 1 gerelateerde indringingslijn heeft
-    # TODO: Check of reflijnen een unieke naam hebben (in de config)
     @model_validator(mode='after')
     def validate_ref_line_method(self) -> Self:
         if self.ref_line_method_type == RefLineMethodType.OFFSETS and self.offset_method_name is None:
@@ -210,19 +205,111 @@ class WaternetConfig(BaseModel):
     reference_line_configs: Optional[list[ReferenceLineConfig]] = None  # Optional - if there is only a phreatic line
 
     @model_validator(mode='after')
+    def validate_unique_names(self) -> Self:
+        names = [config.name_head_line for config in self.head_line_configs]
+        if len(names) != len(set(names)):
+            raise ValueError("There can only be one head line with the same name. This is not the case for the waternet scenario "
+                             f"'{self.name_waternet_scenario}'")
+        
+        if self.reference_line_configs is not None:
+            names = [config.name_ref_line for config in self.reference_line_configs]
+            if len(names) != len(set(names)):
+                raise ValueError("There can only be one reference line with the same name. This is not the case for the waternet scenario "
+                                 f"'{self.name_waternet_scenario}'")
+
+        return self
+    
+    @model_validator(mode='after')
     def validate_head_line_assignment(self) -> Self:
-        # TODO:  #  - Zijn alle headlines toegekend aan een reflijn?
+        head_lines_configs = [hlc.name_head_line for hlc in self.head_line_configs if not hlc.is_phreatic]
+
+        if self.reference_line_configs is not None:
+            assigned_head_line_names = [config.name_head_line_top for config in self.reference_line_configs]
+            assigned_head_line_names.extend([config.name_head_line_bottom for config in self.reference_line_configs])
+        else:
+            assigned_head_line_names = []
+
+        non_assigned_head_line_names = set(head_lines_configs) - set(assigned_head_line_names)
+
+        if len(non_assigned_head_line_names) > 0:
+            raise ValueError("There are head lines that are not assigned to a reference line. "
+                             f"This is the case for the head lines '{', '.join(non_assigned_head_line_names)}' "
+                             f"in the waternet scenario '{self.name_waternet_scenario}'")
+        
         return self
 
     @model_validator(mode='after')
     def validate_max_one_phreatic_line(self) -> Self:
-       
-        return self
+        phreatic_lines = [config for config in self.head_line_configs if config.is_phreatic]
 
+        if len(phreatic_lines) > 1:
+            raise ValueError("There can only be one phreatic line. This is not the case for the waternet scenario "
+                             f"'{self.name_waternet_scenario}'")
+
+        return self
+    
+    @model_validator(mode='after')
+    def validate_single_intrusion_ref_line_per_ref_line(self) -> Self:
+        """Checks if there is only one intrusion reference line per reference line
+        based on the name of the ReferenceLineConfig.
+
+        An exception is however when the related reference line is modelled using the 
+        aquifer method. In that case two reference lines are made using one 
+        ReferenceLineConfig. In that case two intrusion reference lines are allowed, 
+        one below the aquifer and one above the aquifer (one for every aquifer ref. line).
+        """
+
+        if self.reference_line_configs is None:
+            return self
+        
+        intrusion_from_ref_line_names = [config.intrusion_from_ref_line for config in self.reference_line_configs
+                                         if config.ref_line_method_type == RefLineMethodType.INTRUSION]
+
+        # Get duplicate names
+        duplicate_names = set([name for name in intrusion_from_ref_line_names 
+                               if intrusion_from_ref_line_names.count(name) > 1])
+
+        for dup_name in duplicate_names:
+            configs = [config for config in self.reference_line_configs 
+                       if config.intrusion_from_ref_line == dup_name]
+
+            if len(configs) == 2:
+                from_ref_line_config = next(
+                    conf for conf in self.reference_line_configs 
+                    if conf.name_ref_line == configs[0].intrusion_from_ref_line
+                    )
+                from_ref_line_is_aquifer = (from_ref_line_config.ref_line_method_type == RefLineMethodType.AQUIFER
+                                            or from_ref_line_config.ref_line_method_type == RefLineMethodType.INTERMEDIATE_AQUIFER)
+                intrusion_opposite_direction = configs[0].intrusion_length * configs[1].intrusion_length < 0
+
+                if from_ref_line_is_aquifer and intrusion_opposite_direction:
+                    continue
+
+                raise ValueError(
+                    "There can only be one intrusion ref. line per ref. line. "
+                    f"This is not the case for the waternet scenario '{self.name_waternet_scenario}' "
+                    f"and the reference line '{configs[0].name_ref_line}'")
+
+        return self
+    
     @model_validator(mode='after')
     def validate_aquifer_types(self) -> Self:
-        #  Max één Aquifer en max één IntermediateAquifer
-        #  Als er een IntermediateAquifer is, dan moet er ook een Aquifer zijn
+        ref_line_aquifer = [config for config in self.reference_line_configs 
+                            if config.ref_line_method_type == RefLineMethodType.AQUIFER]
+        ref_line_intermediate_aquifer = [config for config in self.reference_line_configs 
+                                        if config.ref_line_method_type == RefLineMethodType.INTERMEDIATE_AQUIFER]
+        
+        if len(ref_line_aquifer) > 1:
+            raise ValueError("There can only be one aquifer ref. line. This is not the case for the waternet scenario "
+                             f"'{self.name_waternet_scenario}'")
+        
+        if len(ref_line_intermediate_aquifer) > 1:
+            raise ValueError("There can only be one intermediate aquifer ref. line. This is not the case for the waternet scenario "
+                             f"'{self.name_waternet_scenario}'")
+
+        if len(ref_line_intermediate_aquifer) == 1 and len(ref_line_aquifer) == 0:
+            raise ValueError("There must be an aquifer ref. line when there is an intermediate aquifer ref. line. "
+                             f"This is not the case for the waternet scenario '{self.name_waternet_scenario}'")
 
         return self
 
@@ -583,7 +670,7 @@ def shift_points_with_equal_l_values(points: list[list[float]]) -> list[list[flo
         dup_points = [p for p in points if p[0] == l_coord]
 
         for i, point in enumerate(dup_points):
-            point[0] += sign * 0.001 * (len(dup_points) - i)
+            point[0] += sign * 0.001 * (len(dup_points) - i - 1)
 
     return points
 
@@ -1262,8 +1349,9 @@ class ReferenceLineCorrector(BaseModel):
         Scenario 2: Intrusion top aquifer, no freatic ref. line
         -------------------------------------------------------
         If the intrusion ref. line related to the top aquifer ref. line crosses
-        the surface level, then the intrusion ref. line is corrected to below
-        the subsoil bottom.
+        the surface level and lies above it, then it has no effect on the waternet.
+
+        No correction is needed in this scenario.
 
         
         Scenario 3: Intrusion top aquifer, phreatic ref. line, no intrusion phreatic ref. line
@@ -1358,8 +1446,8 @@ class ReferenceLineCorrector(BaseModel):
             phreatic_ref_line is None 
             and top_aquifer_intrusion_ref_line_top is not None
             ):
-            # TODO: Snijden met maaiveld
-            pass
+            # No correction needed. A ref. above the surface level has no effect on the waternet.
+            return ref_lines
     
         # Scenario 3: Intrusion top aquifer, phreatic ref. line, no intrusion phreatic ref. line
         elif (
@@ -1524,12 +1612,7 @@ class ReferenceLineCorrector(BaseModel):
 
         else:
             raise ValueError("An error occured correcting the crossing of the aquifer ref. lines")
-        
-        if correct_ref_line == "both":
-            plt.plot(top_ref_line.l, top_ref_line.z, label='top_ref_line before')
-            plt.plot(bottom_ref_line.l, bottom_ref_line.z, label='bottom_ref_line before')
-            plt.show()
-
+    
         # Correct the crossing of the reference lines
         correct_crossing_reference_lines(
             top_ref_line=top_ref_line,
@@ -1537,12 +1620,6 @@ class ReferenceLineCorrector(BaseModel):
             soil_bottom=soil_bottom,
             correct_ref_line=correct_ref_line
         )
-
-        if correct_ref_line == "both":
-            plt.plot(top_ref_line.l, top_ref_line.z, label='top_ref_line after')
-            plt.plot(bottom_ref_line.l, bottom_ref_line.z, label='bottom_ref_line after')
-            plt.legend()
-            plt.show()
 
         return ref_lines
     
@@ -1652,7 +1729,6 @@ class WaternetCreator(BaseModel):
                     head_line_top=ref_line_config.name_head_line_top,
                     head_line_bottom=ref_line_config.name_head_line_bottom
                 )
-                # TODO: Als freatisch, dan corrigeren o.b.v. reflijnen in zandlaag indien aanwezig
 
                 ref_lines.append(ref_line)
 
