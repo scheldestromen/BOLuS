@@ -18,6 +18,9 @@ from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons
 # TODO: Opgeven van stijghoogte voor TZL verplicht maken indien deze aanwezig is!!
 #       Dit i.v.m. dubbelingen in de naam van de reflijnen. (belangrijk voor indrigingslengte)
 
+#       02-05-2025: Dit moet inderdaad - bij enkel WVP krijg je anders alsnog geen reflijn tussen
+#       de aquifers (want dan wordt de max en min gepakt). 
+
 # TODO: Refactor ter bevordering van de leesbaarheid en herleidbaarheid
 #       - Opknippen in waternet_config en waternet_creator.
 #       - water.py hernoemen naar waternet.py
@@ -239,6 +242,11 @@ class WaternetConfig(BaseModel):
         return self
 
     @model_validator(mode='after')
+    def validate_reference_line_from_excists(self) -> Self:
+        # TODO: Check of de lijn waar naar verwezen wordt wel bestaat
+        return self
+
+    @model_validator(mode='after')
     def validate_max_one_phreatic_line(self) -> Self:
         phreatic_lines = [config for config in self.head_line_configs if config.is_phreatic]
 
@@ -285,10 +293,12 @@ class WaternetConfig(BaseModel):
                 if from_ref_line_is_aquifer and intrusion_opposite_direction:
                     continue
 
-                raise ValueError(
-                    "There can only be one intrusion ref. line per ref. line. "
-                    f"This is not the case for the waternet scenario '{self.name_waternet_scenario}' "
-                    f"and the reference line '{configs[0].name_ref_line}'")
+            raise ValueError(
+                "There can only be one intrusion ref. line per ref. line, or two in case "
+                "of an aquifer method."
+                f"This is not the case for the waternet scenario '{self.name_waternet_scenario}' "
+                f"and the reference line '{configs[0].intrusion_from_ref_line}', "
+                f"which is used more than allowed")
 
         return self
     
@@ -1734,6 +1744,18 @@ class WaternetCreator(BaseModel):
 
         return ref_lines
 
+    def check_single_intrusion_ref_line_per_ref_line(self, ref_lines: list[ReferenceLine]):
+        pass
+        # if len(ref_lines) == 0:
+        #     return
+        
+        # intrusion_from_ref_line_names = [config.intrusion_from_ref_line for config in self.reference_line_configs
+        #                                  if config.ref_line_method_type == RefLineMethodType.INTRUSION]
+
+        # # Get duplicate names
+        # duplicate_names = set([name for name in intrusion_from_ref_line_names 
+        #                        if intrusion_from_ref_line_names.count(name) > 1])
+
     def create_ref_lines_intrusion_method(self, current_ref_lines: list[ReferenceLine]) -> list[ReferenceLine]:
         ref_lines: list[ReferenceLine] = []
         ref_line_configs = self.input.waternet_config.reference_line_configs
@@ -1829,11 +1851,13 @@ class WaternetCreator(BaseModel):
                     soil_bottom=self.input.subsoil.get_bottom()
                 )
                 
-        # Finally - correct the ref. lines with equal l-values to ensure a correct order
+        # Correct the ref. lines with equal l-values to ensure a correct order
         for ref_line in ref_lines:
             points = [[l, z] for l, z in zip(ref_line.l, ref_line.z)]
             points = shift_points_with_equal_l_values(points)
             ref_line.l = [p[0] for p in points]
             ref_line.z = [p[1] for p in points]
+
+        self.check_single_intrusion_ref_line_per_ref_line(ref_lines=ref_lines)
 
         return Waternet(head_lines=head_lines, ref_lines=ref_lines)
