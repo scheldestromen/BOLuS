@@ -481,7 +481,7 @@ class LineOffsetMethod(BaseModel):
                 char_point = geometry.char_point_profile.get_point_by_type(offset_point.char_point_type)
                 char_points.append(char_point)
 
-            # If the character point is not present, skip it
+            # If the characteristic point is not present, skip it
             except ValueError:
                 continue
 
@@ -824,6 +824,48 @@ class LineIntrusionMethod(BaseModel):
         return ref_line
 
 
+class InterpolateHeadLineFromWaternet(BaseModel):
+    def collect_all_l_coords(self) -> list[float]:
+        """Returns all unique l-coordinates from the waternet.
+        
+        The HeadLine should be defined at every point where the lines 
+        that influence the head line are defined. Seen from a specific point
+        on the ref. line, 
+        # TODO: uitwerken
+        Dit kan ook de freatische lijn en de maaiveld lijn betreffen
+        Beide zijn ook reference lines! Zie handleiding
+
+
+
+        Returns:
+            list[float]: List of unique l-coordinates
+        """
+        pass
+    
+    def determine_ref_line_above(self, l_coord: float) -> str:
+        pass
+    
+    def determine_ref_line_below(self, l_coord: float) -> str:
+        pass
+    
+    def determine_head_line_from_ref_line(self, ref_line_name: str, ref_line_above_or_below: Literal["above", "below"]) -> str:
+        # If it concerns the ref. line above, then the head line at the bottom side has priority
+        # If it concerns the ref. line below, then the head line at the top side has priority
+
+        # If the priority head line is not present, then the other head line is used
+        pass
+
+    def create_line(self, interpolate_from_waternet: Waternet) -> HeadLine:
+        head_line_l = self.collect_all_l_coords()
+
+        for l_coord in head_line_l:
+            ref_line_above = self.determine_ref_line_above(l_coord)
+            ref_line_below = self.determine_ref_line_below(l_coord)
+
+            head_line_above = self.determine_head_line_from_ref_line(ref_line_above, ref_line_above_or_below="above")
+            head_line_below = self.determine_head_line_from_ref_line(ref_line_below, ref_line_above_or_below="below") 
+
+
 def correct_crossing_reference_lines(
         top_ref_line: ReferenceLine, 
         bottom_ref_line: ReferenceLine, 
@@ -848,9 +890,9 @@ def correct_crossing_reference_lines(
     bottom_ref_line_points = [(l, z) for l, z in zip(bottom_ref_line.l, bottom_ref_line.z)]
     bottom_ref_line_polygon_bottom = Polygon(
         [
-            (bottom_ref_line_points[0][0], soil_bottom), # - 0.01
+            (bottom_ref_line_points[0][0], soil_bottom),
             *bottom_ref_line_points, 
-            (bottom_ref_line_points[-1][0], soil_bottom) # - 0.01
+            (bottom_ref_line_points[-1][0], soil_bottom)
         ]
     )
 
@@ -1744,6 +1786,7 @@ class WaternetCreator(BaseModel):
 
         return ref_lines
 
+    # TODO: Implement this
     def check_single_intrusion_ref_line_per_ref_line(self, ref_lines: list[ReferenceLine]):
         pass
         # if len(ref_lines) == 0:

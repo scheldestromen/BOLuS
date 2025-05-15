@@ -3,8 +3,6 @@ from shapely.ops import orient
 from shapely import offset_curve
 from typing import Literal
 
-import matplotlib.pyplot as plt
-
 
 def geometry_to_polygons(geometry) -> list[Polygon]:
     """
