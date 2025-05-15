@@ -1,6 +1,14 @@
 from enum import StrEnum, auto
 from typing import Optional
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator  #, field_validator, ConfigDict
+import numpy as np
+
+
+# TODO: 
+#  - Replace l and z with points: tuple[tuple[float, float]] (and all other occurrences)
+#  - The check of lengths is not needed anymore
+#  - implement model_config = ConfigDict(validate_assignment=True) -> the coords are automatically validated and sorted
+#  - Remove check of order in get_z_at_l
 
 
 class WaterLineType(StrEnum):
@@ -15,9 +23,11 @@ class WaterLine(BaseModel):
     
     Attributes:
         name (str): Name (label) of the line
-        l (list[float]): List of floats for the l-coordinates
-        z (list[float]): List of floats for the z-coordinates
+        l (tuple[float]): Tuple of floats for the l-coordinates
+        z (tuple[float]): Tuple of floats for the z-coordinates
     """
+
+    # model_config = ConfigDict(validate_assignment=True)  # Pydantic setting
 
     name: str
     l: list[float]
@@ -42,7 +52,7 @@ class WaterLine(BaseModel):
             self.z = list(z_coords)
         
         return self
-    
+
     def get_z_at_l(self, l: float) -> float:
         """Returns the z-coordinate at a given l-coordinate
         based on interpolation of the l and z coordinates.
@@ -56,7 +66,12 @@ class WaterLine(BaseModel):
         Raises:
             ValueError: If l is outside the range of l-coordinates
         """
-        
+
+        if self.l != sorted(self.l):
+            raise ValueError(
+                f"l-coordinates must be sorted for WaterLine {self.name}"
+                )
+
         # Check if l is within range
         if l < min(self.l) or l > max(self.l):
             raise ValueError(
@@ -64,29 +79,7 @@ class WaterLine(BaseModel):
                 f"for WaterLine {self.name}"
                 )
         
-        # If l exactly matches a point, return that point's z-coordinate
-        if l in self.l:
-            return self.z[self.l.index(l)]
-
-        # Find the index of the segment that contains l
-        # Since l-coordinates are sorted, we can find the right segment easily
-        for i in range(len(self.l) - 1):
-            if self.l[i] < l < self.l[i + 1]:
-                # Linear interpolation formula: z = z1 + (z2 - z1) * (l - l1) / (l2 - l1)
-                l1, l2 = self.l[i], self.l[i + 1]
-                z1, z2 = self.z[i], self.z[i + 1]
-                
-                # Handle case where l1 and l2 are the same (avoid division by zero)
-                if l1 == l2:
-                    return z1
-                
-                # Perform linear interpolation
-                return z1 + (z2 - z1) * (l - l1) / (l2 - l1)
-        
-        # In case no segment is found, raise an error (could be if the coords are altered after initialization)
-        raise ValueError(
-            f"Could not interpolate z at l-coordinate {l} for WaterLine {self.name}"
-            )
+        return np.interp(x=l, xp=self.l, fp=self.z)
 
 
 class HeadLine(WaterLine):
