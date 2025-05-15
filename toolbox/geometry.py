@@ -3,7 +3,6 @@ from math import isclose
 from typing import Literal, Optional
 
 from pydantic import BaseModel
-from typing_extensions import List
 from shapely.geometry import LineString
 
 from utils.geometry_utils import geometry_to_points
@@ -157,7 +156,7 @@ class CharPointsProfile(ProfileLine):
         points: A list CharPoint instances representing the characteristic points"""
 
     name: str
-    points: List[CharPoint]
+    points: list[CharPoint]
 
     @classmethod
     def from_dict(
@@ -248,7 +247,7 @@ class SurfaceLine(ProfileLine):
         points (list): A list of Point instances representing the profile"""
 
     name: str
-    points: List[Point]
+    points: list[Point]
 
     @classmethod
     def from_list(cls, name: str, point_list: list[float]) -> "SurfaceLine":
@@ -298,7 +297,7 @@ class CharPointsProfileCollection(BaseModel):
     Attributes:
         char_points_profiles (list): A list of CharPointsProfile instances"""
 
-    char_points_profiles: List[CharPointsProfile]
+    char_points_profiles: list[CharPointsProfile]
 
     def get_by_name(self, name: str) -> CharPointsProfile:
         """Returns the CharPointsProfile with the given name"""
