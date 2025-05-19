@@ -6,6 +6,7 @@ from shapely.ops import unary_union
 
 from toolbox.geometry import CharPointType, CharPoint
 from toolbox.geometry import Geometry
+from toolbox.geometry import SurfaceLine
 from toolbox.geometry import Side
 from toolbox.water import HeadLine, ReferenceLine, Waternet
 from toolbox.subsoil import Subsoil
@@ -71,10 +72,10 @@ class WaterLevelCollection(BaseModel):
 
 class HeadLineMethodType(StrEnum):
     """
-    Enum defining the type of headline method.
-    Currently, only the OFFSETS method is implemented."""
+    Enum defining the type of head line method."""
 
     OFFSETS = auto()
+    INTERPOLATE_FROM_WATERNET = auto()
 
 
 class RefLineMethodType(StrEnum):
@@ -116,11 +117,13 @@ class WaterLevelConfig(BaseModel):
     water_levels: dict[str, str | None]
 
 
+# TODO: Zou gespitst kunnen worden per methode (net als bij ref. line zou moeten)
 class HeadLineConfig(BaseModel):
     name_head_line: str
     is_phreatic: bool
-    head_line_method_type: HeadLineMethodType = HeadLineMethodType.OFFSETS
+    head_line_method_type: HeadLineMethodType
     offset_method_name: Optional[str] = None
+    interpolate_from_waternet_name: Optional[str] = None
     apply_minimal_surface_line_offset: Optional[bool] = None
     minimal_surface_line_offset: Optional[float] = None
     minimal_offset_from_point: Optional[CharPointType] = None
@@ -131,6 +134,17 @@ class HeadLineConfig(BaseModel):
         if self.head_line_method_type == HeadLineMethodType.OFFSETS and self.offset_method_name is None:
             raise ValueError(
                 f"An offset method needs to be specified when the headline method is {HeadLineMethodType.OFFSETS}")
+
+        return self
+    
+    @model_validator(mode='after')
+    def validate_interpolate_from_waternet_name(self) -> Self:
+        if self.head_line_method_type == HeadLineMethodType.INTERPOLATE_FROM_WATERNET:
+            if self.interpolate_from_waternet_name is None:
+                raise ValueError(
+                    f"A waternet name needs to be specified when the headline method is {HeadLineMethodType.INTERPOLATE_FROM_WATERNET}"
+                    f"This is not the case for the headline '{self.name_head_line}'"
+                    )
 
         return self
 
@@ -155,7 +169,7 @@ class HeadLineConfig(BaseModel):
 #       (nice-to-have)
 class ReferenceLineConfig(BaseModel):
     name_ref_line: str
-    name_head_line_top: str
+    name_head_line_top: Optional[str] = None
     name_head_line_bottom: Optional[str] = None
     ref_line_method_type: RefLineMethodType
     offset_method_name: Optional[str] = None
@@ -186,6 +200,13 @@ class ReferenceLineConfig(BaseModel):
 
         return self
 
+    @model_validator(mode='after')
+    def validate_min_one_head_line_name(self) -> Self:
+        if self.name_head_line_top is None and self.name_head_line_bottom is None:
+            raise ValueError(f"At least one head line name needs to be assigned to the reference line "
+                             f"'{self.name_ref_line}'")
+
+        return self
 
 class WaternetConfig(BaseModel):
     """A WaternetConfig is the blueprint for creating a waternet.
@@ -825,46 +846,336 @@ class LineIntrusionMethod(BaseModel):
 
 
 class InterpolateHeadLineFromWaternet(BaseModel):
-    def collect_all_l_coords(self) -> list[float]:
+    """Creates a head line based on the hydraulic head along a reference line
+    projected in another stage. 
+    
+    This is used for modelling a change in (e.g.) the 
+    water level for which the subsoil has not fully adjusted yet. The reference line 
+    is used for modelling the intrusion of pore pressure. The desired head along this
+    ref. line is the initial head along this line. Therefore, the reference line is 
+    'projected' in a previous stage and the head is determined along this line. 
+    Under hydrostatic pressure, this is simply the phreatic level. The method in 
+    this class comes in when the initial contion is not hydrostatic, and interpolation 
+    between reference lines and head lines is needed.
+
+    It is assumed that only the hydraulic situation is changed, not the geometry.
+    The geometry is assumed equal in both stages (is also used as a reference line).
+      
+    Example:
+        There are two stages, stage A and stage B. 
+        Stage A: Represents the initial condition. It has a phreatic line (PL1), a ref. line in the aquifer 
+                 (Ref. PL2) and a head line for the head in the aquifer (PL2). The surface level is the 
+                 reference line for PL1.
+        Stage B: Represents the changed condition. The water level is increased as has the head in the 
+                 aquifer. An intrusion line is added (Ref. PL3) just above the ref. line of the aquifer. 
+                 The hydraulic head along this line (PL3) is not influenced by the increased water level. 
+                 Therefore the head along this line is equal to the head along this same ref. line in stage A.
+
+        The intrusion head line (PL3) in stage B is determined by projecting the ref. line (Ref. PL3) to stage A 
+        and interpolating the head along this line. The ref. line (Ref. PL3) lies between the surface level and 
+        Ref. PL2 and is therefore an interpolation of PL1 and PL2.
+    """
+
+    def determine_z_bounds(self, waternet: Waternet, surface_level: SurfaceLine) -> tuple[float, float]:
+        """Determines the outer z-bounds of the waternet and surface level.
+        
+        Returns:
+            tuple[float, float]: The minimum and maximum z-values of the waternet and surface level.
+        """
+
+        z_coords: list[float] = []
+
+        for ref_line in waternet.ref_lines:
+            z_coords.extend(ref_line.z)
+
+        for head_line in waternet.head_lines:
+            z_coords.extend(head_line.z)
+
+        for point in surface_level.points:
+            z_coords.append(point.z)
+
+        z_min = min(z_coords)
+        z_max = max(z_coords)
+
+        return z_min, z_max
+    
+
+    def collect_all_l_coords(self, waternet: Waternet, surface_level: SurfaceLine) -> list[float]:
         """Returns all unique l-coordinates from the waternet.
         
-        The HeadLine should be defined at every point where the lines 
-        that influence the head line are defined. Seen from a specific point
-        on the ref. line, 
-        # TODO: uitwerken
-        Dit kan ook de freatische lijn en de maaiveld lijn betreffen
-        Beide zijn ook reference lines! Zie handleiding
+        The head line is determined by the reference lines it lies between and by 
+        the head that belongs to these reference lines. The head line should 
+        therefore be determined at every point along the horizontal axis (l-axis) 
+        where the head and ref. lines of influence are defined. There could be 
+        multiple ref. lines (and head lines) involved. At one point the interpolation
+        could be between a ref. line (e.g. aquifer) and the surface level (e.g. open water), 
+        at another point between two ref. lines. 
+        
+        The lines of influence are determined per point, but the necessary points are not
+        known beforehand. Therefore, the l-coordinates are collected from ALL the lines 
+        that could be of influence. These are the ref. lines, the head lines and the 
+        surface level.
 
-
+        This could be improved by only collecting the l-coordinates of the points that
+        are actually needed. Or by simplifying the head line afterwards.
 
         Returns:
             list[float]: List of unique l-coordinates
         """
-        pass
+
+        l_coords: list[float] = []
+
+        for ref_line in waternet.ref_lines:
+            l_coords.extend(ref_line.l)
+
+        for head_line in waternet.head_lines:
+            l_coords.extend(head_line.l)
+
+        for point in surface_level.points:
+            l_coords.append(point.l)
+
+        return l_coords
+
+    def get_phreatic_line(self, waternet: Waternet) -> HeadLine:
+        """Returns the phreatic line from the waternet.
+        
+        Returns:
+            HeadLine: The phreatic line
+        """
+
+        phreatic_line = next((hl for hl in waternet.head_lines if hl.is_phreatic), None)
+
+        if not phreatic_line:
+            raise ValueError(
+                f"No phreatic line found in the waternet"
+                f"This is required for the interpolation of the head line in another stage"
+                f"The following head lines are present: {', '.join([hl.name for hl in waternet.head_lines])}"
+                )
+
+        return phreatic_line
+
+    def determine_ref_line_above_and_below(
+            self, 
+            l_coord: float,
+            z_coord: float,
+            lines: list[ReferenceLine | HeadLine | SurfaceLine],
+            ) -> tuple[tuple[ReferenceLine | HeadLine | SurfaceLine | None, float | None], 
+                       tuple[ReferenceLine | HeadLine | SurfaceLine | None, float | None]]:
+        """Determines the ref. line below and above a given z-coordinate.
+        
+        Returns:
+            tuple[tuple[ReferenceLine | HeadLine | SurfaceLine | None, float | None], 
+                  tuple[ReferenceLine | HeadLine | SurfaceLine | None, float | None]]:
+                (ref_line_below, z_below), (ref_line_above, z_above)
+        """
+        z_at_l: list[float] = []
+
+        # Collect the z-coord of each (head/phreatic/ref.) line at the given l-coordinate
+        for i, line in enumerate(lines):
+            z = line.get_z_at_l(l_coord)
+            print(f"{i}: {line.name}, {z}")
+            
+            z_at_l.append(z)  # line.get_z_at_l(l_coord)
+
+        print(f"z_at_l: {z_at_l}")
+        # Select the relevant z-coords and sort them
+        z_at_l_above = [z for z in z_at_l if z >= z_coord]
+        z_at_l_below = [z for z in z_at_l if z <= z_coord]
+
+        if z_at_l_above:
+            z_above = min(z_at_l_above)
+            i_z_above = z_at_l.index(z_above)
+            ref_line_above = lines[i_z_above]
+        else:
+            z_above = None
+            ref_line_above = None
+
+        if z_at_l_below:
+            z_below = max(z_at_l_below)
+            i_z_below = z_at_l.index(z_below)
+            ref_line_below = lines[i_z_below]
+        else:
+            z_below = None
+            ref_line_below = None
+
+        return (ref_line_below, z_below), (ref_line_above, z_above)
+
     
-    def determine_ref_line_above(self, l_coord: float) -> str:
-        pass
+    def determine_head_line_from_ref_line(
+            self, 
+            ref_line: ReferenceLine | HeadLine | SurfaceLine, 
+            ref_line_above_or_below: Literal["above", "below"],
+            waternet: Waternet,
+            ) -> HeadLine:
+        """Determines the head line from the ref. line.
+        
+        Returns:
+            HeadLine: The head line
+        """
+
+        # If the ref. line is a surface line, then the phreatic line is the head line
+        if isinstance(ref_line, SurfaceLine):
+            return self.get_phreatic_line(waternet)
+
+        # If the ref. line is a head line (i.e. the phreatic line), then the
+        # phreatic line is returned. This is a head line and reference line in one.
+        if isinstance(ref_line, HeadLine):
+            return ref_line
+
+        # If the ref. line is a reference line, then the head line is determined
+        # based on the position of the ref. line relative to ref. line where we
+        # want to determine the head line.
+        if isinstance(ref_line, ReferenceLine):
+            head_line_name_top = ref_line.head_line_top
+            head_line_name_bottom = ref_line.head_line_bottom
+
+            # If the ref. line is above the ref. line where we want to determine the head line,
+            # then the head line at the bottom of the ref. line has priority.
+            if ref_line_above_or_below == "above":
+                if head_line_name_bottom is not None:
+                    head_line_name = head_line_name_bottom
+                else:
+                    head_line_name = head_line_name_top
+
+            # If the ref. line is below the ref. line where we want to determine the head line,
+            # then the head line at the top of the ref. line has priority.
+            elif ref_line_above_or_below == "below":
+                if head_line_name_top is not None:
+                    head_line_name = head_line_name_top
+                else:
+                    head_line_name = head_line_name_bottom
+
+            head_line = next(hl for hl in waternet.head_lines if hl.name == head_line_name)
+
+            return head_line
+
+
+    def determine_head_at_point(
+            self, 
+            l_coord: float, 
+            z_coord: float, 
+            ref_line_below: ReferenceLine | HeadLine | SurfaceLine | None, 
+            z_below: float | None, 
+            ref_line_above: ReferenceLine | HeadLine | SurfaceLine | None, 
+            z_above: float | None,
+            waternet: Waternet,
+            ) -> float:
+        """Determines the head at a given l-coordinate.
+        
+        Returns:
+            float: The head at the given l-coordinate
+        """
+
+        # No ref. line above - point lies above the phreatic level, head = 0
+        if ref_line_above is None:
+            return 0.
+        
+        # No ref. line below. The point lies below the lowest ref. line, which is ref_line_above
+        # The head line is determined from the ref. line above
+        if ref_line_below is None:
+            head_line = self.determine_head_line_from_ref_line(
+                ref_line=ref_line_above,
+                ref_line_above_or_below="above",
+                waternet=waternet
+                )
+            return head_line.get_z_at_l(l_coord)
+
+        # Both ref. lines are present - determine both head lines
+        head_line_below = self.determine_head_line_from_ref_line(
+            ref_line=ref_line_below,
+            ref_line_above_or_below="below",
+            waternet=waternet
+            )
+        head_below = head_line_below.get_z_at_l(l_coord)
+
+        head_line_above = self.determine_head_line_from_ref_line(
+            ref_line=ref_line_above,
+            ref_line_above_or_below="above",
+            waternet=waternet
+            )
+        print(f"head_line_above: {head_line_above.name}")
+        print(f"ref_line_above: {ref_line_above.name}")
+        print(f"head_line_below: {head_line_below.name}")
+        print(f"ref_line_below: {ref_line_below.name}")
+        head_above = head_line_above.get_z_at_l(l_coord)
+        
+        if head_below == head_above:
+            return head_below
+        
+        # This is a very unlikely situation - an error is raised in case it occurs
+        if z_below == z_above and head_below != head_above:
+            raise ValueError(
+                f"An error occurred while determining the head at point ({l_coord}, {z_coord}) at "
+                f"a previous stage by interpolation. At this point the reference line {ref_line_below.name} "
+                f"lies on the reference line where to determine the head by interpolation. The ref. line "
+                f"{ref_line_below.name} has a different head below and above the line, so the head cannot "
+                f"be determined unambiguously."
+                )
+
+        # Here the heads and z-values are all different - we determine the head by interpolation
+        if z_below != z_above and head_below != head_above:
+            
+            head = head_below + (head_above - head_below) * (z_coord - z_below) / (z_above - z_below)
+            print(f"({l_coord}, {z_coord})")
+            print(f"z_above: {z_above}, head_above: {head_above}, z_below: {z_below}, head_below: {head_below}")
+            print(f"head: {head}\n")
+            return head_below + (head_above - head_below) * (z_coord - z_below) / (z_above - z_below)
+
+        raise ValueError(
+            "An error occurred while determining the head by interpolation based on another stage"
+        )           
+            
+    def create_line(
+            self, 
+            head_line_config: HeadLineConfig,
+            ref_line: ReferenceLine, 
+            interpolate_from_waternet: Waternet,
+            surface_level: SurfaceLine
+            ) -> HeadLine:
+        """Creates a head line based on the hydraulic head along a reference line"""
+
+        phreatic_line = self.get_phreatic_line(interpolate_from_waternet)
+
+        head_line_l = self.collect_all_l_coords(
+            waternet=interpolate_from_waternet, 
+            surface_level=surface_level
+            )
+        head_line_z: list[float] = []
+
+        for l_coord_ref in head_line_l:
+            z_coord_ref = ref_line.get_z_at_l(l_coord_ref)
+
+            (ref_line_below, z_below), (ref_line_above, z_above) = self.determine_ref_line_above_and_below(
+                l_coord=l_coord_ref, 
+                z_coord=z_coord_ref, 
+                lines=[
+                    *interpolate_from_waternet.ref_lines,
+                    phreatic_line,
+                    surface_level
+                    ]
+                )
+            
+            head = self.determine_head_at_point(
+                l_coord=l_coord_ref, 
+                z_coord=z_coord_ref, 
+                ref_line_below=ref_line_below, 
+                z_below=z_below,
+                ref_line_above=ref_line_above,
+                z_above=z_above,
+                waternet=interpolate_from_waternet
+            )
+
+            head_line_z.append(head)
+
+        head_line = HeadLine(
+            name=head_line_config.name_head_line,
+            l=head_line_l,
+            z=head_line_z,
+            is_phreatic=head_line_config.is_phreatic
+        )
+
+        return head_line
     
-    def determine_ref_line_below(self, l_coord: float) -> str:
-        pass
-    
-    def determine_head_line_from_ref_line(self, ref_line_name: str, ref_line_above_or_below: Literal["above", "below"]) -> str:
-        # If it concerns the ref. line above, then the head line at the bottom side has priority
-        # If it concerns the ref. line below, then the head line at the top side has priority
-
-        # If the priority head line is not present, then the other head line is used
-        pass
-
-    def create_line(self, interpolate_from_waternet: Waternet) -> HeadLine:
-        head_line_l = self.collect_all_l_coords()
-
-        for l_coord in head_line_l:
-            ref_line_above = self.determine_ref_line_above(l_coord)
-            ref_line_below = self.determine_ref_line_below(l_coord)
-
-            head_line_above = self.determine_head_line_from_ref_line(ref_line_above, ref_line_above_or_below="above")
-            head_line_below = self.determine_head_line_from_ref_line(ref_line_below, ref_line_above_or_below="below") 
-
 
 def correct_crossing_reference_lines(
         top_ref_line: ReferenceLine, 
@@ -980,6 +1291,7 @@ class WaternetCreatorInput(BaseModel):
     water_level_collection: WaterLevelCollection
     offset_method_collection: LineOffsetMethodCollection
     subsoil: Optional[Subsoil] = None
+    previous_waternets: Optional[dict[str, Waternet]] = None
 
     @model_validator(mode='after')
     def validate_subsoil(self) -> Self:
@@ -998,7 +1310,35 @@ class WaternetCreatorInput(BaseModel):
                     )
             
         return self
+    
+    @model_validator(mode='after')
+    def validate_previous_waternets(self) -> Self:
+        waternet_methods = [
+            hlc for hlc in self.waternet_config.head_line_configs
+            if hlc.head_line_method_type == HeadLineMethodType.INTERPOLATE_FROM_WATERNET
+            ]
+        
+        if waternet_methods and self.previous_waternets is None:
+            raise ValueError(
+                "Previous waternets are required input when creating head lines"
+                f"with the method '{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}'. No waternets are available"
+                f"for generating the head lines '{[hlc.name_head_line for hlc in waternet_methods]}'."
+            )
+        
+        for hlc in waternet_methods:
+            waternet_names = list(self.previous_waternets.keys())
 
+            if hlc.interpolate_from_waternet_name not in waternet_names:
+                raise ValueError(
+                    f"The waternet scenario '{hlc.interpolate_from_waternet_name}' is not available for "
+                    f"generating the head line '{hlc.name_head_line}' with the method "
+                    f"'{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}'. Please check if "
+                    f"the scenario '{hlc.interpolate_from_waternet_name}' is applied for every calculation "
+                    f"where '{hlc.name_head_line}' is used."
+                )
+        
+        return self
+    
 
 class PhreaticLineModifier(BaseModel):
     """Factory for modifying a head line representing a phreatic line"""
@@ -1682,15 +2022,15 @@ class WaternetCreator(BaseModel):
     input: WaternetCreatorInput
     _aquifers: Optional[list[Aquifer]] = None
 
-    def create_head_lines(self, water_level_set: dict[str, float | None]) -> list[HeadLine]:
+    def create_head_lines_with_offsets(self, water_level_set: dict[str, float | None]) -> list[HeadLine]:
         head_lines: list[HeadLine] = []
 
         for head_line_config in self.input.waternet_config.head_line_configs:
             # Get the method to create the head line
-            if head_line_config.head_line_method_type == HeadLineMethodType.OFFSETS:
-                method = self.input.offset_method_collection.get_by_name(head_line_config.offset_method_name)
-            else:
-                raise ValueError(f"Invalid headline method type '{head_line_config.head_line_method_type}'")
+            if head_line_config.head_line_method_type != HeadLineMethodType.OFFSETS:
+                continue
+
+            method = self.input.offset_method_collection.get_by_name(head_line_config.offset_method_name)
 
             # Create the head line
             head_line_l, head_line_z = method.create_line(geometry=self.input.geometry, ref_levels=water_level_set)
@@ -1716,6 +2056,51 @@ class WaternetCreator(BaseModel):
                         from_char_point_type=head_line_config.minimal_offset_from_point,
                         to_char_point_type=head_line_config.minimal_offset_to_point
                     )
+
+            head_lines.append(head_line)
+        
+        return head_lines
+
+    def create_head_lines_interpolate_from_waternet(
+            self,
+            ref_lines: list[ReferenceLine]
+            ) -> list[HeadLine]:
+        
+        head_lines: list[HeadLine] = []
+        
+        for head_line_config in self.input.waternet_config.head_line_configs:
+            if head_line_config.head_line_method_type != HeadLineMethodType.INTERPOLATE_FROM_WATERNET:
+                continue
+
+            # Validation of presence of name and previous waternet has already been done in the validator
+            interpolate_from_waternet_name = head_line_config.interpolate_from_waternet_name
+            interpolate_from_waternet = self.input.previous_waternets[interpolate_from_waternet_name]
+
+            # Get the ref. line that is used to create the head line
+            for ref_line in ref_lines:
+                print(ref_line.name)
+            coupled_ref_lines = [
+                rl for rl in ref_lines
+                if rl.head_line_top == head_line_config.name_head_line
+                or rl.head_line_bottom == head_line_config.name_head_line
+            ]
+
+            if len(coupled_ref_lines) > 1:
+                raise ValueError(
+                    f"The head line '{head_line_config.name_head_line}' is "
+                    f"assigned to multiple ref. lines in the scenario '{self.input.waternet_config.name_waternet_scenario}'."
+                    f"This is not allowed when using the method '{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}'." 
+                    f"The ref. lines are '{[rl.name for rl in coupled_ref_lines]}'."
+                )
+            
+            ref_line = coupled_ref_lines[0]
+            
+            head_line = InterpolateHeadLineFromWaternet().create_line(
+                head_line_config=head_line_config,
+                ref_line=ref_line,
+                interpolate_from_waternet=interpolate_from_waternet,
+                surface_level=self.input.geometry.surface_line
+            )
 
             head_lines.append(head_line)
         
@@ -1862,8 +2247,9 @@ class WaternetCreator(BaseModel):
             if v is not None
         }
 
-        # Create the head lines
-        head_lines = self.create_head_lines(water_level_set=water_level_set)
+        # Create the head lines - first only with offsets
+        head_lines: list[HeadLine] = []
+        head_lines.extend(self.create_head_lines_with_offsets(water_level_set=water_level_set))
 
         # Create the reference lines - The order is important here
         ref_lines: list[ReferenceLine] = []
@@ -1902,5 +2288,8 @@ class WaternetCreator(BaseModel):
             ref_line.z = [p[1] for p in points]
 
         self.check_single_intrusion_ref_line_per_ref_line(ref_lines=ref_lines)
+
+        # Determine head line at ref line from another stage (if applicable)
+        head_lines.extend(self.create_head_lines_interpolate_from_waternet(ref_lines=ref_lines))
 
         return Waternet(head_lines=head_lines, ref_lines=ref_lines)

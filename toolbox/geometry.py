@@ -2,6 +2,7 @@ from enum import StrEnum, auto
 from math import isclose
 from typing import Literal, Optional
 
+import numpy as np
 from pydantic import BaseModel
 from shapely.geometry import LineString
 
@@ -84,6 +85,7 @@ class CharPoint(Point):
     type: CharPointType
 
 
+# TODO: Gelijk sorteren o.b.v. l-coordinaten wanneer deze berekend worden.
 class ProfileLine(BaseModel):
     """Base class for SurfaceLine and CharPointProfile"""
 
@@ -94,7 +96,7 @@ class ProfileLine(BaseModel):
                 f"SurfaceLine {self.name} does not have (all the) l-coordinates"
             )
 
-    def check_l_coordinates_increasing(self):
+    def check_l_coordinates_monotonic(self):
         """Checks if the l-coordinates are monotonically increasing"""
         l_coords = [point.l for point in self.points]
         steps = [l_coords[i + 1] - l_coords[i] for i in range(len(l_coords) - 1)]
@@ -138,14 +140,45 @@ class ProfileLine(BaseModel):
             dist_from_left = point.distance(left_point)
             point.l = dist_from_left - shift
 
-        self.check_l_coordinates_increasing()
+        self.check_l_coordinates_monotonic()
 
     def set_x_as_l_coordinates(self):
         """Sets the x-coordinates as the l-coordinates"""
         for point in self.points:
             point.l = point.x
         
-        self.check_l_coordinates_increasing()
+        self.check_l_coordinates_monotonic()
+
+    def get_z_at_l(self, l: float) -> float:
+        """Returns the z-coordinate at a given l-coordinate
+        based on interpolation of the l and z coordinates.
+        
+        Args:
+            l (float): The l-coordinate
+            
+        Returns:
+            float: The interpolated z-coordinate at the given l-coordinate
+            
+        Raises:
+            ValueError: If l is outside the range of l-coordinates
+        """
+
+        l_coords = [point.l for point in self.points]
+        z_coords = [point.z for point in self.points]
+        
+        if l_coords != sorted(l_coords) and l_coords != sorted(l_coords, reverse=True):
+            raise ValueError(
+                f"l-coordinates must be monotonically increasing or decreasing for ProfileLine {self.name}"
+            )
+
+        # Check if l is within range
+        if l < min(l_coords) or l > max(l_coords):
+            raise ValueError(
+                f"l-coordinate {l} is outside the range of l-coordinates [{min(l_coords)}, {max(l_coords)}] "
+                f"for ProfileLine {self.name}"
+                )
+        print(f"before the interpolation (geom): {l_coords}, {z_coords}")
+        return np.interp(x=l, xp=l_coords, fp=z_coords)
 
 
 class CharPointsProfile(ProfileLine):
@@ -358,9 +391,9 @@ class Geometry(BaseModel):
         
         # Checks
         self.surface_line.check_l_coordinates_present()
-        self.surface_line.check_l_coordinates_increasing()
+        self.surface_line.check_l_coordinates_monotonic()
         self.char_point_profile.check_l_coordinates_present()
-        self.char_point_profile.check_l_coordinates_increasing()
+        self.char_point_profile.check_l_coordinates_monotonic()
 
         # Get subsection of the surface line between the two characteristic points
         from_point = self.char_point_profile.get_point_by_type(from_char_point)

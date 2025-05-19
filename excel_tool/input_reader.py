@@ -24,7 +24,7 @@ from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilP
 from toolbox.water import WaterLineType, HeadLine, ReferenceLine
 from toolbox.water_creater import WaterLevelCollection, RefLevelType, OffsetType, HeadLineConfig, WaterLevelConfig, \
     WaternetConfigCollection, WaternetConfig, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint, \
-    ReferenceLineConfig, RefLineMethodType
+    ReferenceLineConfig, RefLineMethodType, HeadLineMethodType
 from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
                                           SlipPlaneModel,
@@ -180,10 +180,12 @@ HEAD_LINE_CONFIG_COLS = {
     "name_waternet_scenario": "Naam waterspanningsscenario",
     "name_head_line": "Naam PL-lijn",
     "is_phreatic": "Freatisch",
+    "head_line_method_type": "Methode stijghoogte",
     "offset_method_name": "Offset methode",
+    "interpolate_from_waternet_name": "Stijghoogte afleiden uit scenario",
     "apply_minimal_surface_line_offset": "Minimale offset met het maaiveld toepassen",
     "minimal_surface_line_offset": "Waarde minimale offset",
-    "minimal_offset_from_point": "Minimale offset van punt",
+    "minimal_offset_from_point": "Minimale offset vanaf punt",
     "minimal_offset_to_point": "Minimale offset tot punt",
 }
 
@@ -209,7 +211,7 @@ LOAD_COLS = {
 
 REVERTMENT_PROFILE_COLS = {
     "revetment_profile_name": "Naam bekledingsprofiel",
-    "from_char_point": "Van punt",
+    "from_char_point": "Vanaf punt",
     "to_char_point": "Tot punt",
     "thickness": "Dikte",
     "soil_type": "Grondsoort",
@@ -322,6 +324,11 @@ INPUT_TO_SIDE = {
 INPUT_TO_WATER_LINE_TYPE = {
     "Stijghoogtelijn": WaterLineType.HEADLINE,
     "Referentielijn": WaterLineType.REFERENCE_LINE,
+}
+
+INPUT_TO_HEAD_LINE_METHOD_TYPE = {
+    "Offset methode": HeadLineMethodType.OFFSETS,
+    "Afleiden uit ander scenario": HeadLineMethodType.INTERPOLATE_FROM_WATERNET,
 }
 
 INPUT_TO_REF_LINE_METHOD_TYPE = {
@@ -587,7 +594,7 @@ class ExcelInputReader(BaseModel):
         return headline_offset_methods
 
     @staticmethod
-    def parse_head_line_configs(workbook: Any) -> dict[str, list[dict[str, str | bool | float | CharPointType]]]:
+    def parse_head_line_configs(workbook: Any) -> dict[str, list[dict[str, str | bool | float | CharPointType | None]]]:
         head_line_configs = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["head_line_configs"]],
             header_row=2,
@@ -596,6 +603,8 @@ class ExcelInputReader(BaseModel):
         )
         for head_line_config in head_line_configs:
             head_line_config["is_phreatic"] = INPUT_TO_BOOL.get(head_line_config["is_phreatic"])
+            head_line_config["head_line_method_type"] = INPUT_TO_HEAD_LINE_METHOD_TYPE.get(
+                head_line_config["head_line_method_type"])
             head_line_config["apply_minimal_surface_line_offset"] = INPUT_TO_BOOL.get(
                 head_line_config["apply_minimal_surface_line_offset"])
             head_line_config["minimal_offset_from_point"] = INPUT_TO_CHAR_POINTS.get(

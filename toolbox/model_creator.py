@@ -14,7 +14,7 @@ from toolbox.model import Model, Scenario, Stage
 from toolbox.soils import SoilCollection
 from toolbox.state import create_state_points_from_subsoil
 from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
-# from toolbox.water import WaternetCollection
+from toolbox.water import Waternet
 from toolbox.water_creater import WaterLevelCollection, WaternetConfigCollection, LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
 
 
@@ -109,6 +109,7 @@ def create_stage(
     calc_name: str,
     geometries: List[Geometry],
     input_structure: UserInputStructure,
+    previous_waternets: Optional[dict[str, Waternet]] = None,
 ) -> Stage:
     """
     Creates a Stage object from the provided input.
@@ -119,6 +120,7 @@ def create_stage(
         calc_name: The name of the calculation.
         geometries: A list of Geometry objects.
         input_structure: The user-provided input structure.
+        previous_waternets: A dict of Waternet objects with as keys the names of the stages.
 
     Returns:
         A Stage object.
@@ -176,6 +178,7 @@ def create_stage(
             waternet_config=waternet_config,
             water_level_collection=input_structure.water_levels,
             offset_method_collection=input_structure.headline_offset_methods,
+            previous_waternets=previous_waternets,
         )
         waternet_creator = WaternetCreator(input=waternet_creator_input)
         waternet = waternet_creator.create_waternet()
@@ -234,16 +237,23 @@ def create_scenario(
     Returns:
         A Scenario object."""
     
-    stages = [
-        create_stage(
-            stage_config=stage,
-            scenario_name=scenario_config.scenario_name,
-            calc_name=calc_name,
-            geometries=geometries,
-            input_structure=input_structure,
+    stages: list[Stage] = []
+
+    for stage in scenario_config.stages:
+        previous_waternets = {
+            stage.name: stage.waternet for stage in stages if stage.waternet is not None
+            }
+        
+        stages.append(
+            create_stage(
+                stage_config=stage,
+                scenario_name=scenario_config.scenario_name,
+                calc_name=calc_name,
+                geometries=geometries,
+                input_structure=input_structure,
+                previous_waternets=previous_waternets,
+            )
         )
-        for stage in scenario_config.stages
-    ]
 
     if scenario_config.grid_settings_set_name is not None:
         grid_settings_set = input_structure.grid_settings.get_by_name(

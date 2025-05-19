@@ -78,7 +78,8 @@ class WaterLine(BaseModel):
                 f"l-coordinate {l} is outside the range of l-coordinates [{min(self.l)}, {max(self.l)}] "
                 f"for WaterLine {self.name}"
                 )
-        
+        # TODO: Wat als de head line een sprong heeft op het gevraagde punt? Dan is er geen monotone toename wat wel verplicht is voor np.interp
+        print(f"before the interpolation: {self.l}, {self.z}")
         return np.interp(x=l, xp=self.l, fp=self.z)
 
 
