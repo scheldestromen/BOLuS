@@ -97,16 +97,15 @@ class ProfileLine(BaseModel):
             )
 
     def check_l_coordinates_monotonic(self):
-        """Checks if the l-coordinates are monotonically increasing"""
-        l_coords = [point.l for point in self.points]
-        steps = [l_coords[i + 1] - l_coords[i] for i in range(len(l_coords) - 1)]
-        steps_filtered = [step for step in steps if step != 0]
+        """Checks if the l-coordinates are equal or monotonically increasing"""
 
-        if abs(sum(steps_filtered)) != sum([abs(step) for step in steps_filtered]):
+        l_coords = [point.l for point in self.points]
+        monotonical = np.all(np.diff(l_coords) >= 0)
+
+        if not monotonical:
             raise ValueError(
-                f"Profile {self.name} of type {type(self)} has "
-                f"non-monotonically increasing or decreasing "
-                f"l-coordinates"
+                f"Not all l-coordinates of profile {self.name} of type {type(self)} "
+                f"are equal or monotonically increasing. Decreasing l-coordinates are not allowed."
             )
 
     def set_l_coordinates(self, left_point: Point, ref_point: Optional[Point] = None):
@@ -140,10 +139,13 @@ class ProfileLine(BaseModel):
             dist_from_left = point.distance(left_point)
             point.l = dist_from_left - shift
 
+        # Sort the points on ascending order of l-coordinates
+        self.points = sorted(self.points, key=lambda p: p.l)
         self.check_l_coordinates_monotonic()
 
     def set_x_as_l_coordinates(self):
         """Sets the x-coordinates as the l-coordinates"""
+
         for point in self.points:
             point.l = point.x
         
@@ -166,19 +168,21 @@ class ProfileLine(BaseModel):
         l_coords = [point.l for point in self.points]
         z_coords = [point.z for point in self.points]
         
-        if l_coords != sorted(l_coords) and l_coords != sorted(l_coords, reverse=True):
-            raise ValueError(
-                f"l-coordinates must be monotonically increasing or decreasing for ProfileLine {self.name}"
-            )
-
         # Check if l is within range
         if l < min(l_coords) or l > max(l_coords):
             raise ValueError(
                 f"l-coordinate {l} is outside the range of l-coordinates [{min(l_coords)}, {max(l_coords)}] "
                 f"for ProfileLine {self.name}"
                 )
-        print(f"before the interpolation (geom): {l_coords}, {z_coords}")
-        return np.interp(x=l, xp=l_coords, fp=z_coords)
+        
+        if not np.all(np.diff(l_coords) > 0):
+            raise ValueError(
+                f"Not all the l-coordinates of profile {self.name} of type {type(self)} "
+                f"are monotonically increasing. This is required for interpolation. "
+                f"Equal or decreasing l-coordinates are not allowed."
+            )
+        
+        return float(np.interp(x=l, xp=l_coords, fp=z_coords))
 
 
 class CharPointsProfile(ProfileLine):

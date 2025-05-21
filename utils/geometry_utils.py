@@ -205,3 +205,69 @@ def offset_line(line: LineString, offset: float, above_or_below: Literal["above"
     offset_line = LineString(offset_line_coords)
 
     return offset_line
+
+
+def point_is_redundant(
+        p1: tuple[float, float], 
+        p2: tuple[float, float], 
+        p3: tuple[float, float], 
+        tolerance: float
+        ) -> bool:
+    
+    x1, y1 = p1
+    x2, y2 = p2
+    x3, y3 = p3
+
+    # Avoid division by zero (vertical line)
+    if x3 == x1:
+        return abs(x2 - x1) < tolerance
+
+    # Interpolate p2's expected coordinates between p1 and p3
+    t = (x2 - x1) / (x3 - x1)
+    expected_y = y1 + t * (y3 - y1)
+
+    # Compare actual vs expected
+    return abs(y2 - expected_y) < tolerance
+
+
+def simplify_line(
+        x: list[float], 
+        y: list[float], 
+        tolerance: float
+        ) -> tuple[list[float], list[float]]:
+    """Simplifies a line by reducing the number of points.
+
+    Per set of three points it is checked if the middle point is 
+    necessary. This is checked by comparing the actual y-coordinate 
+    of the middle point with a calculated y-coordinate of a linear 
+    interpolation between the first and last point at the x-coordinate
+    of the middle point. If the difference is smaller than the tolerance,
+    the middle point is removed.
+
+    Args:
+        x: The x-coordinates of the line
+        y: The y-coordinates of the line
+        tolerance: The tolerance to simplify the line
+
+    Returns:
+
+        A tuple of (x, y) coordinates of the simplified line"""
+    if len(x) <= 2:
+        return x, y  # Nothing to simplify
+
+    simplified_x = [x[0]]
+    simplified_y = [y[0]]
+
+    for i in range(1, len(x) - 1):
+        prev_point = (simplified_x[-1], simplified_y[-1])
+        curr_point = (x[i], y[i])
+        next_point = (x[i + 1], y[i + 1])
+
+        if not point_is_redundant(p1=prev_point, p2=curr_point, p3=next_point, tolerance=tolerance):
+            simplified_x.append(x[i])
+            simplified_y.append(y[i])
+
+    simplified_x.append(x[-1])
+    simplified_y.append(y[-1])
+
+    return simplified_x, simplified_y

@@ -23,8 +23,8 @@ class WaterLine(BaseModel):
     
     Attributes:
         name (str): Name (label) of the line
-        l (tuple[float]): Tuple of floats for the l-coordinates
-        z (tuple[float]): Tuple of floats for the z-coordinates
+        l (list[float]): List of floats for the l-coordinates
+        z (list[float]): List of floats for the z-coordinates
     """
 
     # model_config = ConfigDict(validate_assignment=True)  # Pydantic setting
@@ -42,6 +42,8 @@ class WaterLine(BaseModel):
         
         return self
 
+
+    # TODO: Misschien hier ook checken of de l-coordinates allemaal toenemen? Anders leidt dit in dstab ook mogelijk tot onzin schematisering
     @model_validator(mode="after")
     def validate_order(self):
         if self.l != sorted(self.l):
@@ -64,13 +66,16 @@ class WaterLine(BaseModel):
             float: The interpolated z-coordinate at the given l-coordinate
             
         Raises:
-            ValueError: If l is outside the range of l-coordinates
+            ValueError: If l is outside the range of l-coordinates or if the 
+            l-coordinates are not monotonically increasing.
         """
 
-        if self.l != sorted(self.l):
+        if not np.all(np.diff(self.l) > 0):
             raise ValueError(
-                f"l-coordinates must be sorted for WaterLine {self.name}"
-                )
+                f"Not all the l-coordinates of water line {self.name} of type {type(self)} "
+                f"are monotonically increasing. This is required for interpolation. "
+                f"Equal or decreasing l-coordinates are not allowed."
+            )
 
         # Check if l is within range
         if l < min(self.l) or l > max(self.l):
@@ -78,8 +83,7 @@ class WaterLine(BaseModel):
                 f"l-coordinate {l} is outside the range of l-coordinates [{min(self.l)}, {max(self.l)}] "
                 f"for WaterLine {self.name}"
                 )
-        # TODO: Wat als de head line een sprong heeft op het gevraagde punt? Dan is er geen monotone toename wat wel verplicht is voor np.interp
-        print(f"before the interpolation: {self.l}, {self.z}")
+        
         return np.interp(x=l, xp=self.l, fp=self.z)
 
 

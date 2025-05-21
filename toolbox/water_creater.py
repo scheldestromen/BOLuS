@@ -10,7 +10,7 @@ from toolbox.geometry import SurfaceLine
 from toolbox.geometry import Side
 from toolbox.water import HeadLine, ReferenceLine, Waternet
 from toolbox.subsoil import Subsoil
-from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line
+from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line, simplify_line
 
 # TODO: Idee: Om flexibiliteit te houden - naast het genereren van de waternets - zou ik
 #       een WaternetExceptions o.i.d. kunnen maken waarin specifieke correcties zijn opgegeven.
@@ -35,6 +35,8 @@ TOP_BOTTOM_TO_DUTCH = {
     "bottom": "onder",
 }
 
+# Used for simplifying the head line determined by interpolation from another waternet
+TOLERANCE_SIMPLIFY_LINE = 0.01  # 1 cm
 
 class WaterLevelCollection(BaseModel):
     """
@@ -914,10 +916,7 @@ class InterpolateHeadLineFromWaternet(BaseModel):
         The lines of influence are determined per point, but the necessary points are not
         known beforehand. Therefore, the l-coordinates are collected from ALL the lines 
         that could be of influence. These are the ref. lines, the head lines and the 
-        surface level.
-
-        This could be improved by only collecting the l-coordinates of the points that
-        are actually needed. Or by simplifying the head line afterwards.
+        surface level. Afterwards the head line is simplified.
 
         Returns:
             list[float]: List of unique l-coordinates
@@ -933,6 +932,12 @@ class InterpolateHeadLineFromWaternet(BaseModel):
 
         for point in surface_level.points:
             l_coords.append(point.l)
+
+        # Remove duplicate l-coordinates
+        l_coords = list(set(l_coords))
+
+        # Sort the l-coordinates
+        l_coords.sort()
 
         return l_coords
 
@@ -1166,6 +1171,13 @@ class InterpolateHeadLineFromWaternet(BaseModel):
             )
 
             head_line_z.append(head)
+
+        # Simplify the head line
+        head_line_l, head_line_z = simplify_line(
+            x=head_line_l,
+            y=head_line_z,
+            tolerance=TOLERANCE_SIMPLIFY_LINE
+        )
 
         head_line = HeadLine(
             name=head_line_config.name_head_line,
