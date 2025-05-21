@@ -42,7 +42,7 @@ class WaterLine(BaseModel):
         
         return self
 
-
+    # TODO: BUG: bij gelijke l-coords gaat sorteren niet goed. Er moet gespiegeld worden
     # TODO: Misschien hier ook checken of de l-coordinates allemaal toenemen? Anders leidt dit in dstab ook mogelijk tot onzin schematisering
     @model_validator(mode="after")
     def validate_order(self):

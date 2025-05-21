@@ -140,6 +140,7 @@ class ProfileLine(BaseModel):
             point.l = dist_from_left - shift
 
         # Sort the points on ascending order of l-coordinates
+        # TODO: dit leidt tot fouten bij gelijke l-coords.
         self.points = sorted(self.points, key=lambda p: p.l)
         self.check_l_coordinates_monotonic()
 

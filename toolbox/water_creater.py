@@ -27,6 +27,10 @@ from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons
 #       - water.py hernoemen naar waternet.py
 #       - methodes in mapje zetten, splitsen in scripts?
 
+# TODO: De shift_points_with_equal_l_values functie wordt enkel toegepast bij het genereren van de ref. lijnen.
+#       Zou deze niet ook bij de head lines moeten worden toegepast? Bv. als gevolg van gelijke coords bij 
+#       correctie voor offset met maaiveld.
+
 NAME_DEEP_AQUIFER = "WVP"
 NAME_INTERMEDIATE_AQUIFER = "TZL"
 
@@ -119,7 +123,7 @@ class WaterLevelConfig(BaseModel):
     water_levels: dict[str, str | None]
 
 
-# TODO: Zou gespitst kunnen worden per methode (net als bij ref. line zou moeten)
+# TODO: Zou gesplitst kunnen worden per methode (net als bij ref. line zou moeten)
 class HeadLineConfig(BaseModel):
     name_head_line: str
     is_phreatic: bool
@@ -690,10 +694,12 @@ def shift_points_with_equal_l_values(points: list[list[float]]) -> list[list[flo
     
     # Determine in which direction to shift points
     # if the points are sorted in the positive direction, then the shift should be negative
+    
     if points[0][0] < points[-1][0]:
         sign = -1
     # if the points are sorted in the negative direction, then the shift should be positive
     else:
+        print('sign is 1')
         sign = 1
 
     l_coords = [p[0] for p in points]
@@ -2159,6 +2165,10 @@ class WaternetCreator(BaseModel):
                     ref_line_config=config
                 )
                 ref_lines.extend([ref_line_top, ref_line_bottom])
+                print(ref_line_top.l)
+                print(ref_line_top.z)
+                print(ref_line_bottom.l)
+                print(ref_line_bottom.z)
                             
         return ref_lines
 
