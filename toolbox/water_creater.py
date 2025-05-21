@@ -902,7 +902,12 @@ class InterpolateHeadLineFromWaternet(BaseModel):
         return z_min, z_max
     
 
-    def collect_all_l_coords(self, waternet: Waternet, surface_level: SurfaceLine) -> list[float]:
+    def collect_all_l_coords(
+            self, 
+            ref_line: ReferenceLine,
+            waternet: Waternet, 
+            surface_level: SurfaceLine
+            ) -> list[float]:
         """Returns all unique l-coordinates from the waternet.
         
         The head line is determined by the reference lines it lies between and by 
@@ -918,11 +923,21 @@ class InterpolateHeadLineFromWaternet(BaseModel):
         that could be of influence. These are the ref. lines, the head lines and the 
         surface level. Afterwards the head line is simplified.
 
+        Args:
+            ref_line: The reference line to collect the l-coordinates from.
+              This is the reference line that is used to determine the head line.
+            waternet: The waternet to collect the l-coordinates from.
+              The head is determined from this waternet
+            surface_level: The surface level to collect the l-coordinates from.
+        
         Returns:
             list[float]: List of unique l-coordinates
         """
 
         l_coords: list[float] = []
+
+        # Collect the l-coordinates from the ref. lines
+        l_coords.extend(ref_line.l)
 
         for ref_line in waternet.ref_lines:
             l_coords.extend(ref_line.l)
@@ -976,13 +991,10 @@ class InterpolateHeadLineFromWaternet(BaseModel):
         z_at_l: list[float] = []
 
         # Collect the z-coord of each (head/phreatic/ref.) line at the given l-coordinate
-        for i, line in enumerate(lines):
+        for line in lines:
             z = line.get_z_at_l(l_coord)
-            print(f"{i}: {line.name}, {z}")
-            
-            z_at_l.append(z)  # line.get_z_at_l(l_coord)
+            z_at_l.append(z)
 
-        print(f"z_at_l: {z_at_l}")
         # Select the relevant z-coords and sort them
         z_at_l_above = [z for z in z_at_l if z >= z_coord]
         z_at_l_below = [z for z in z_at_l if z <= z_coord]
@@ -1098,10 +1110,6 @@ class InterpolateHeadLineFromWaternet(BaseModel):
             ref_line_above_or_below="above",
             waternet=waternet
             )
-        print(f"head_line_above: {head_line_above.name}")
-        print(f"ref_line_above: {ref_line_above.name}")
-        print(f"head_line_below: {head_line_below.name}")
-        print(f"ref_line_below: {ref_line_below.name}")
         head_above = head_line_above.get_z_at_l(l_coord)
         
         if head_below == head_above:
@@ -1119,12 +1127,9 @@ class InterpolateHeadLineFromWaternet(BaseModel):
 
         # Here the heads and z-values are all different - we determine the head by interpolation
         if z_below != z_above and head_below != head_above:
-            
             head = head_below + (head_above - head_below) * (z_coord - z_below) / (z_above - z_below)
-            print(f"({l_coord}, {z_coord})")
-            print(f"z_above: {z_above}, head_above: {head_above}, z_below: {z_below}, head_below: {head_below}")
-            print(f"head: {head}\n")
-            return head_below + (head_above - head_below) * (z_coord - z_below) / (z_above - z_below)
+
+            return head
 
         raise ValueError(
             "An error occurred while determining the head by interpolation based on another stage"
@@ -1142,6 +1147,7 @@ class InterpolateHeadLineFromWaternet(BaseModel):
         phreatic_line = self.get_phreatic_line(interpolate_from_waternet)
 
         head_line_l = self.collect_all_l_coords(
+            ref_line=ref_line,
             waternet=interpolate_from_waternet, 
             surface_level=surface_level
             )
@@ -1344,7 +1350,8 @@ class WaternetCreatorInput(BaseModel):
                 raise ValueError(
                     f"The waternet scenario '{hlc.interpolate_from_waternet_name}' is not available for "
                     f"generating the head line '{hlc.name_head_line}' with the method "
-                    f"'{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}'. Please check if "
+                    f"'{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}' in "
+                    f"the waternet scenario '{self.waternet_config.name_waternet_scenario}'. Please check if "
                     f"the scenario '{hlc.interpolate_from_waternet_name}' is applied for every calculation "
                     f"where '{hlc.name_head_line}' is used."
                 )
@@ -2089,8 +2096,6 @@ class WaternetCreator(BaseModel):
             interpolate_from_waternet = self.input.previous_waternets[interpolate_from_waternet_name]
 
             # Get the ref. line that is used to create the head line
-            for ref_line in ref_lines:
-                print(ref_line.name)
             coupled_ref_lines = [
                 rl for rl in ref_lines
                 if rl.head_line_top == head_line_config.name_head_line
