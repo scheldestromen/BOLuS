@@ -20,7 +20,7 @@ from toolbox.model import Model
 from toolbox.soils import SoilCollection
 from toolbox.state import StatePoint
 from toolbox.subsoil import Subsoil
-from toolbox.water import Waternet
+from toolbox.waternet import Waternet
 
 
 def get_scenario_and_stage_index_by_label(
@@ -221,6 +221,7 @@ def add_uniform_load(
     )
 
 
+# TODO: Hier kan de eindvalidatie plaatsvinden - (zijn er gelijke punten?)
 def set_waternet(
     waternet: Waternet, dm: DStabilityModel, scenario_index: int, stage_index: int
 ):

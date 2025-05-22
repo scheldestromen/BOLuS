@@ -14,8 +14,9 @@ from toolbox.model import Model, Scenario, Stage
 from toolbox.soils import SoilCollection
 from toolbox.state import create_state_points_from_subsoil
 from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
-from toolbox.water import Waternet
-from toolbox.water_creater import WaterLevelCollection, WaternetConfigCollection, LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
+from toolbox.waternet import Waternet
+from toolbox.waternet_creator import LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
+from toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection
 
 
 class GeneralSettings(BaseModel):

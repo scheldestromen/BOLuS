@@ -1,3 +1,4 @@
+import numpy as np
 from shapely import GeometryCollection, MultiPolygon, Point, Polygon, LineString, MultiLineString, MultiPoint, LinearRing
 from shapely.ops import orient
 from shapely import offset_curve
@@ -64,7 +65,6 @@ def geometry_to_points(geometry) -> list[Point]:
             raise ValueError(f"Unexpected geometry type: {type(current)}")
 
     return points
-
 
 def determine_point_in_polygon(
     polygon: Polygon, shift: float = 0.01
@@ -271,3 +271,42 @@ def simplify_line(
     simplified_y.append(y[-1])
 
     return simplified_x, simplified_y
+
+
+def linear_interpolation(
+        x: float, 
+        xp: list[float], 
+        fp: list[float]
+    ) -> float:
+    """Performs linear interpolation on a list of x and y coordinates.
+    The x-coordinates must be monotonically increasing or decreasing.
+    Equal values are NOT allowed.
+
+    Args:
+        x: The x-coordinate to interpolate the y-coordinate for
+        xp: The x-coordinates of the line
+        fp: The y-coordinates of the line
+
+    Returns:
+        The y-coordinate of the interpolated point"""
+    
+    # Check if x is within the range of xp
+    if x < min(xp) or x > max(xp):
+        raise ValueError(
+            f"x-coordinate {x} is outside the range of x-coordinates [{min(xp)}, {max(xp)}]"
+            )
+    
+    # Check if xp is monotonically increasing or decreasing
+    if not np.all(np.diff(xp) > 0) and not np.all(np.diff(xp) < 0):
+        raise ValueError(
+            f"The x-coordinates of the line are not monotonically increasing or decreasing"
+            "(equal values are allowed).\n"
+            f"The x-coordinates are: {xp}\n"
+            f"The y-coordinates are: {fp}"
+            )
+
+    # Sort the x and y coordinates
+    xp, fp = zip(*sorted(zip(xp, fp), key=lambda p: p[0]))
+    
+    # Perform linear interpolation
+    return np.interp(x, xp, fp)

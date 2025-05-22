@@ -3,12 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, model_validator  #, field_validator, ConfigDict
 import numpy as np
 
-
-# TODO: 
-#  - Replace l and z with points: tuple[tuple[float, float]] (and all other occurrences)
-#  - The check of lengths is not needed anymore
-#  - implement model_config = ConfigDict(validate_assignment=True) -> the coords are automatically validated and sorted
-#  - Remove check of order in get_z_at_l
+from utils.geometry_utils import linear_interpolation
 
 
 class WaterLineType(StrEnum):
@@ -19,15 +14,16 @@ class WaterLineType(StrEnum):
 class WaterLine(BaseModel):
     """Base class for HeadLine and ReferenceLine
 
-    l and z are automatically sorted by the values in l.
+    The l-coordinates should be monotonically increasing, decreasing 
+    or equal.
+
+    Coordinates are rounded to 3 decimal places.
     
     Attributes:
         name (str): Name (label) of the line
         l (list[float]): List of floats for the l-coordinates
         z (list[float]): List of floats for the z-coordinates
     """
-
-    # model_config = ConfigDict(validate_assignment=True)  # Pydantic setting
 
     name: str
     l: list[float]
@@ -37,27 +33,33 @@ class WaterLine(BaseModel):
     def validate_equal_length_l_z(self):
         if len(self.l) != len(self.z):
             raise ValueError(
-                f"l and z must have the same length. This is not the case for line {self.name}."
+                f"l and z must have the same length. This is not the case for line {self.name} "
+                f"with l-length {len(self.l)} and z-length {len(self.z)}."
                 )
         
         return self
 
-    # TODO: BUG: bij gelijke l-coords gaat sorteren niet goed. Er moet gespiegeld worden
-    # TODO: Misschien hier ook checken of de l-coordinates allemaal toenemen? Anders leidt dit in dstab ook mogelijk tot onzin schematisering
     @model_validator(mode="after")
-    def validate_order(self):
-        if self.l != sorted(self.l):
-            # Create pairs of (l, z), sort by l, and unpack back into separate lists
-            coords = sorted(zip(self.l, self.z), key=lambda p: p[0])
-            l_coords, z_coords = zip(*coords)
-            self.l = list(l_coords)
-            self.z = list(z_coords)
+    def validate_monotonic(self):
+        """Validate if points are ordered. This is not strictly necessary for 
+        D-Stability and is meant as a sanity check."""
+
+        if not np.all(np.diff(self.l) >= 0) and not np.all(np.diff(self.l) <= 0):
+            raise ValueError(
+                f"Not all the l-coordinates of water line {self.name} of type {type(self)} "
+                f"are monotonically increasing or decreasing. Equal values are allowed. "
+                f"The l-coordinates are: {self.l}\n"
+                f"The z-coordinates are: {self.z}"
+            )
         
         return self
 
     def get_z_at_l(self, l: float) -> float:
         """Returns the z-coordinate at a given l-coordinate
         based on interpolation of the l and z coordinates.
+
+        The l-coordinates must be monotonically increasing or decreasing.
+        Equal values are NOT allowed.
         
         Args:
             l (float): The l-coordinate
@@ -66,25 +68,11 @@ class WaterLine(BaseModel):
             float: The interpolated z-coordinate at the given l-coordinate
             
         Raises:
-            ValueError: If l is outside the range of l-coordinates or if the 
-            l-coordinates are not monotonically increasing.
+            ValueError: If l is outside the range of l-coordinates.
+
         """
 
-        if not np.all(np.diff(self.l) > 0):
-            raise ValueError(
-                f"Not all the l-coordinates of water line {self.name} of type {type(self)} "
-                f"are monotonically increasing. This is required for interpolation. "
-                f"Equal or decreasing l-coordinates are not allowed."
-            )
-
-        # Check if l is within range
-        if l < min(self.l) or l > max(self.l):
-            raise ValueError(
-                f"l-coordinate {l} is outside the range of l-coordinates [{min(self.l)}, {max(self.l)}] "
-                f"for WaterLine {self.name}"
-                )
-        
-        return np.interp(x=l, xp=self.l, fp=self.z)
+        return linear_interpolation(x=l, xp=self.l, fp=self.z)
 
 
 class HeadLine(WaterLine):

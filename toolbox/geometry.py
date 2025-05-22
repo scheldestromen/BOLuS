@@ -6,7 +6,7 @@ import numpy as np
 from pydantic import BaseModel
 from shapely.geometry import LineString
 
-from utils.geometry_utils import geometry_to_points
+from utils.geometry_utils import geometry_to_points, linear_interpolation
 
 # TODO: Overwegen om validatie methodes toe te voegen.
 #       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.
@@ -87,7 +87,11 @@ class CharPoint(Point):
 
 # TODO: Gelijk sorteren o.b.v. l-coordinaten wanneer deze berekend worden.
 class ProfileLine(BaseModel):
-    """Base class for SurfaceLine and CharPointProfile"""
+    """Base class for SurfaceLine and CharPointProfile
+    
+    The order of the points must be in ascending, descending or equal order
+    based on the l-coordinates.
+    """
 
     def check_l_coordinates_present(self):
         """Checks if the l-coordinates are present"""
@@ -99,13 +103,15 @@ class ProfileLine(BaseModel):
     def check_l_coordinates_monotonic(self):
         """Checks if the l-coordinates are equal or monotonically increasing"""
 
+        # CharPoints can have equal l-coordinates (e.g. the crest and traffic load)
         l_coords = [point.l for point in self.points]
-        monotonical = np.all(np.diff(l_coords) >= 0)
+        monotonical = np.all(np.diff(l_coords) >= 0) or np.all(np.diff(l_coords) <= 0)
 
         if not monotonical:
             raise ValueError(
                 f"Not all l-coordinates of profile {self.name} of type {type(self)} "
-                f"are equal or monotonically increasing. Decreasing l-coordinates are not allowed."
+                f"are equal or monotonically increasing or decreasing.\n"
+                f"The l-coordinates are: {l_coords}"
             )
 
     def set_l_coordinates(self, left_point: Point, ref_point: Optional[Point] = None):
@@ -138,10 +144,7 @@ class ProfileLine(BaseModel):
         for point in self.points:
             dist_from_left = point.distance(left_point)
             point.l = dist_from_left - shift
-
-        # Sort the points on ascending order of l-coordinates
-        # TODO: dit leidt tot fouten bij gelijke l-coords.
-        self.points = sorted(self.points, key=lambda p: p.l)
+        
         self.check_l_coordinates_monotonic()
 
     def set_x_as_l_coordinates(self):
@@ -169,21 +172,7 @@ class ProfileLine(BaseModel):
         l_coords = [point.l for point in self.points]
         z_coords = [point.z for point in self.points]
         
-        # Check if l is within range
-        if l < min(l_coords) or l > max(l_coords):
-            raise ValueError(
-                f"l-coordinate {l} is outside the range of l-coordinates [{min(l_coords)}, {max(l_coords)}] "
-                f"for ProfileLine {self.name}"
-                )
-        
-        if not np.all(np.diff(l_coords) > 0):
-            raise ValueError(
-                f"Not all the l-coordinates of profile {self.name} of type {type(self)} "
-                f"are monotonically increasing. This is required for interpolation. "
-                f"Equal or decreasing l-coordinates are not allowed."
-            )
-        
-        return float(np.interp(x=l, xp=l_coords, fp=z_coords))
+        return linear_interpolation(x=l, xp=l_coords, fp=z_coords)
 
 
 class CharPointsProfile(ProfileLine):
