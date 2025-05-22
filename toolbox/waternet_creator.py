@@ -25,12 +25,8 @@ from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons
 #       de aquifers (want dan wordt de max en min gepakt). 
 
 # TODO: Refactor ter bevordering van de leesbaarheid en herleidbaarheid
-#       - Opknippen in waternet_config en waternet_creator.
 #       - methodes in mapje zetten, splitsen in scripts?
 
-# TODO: De shift_points_with_equal_l_values functie wordt enkel toegepast bij het genereren van de ref. lijnen.
-#       Zou deze niet ook bij de head lines moeten worden toegepast? Bv. als gevolg van gelijke coords bij 
-#       correctie voor offset met maaiveld.
 
 NAME_DEEP_AQUIFER = "WVP"
 NAME_INTERMEDIATE_AQUIFER = "TZL"

@@ -21,10 +21,10 @@ from toolbox.soils import SoilCollection, Soil
 from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
     SoilProfilePositionSet, SoilProfilePositionSetCollection, RevetmentLayerBlueprint, RevetmentProfileBlueprint, \
     RevetmentProfileBlueprintCollection
-from toolbox.water import WaterLineType, HeadLine, ReferenceLine
-from toolbox.water_creater import WaterLevelCollection, RefLevelType, OffsetType, HeadLineConfig, WaterLevelConfig, \
-    WaternetConfigCollection, WaternetConfig, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint, \
-    ReferenceLineConfig, RefLineMethodType, HeadLineMethodType
+from toolbox.waternet import WaterLineType, HeadLine, ReferenceLine
+from toolbox.waternet_creator import RefLevelType, OffsetType, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint
+from toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, RefLineMethodType, WaterLevelConfig, \
+    HeadLineConfig, ReferenceLineConfig, WaternetConfig, WaternetConfigCollection
 from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
                                           SlipPlaneModel,
