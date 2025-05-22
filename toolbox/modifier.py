@@ -221,7 +221,6 @@ def add_uniform_load(
     )
 
 
-# TODO: Hier kan de eindvalidatie plaatsvinden - (zijn er gelijke punten?)
 def set_waternet(
     waternet: Waternet, dm: DStabilityModel, scenario_index: int, stage_index: int
 ):

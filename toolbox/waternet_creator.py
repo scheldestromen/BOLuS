@@ -1910,19 +1910,6 @@ class WaternetCreator(BaseModel):
 
         return ref_lines
 
-    # TODO: Implement this
-    def check_single_intrusion_ref_line_per_ref_line(self, ref_lines: list[ReferenceLine]):
-        pass
-        # if len(ref_lines) == 0:
-        #     return
-        
-        # intrusion_from_ref_line_names = [config.intrusion_from_ref_line for config in self.reference_line_configs
-        #                                  if config.ref_line_method_type == RefLineMethodType.INTRUSION]
-
-        # # Get duplicate names
-        # duplicate_names = set([name for name in intrusion_from_ref_line_names 
-        #                        if intrusion_from_ref_line_names.count(name) > 1])
-
     def create_ref_lines_intrusion_method(self, current_ref_lines: list[ReferenceLine]) -> list[ReferenceLine]:
         ref_lines: list[ReferenceLine] = []
         ref_line_configs = self.input.waternet_config.reference_line_configs
@@ -2025,8 +2012,6 @@ class WaternetCreator(BaseModel):
             points = shift_points_with_equal_l_values(points)
             ref_line.l = [p[0] for p in points]
             ref_line.z = [p[1] for p in points]
-
-        self.check_single_intrusion_ref_line_per_ref_line(ref_lines=ref_lines)
 
         # Determine head line at ref line from another stage (if applicable)
         head_lines.extend(self.create_head_lines_interpolate_from_waternet(ref_lines=ref_lines))

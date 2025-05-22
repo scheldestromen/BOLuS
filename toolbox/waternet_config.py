@@ -173,14 +173,15 @@ class ReferenceLineConfig(BaseModel):
     @model_validator(mode='after')
     def validate_min_one_head_line_name(self) -> Self:
         if self.name_head_line_top is None and self.name_head_line_bottom is None:
-            raise ValueError(f"At least one head line name needs to be assigned to the reference line "
+            raise ValueError(f"At least one head line needs to be assigned to the reference line "
                              f"'{self.name_ref_line}'")
 
         return self
 
 
 class WaternetConfig(BaseModel):
-    """A WaternetConfig is the blueprint for creating a waternet.
+    """A WaternetConfig is the blueprint for creating a waternet. At least a 
+    phreatic line is required.
 
     Attributes:
         name (str): The name of the waternet configuration
@@ -234,13 +235,29 @@ class WaternetConfig(BaseModel):
         return self
 
     @model_validator(mode='after')
-    def validate_reference_line_from_excists(self) -> Self:
-        # TODO: Check of de lijn waar naar verwezen wordt wel bestaat
+    def validate_intrusion_from_ref_line_excists(self) -> Self:
+        if self.reference_line_configs is not None:
+            ref_line_names_referenced = [
+                config.intrusion_from_ref_line for config in self.reference_line_configs
+                if config.ref_line_method_type == RefLineMethodType.INTRUSION
+                ]
+            ref_line_names = [config.name_ref_line for config in self.reference_line_configs]
+
+            for ref_line_name in ref_line_names_referenced:
+                if ref_line_name not in ref_line_names:
+                    raise ValueError(
+                        f"The ref. line '{ref_line_name}' is referenced by an intrusion method, "
+                        f"but is not defined in the reference line configs")
+
         return self
 
     @model_validator(mode='after')
-    def validate_max_one_phreatic_line(self) -> Self:
+    def validate_amount_of_phreatic_lines(self) -> Self:
         phreatic_lines = [config for config in self.head_line_configs if config.is_phreatic]
+
+        if len(phreatic_lines) == 0:
+            raise ValueError("There must be at least a phreatic line. This is not the case for the waternet scenario "
+                             f"'{self.name_waternet_scenario}'")
 
         if len(phreatic_lines) > 1:
             raise ValueError("There can only be one phreatic line. This is not the case for the waternet scenario "
