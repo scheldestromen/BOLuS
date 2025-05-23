@@ -12,10 +12,14 @@ def check_list_of_dicts_for_duplicate_values(dict_list: list[dict], key: str) ->
         dict_list: list of dictionaries, which all contain the specified key
         key: key to check for duplicates"""
 
-    if len(set([d[key] for d in dict_list])) != len(dict_list):
+    values = [d[key] for d in dict_list]
+    duplicates = [value for value in values if values.count(value) > 1]
+    duplicates = list(set(duplicates))
+
+    if duplicates:
         raise ValueError(
-            f"List contains duplicate values at the specified key {key}."
-            f"This is not allowed."
+            f"List contains duplicate values at the specified key '{key}'. "
+            f"This is not allowed. \nThe duplicates are: {', '.join(duplicates)}."
         )
 
 

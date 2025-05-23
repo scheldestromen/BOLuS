@@ -17,7 +17,7 @@ from toolbox.modifier import (add_soil_collection, add_state_points,
 from toolbox.soils import Soil, SoilCollection
 from toolbox.state import StatePoint
 from toolbox.subsoil import SoilPolygon, Subsoil
-from toolbox.water import HeadLine, ReferenceLine, Waternet
+from toolbox.waternet import HeadLine, ReferenceLine, Waternet
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")

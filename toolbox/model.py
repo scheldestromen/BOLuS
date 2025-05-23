@@ -7,7 +7,7 @@ from .loads import Load
 from .soils import SoilCollection
 from .state import StatePoint
 from .subsoil import Subsoil
-from .water import Waternet
+from .waternet import Waternet
 
 
 class Stage(BaseModel):

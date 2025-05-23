@@ -2,8 +2,19 @@ from enum import StrEnum, auto
 from math import isclose
 from typing import Literal, Optional
 
+import numpy as np
 from pydantic import BaseModel
-from typing_extensions import List
+from shapely.geometry import LineString
+
+from utils.geometry_utils import geometry_to_points, linear_interpolation
+
+# TODO: Overwegen om validatie methodes toe te voegen.
+#       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.
+# TODO: Overwegen om validatie (b.v. l-coordinates) met Pydantic te doen ('after')
+#       Ook overwegen om l verplicht te maken, dan hoeven we de checks niet meer te doen.
+# TODO: Overwegen om logica in CharPointsProfile te checken (bv. volgorde en aanwezigheid punten)
+# TODO: Overwegen om de sortering op l-coordinates automatisch te doen bij bepalen (of aanmaken)
+#       Dat heeft meerwaarde voor de intuïtie.
 
 
 class CharPointType(StrEnum):
@@ -74,8 +85,13 @@ class CharPoint(Point):
     type: CharPointType
 
 
+# TODO: Gelijk sorteren o.b.v. l-coordinaten wanneer deze berekend worden.
 class ProfileLine(BaseModel):
-    """Base class for SurfaceLine and CharPointProfile"""
+    """Base class for SurfaceLine and CharPointProfile
+    
+    The order of the points must be in ascending, descending or equal order
+    based on the l-coordinates.
+    """
 
     def check_l_coordinates_present(self):
         """Checks if the l-coordinates are present"""
@@ -84,17 +100,18 @@ class ProfileLine(BaseModel):
                 f"SurfaceLine {self.name} does not have (all the) l-coordinates"
             )
 
-    def check_l_coordinates_increasing(self):
-        """Checks if the l-coordinates are monotonically increasing"""
-        l_coords = [point.l for point in self.points]
-        steps = [l_coords[i + 1] - l_coords[i] for i in range(len(l_coords) - 1)]
-        steps_filtered = [step for step in steps if step != 0]
+    def check_l_coordinates_monotonic(self):
+        """Checks if the l-coordinates are equal or monotonically increasing"""
 
-        if abs(sum(steps_filtered)) != sum([abs(step) for step in steps_filtered]):
+        # CharPoints can have equal l-coordinates (e.g. the crest and traffic load)
+        l_coords = [point.l for point in self.points]
+        monotonical = np.all(np.diff(l_coords) >= 0) or np.all(np.diff(l_coords) <= 0)
+
+        if not monotonical:
             raise ValueError(
-                f"Profile {self.name} of type {type(self)} has "
-                f"non-monotonically increasing or decreasing "
-                f"l-coordinates"
+                f"Not all l-coordinates of profile {self.name} of type {type(self)} "
+                f"are equal or monotonically increasing or decreasing.\n"
+                f"The l-coordinates are: {l_coords}"
             )
 
     def set_l_coordinates(self, left_point: Point, ref_point: Optional[Point] = None):
@@ -127,15 +144,35 @@ class ProfileLine(BaseModel):
         for point in self.points:
             dist_from_left = point.distance(left_point)
             point.l = dist_from_left - shift
-
-        self.check_l_coordinates_increasing()
+        
+        self.check_l_coordinates_monotonic()
 
     def set_x_as_l_coordinates(self):
         """Sets the x-coordinates as the l-coordinates"""
+
         for point in self.points:
             point.l = point.x
         
-        self.check_l_coordinates_increasing()
+        self.check_l_coordinates_monotonic()
+
+    def get_z_at_l(self, l: float) -> float:
+        """Returns the z-coordinate at a given l-coordinate
+        based on interpolation of the l and z coordinates.
+        
+        Args:
+            l (float): The l-coordinate
+            
+        Returns:
+            float: The interpolated z-coordinate at the given l-coordinate
+            
+        Raises:
+            ValueError: If l is outside the range of l-coordinates
+        """
+
+        l_coords = [point.l for point in self.points]
+        z_coords = [point.z for point in self.points]
+        
+        return linear_interpolation(x=l, xp=l_coords, fp=z_coords)
 
 
 class CharPointsProfile(ProfileLine):
@@ -146,7 +183,7 @@ class CharPointsProfile(ProfileLine):
         points: A list CharPoint instances representing the characteristic points"""
 
     name: str
-    points: List[CharPoint]
+    points: list[CharPoint]
 
     @classmethod
     def from_dict(
@@ -215,7 +252,7 @@ class CharPointsProfile(ProfileLine):
         l_outward = self.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
         inward_positive = l_inward > l_outward  # Determine the direction of the l-axis
 
-        # Determine the start and end of the load
+        # Determine the sign based on the direction and the direction of the l-axis
         if (
             direction == Side.LAND_SIDE
             and inward_positive
@@ -237,7 +274,7 @@ class SurfaceLine(ProfileLine):
         points (list): A list of Point instances representing the profile"""
 
     name: str
-    points: List[Point]
+    points: list[Point]
 
     @classmethod
     def from_list(cls, name: str, point_list: list[float]) -> "SurfaceLine":
@@ -287,7 +324,7 @@ class CharPointsProfileCollection(BaseModel):
     Attributes:
         char_points_profiles (list): A list of CharPointsProfile instances"""
 
-    char_points_profiles: List[CharPointsProfile]
+    char_points_profiles: list[CharPointsProfile]
 
     def get_by_name(self, name: str) -> CharPointsProfile:
         """Returns the CharPointsProfile with the given name"""
@@ -313,6 +350,84 @@ class Geometry(BaseModel):
     name: str
     surface_line: SurfaceLine
     char_point_profile: CharPointsProfile
+
+    # TODO: Unit tests
+    def get_intersection(
+            self, 
+            level: float, 
+            from_char_point: CharPointType = CharPointType.SURFACE_LEVEL_WATER_SIDE, 
+            to_char_point: CharPointType = CharPointType.SURFACE_LEVEL_LAND_SIDE, 
+            search_direction: Side = Side.LAND_SIDE
+        ) -> tuple[float, float] | None:
+        """Returns a 2D intersection point of the surface line and the given level.
+        A search area is defined by the two characteristic points. Intersections
+        outside this area are not considered. The search direction is the direction
+        in which to search for the intersection. If multiple intersections are found,
+        then the search direction determines which intersection is returned. If the
+        direction is Side.LAND_SIDE, then the point laying most Side.WATER_SIDE
+        point is returned.
+
+        The characteristic points should be defined.
+        
+        Args:
+            level: The level of the intersection
+            from_char_point: The characteristic point type to use for the start of the intersection.
+              By default, this is CharPointType.SURFACE_LEVEL_WATER_SIDE.
+            to_char_point: The characteristic point type to use for the end of the intersection.
+              By default, this is CharPointType.SURFACE_LEVEL_LAND_SIDE.
+            search_direction: The direction in which to search for the intersection.
+              By default, this is Side.LAND_SIDE.
+
+        Returns:
+            tuple[float, float]: The 2D intersection point based on the l- and z-coordinates
+            of the surface line.
+        """
+        
+        # Checks
+        self.surface_line.check_l_coordinates_present()
+        self.surface_line.check_l_coordinates_monotonic()
+        self.char_point_profile.check_l_coordinates_present()
+        self.char_point_profile.check_l_coordinates_monotonic()
+
+        # Get subsection of the surface line between the two characteristic points
+        from_point = self.char_point_profile.get_point_by_type(from_char_point)
+        to_point = self.char_point_profile.get_point_by_type(to_char_point)
+
+        points: list[Point] = []
+
+        for point in self.surface_line.points:
+            # Two conditions, accounting for two possible geometry orientations
+            if (from_point.l <= point.l <= to_point.l) or (from_point.l >= point.l >= to_point.l):
+                points.append(point)
+
+        # Get the intersection of the surface line and the given level
+        l_coords = [p.l for p in points]
+        min_l = min(l_coords)
+        max_l = max(l_coords)
+
+        shapely_surface_line = LineString([(p.l, p.z) for p in points])
+        shapely_level = LineString([(min_l, level), (max_l, level)])
+
+        intersection = shapely_surface_line.intersection(shapely_level)
+        intersection_points = geometry_to_points(intersection)
+
+        if len(intersection_points) == 0:
+            return None
+        
+        # Determine which the direction of the l-axis is
+        sign = self.char_point_profile.determine_l_direction_sign(search_direction)
+
+        # Get the intersection point
+        # If the l-axis is positive in the search direction, then the right 
+        # intersection point is the one with the minimum l-coordinate
+        if sign == 1:
+            intersection_point = min(intersection_points, key=lambda p: p.x)
+        # Otherwise, it is the intersection point with the maximum l-coordinate
+        else:
+            intersection_point = max(intersection_points, key=lambda p: p.x)
+
+        # Return the intersection point
+        return intersection_point.x, intersection_point.y
 
 
 def create_geometries(

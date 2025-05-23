@@ -20,7 +20,7 @@ from toolbox.model import Model
 from toolbox.soils import SoilCollection
 from toolbox.state import StatePoint
 from toolbox.subsoil import Subsoil
-from toolbox.water import Waternet
+from toolbox.waternet import Waternet
 
 
 def get_scenario_and_stage_index_by_label(
@@ -270,8 +270,8 @@ def set_waternet(
             points=[GLPoint(x=l, z=z) for l, z in zip(ref_line.l, ref_line.z)],
             scenario_index=scenario_index,
             stage_index=stage_index,
-            top_head_line_id=head_line_id_dict[ref_line.head_line_top],
-            bottom_headline_id=head_line_id_dict[ref_line.head_line_bottom],
+            top_head_line_id=head_line_id_dict.get(ref_line.head_line_top),
+            bottom_headline_id=head_line_id_dict.get(ref_line.head_line_bottom),
         )
 
     return dm
@@ -332,7 +332,7 @@ def create_d_stability_model(model: Model):
 
     # Add the scenarios
     for i, scenario in enumerate(model.scenarios):
-        # By default, a first stage is created by GEOLib
+        # By default, a first scenario is created by GEOLib
         if i == 0:
             dm.scenarios[0].Label = scenario.name
             dm.scenarios[0].Notes = scenario.notes
@@ -367,6 +367,7 @@ def create_d_stability_model(model: Model):
                     )
 
         for j, stage in enumerate(scenario.stages):
+            # By default, a first stage is created by GEOLib
             if j == 0:
                 dm.scenarios[dm.current_scenario].Stages[0].Label = stage.name
                 dm.scenarios[dm.current_scenario].Stages[0].Notes = stage.notes

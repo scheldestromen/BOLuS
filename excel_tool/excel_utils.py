@@ -22,14 +22,25 @@ def get_list_item_indices(li: list[str], di: dict[str, str]) -> dict[str, int]:
 
 
 def parse_row_instance(
-    sheet: Any, header_row: int, skip_rows: int, col_dict: dict[str, str]
+    sheet: Any, header_row: int, skip_rows: int, col_dict: dict[str, str] | None = None
 ) -> list[dict[str, Any]]:
     """
     Reads an Excelsheet. Every row becomes a dictionary with the keys from the col_dict based on the header_row.
     """
 
     header_list = [cell.value for cell in sheet[header_row]]
-    indices = get_list_item_indices(header_list, col_dict)
+
+    # Check if the column names are unique (there could be None column names, but this is allowed)
+    header_list_check = [header for header in header_list if header is not None]
+
+    if len(set(header_list_check)) != len(header_list_check):
+        raise ValueError(f"Duplicate names found in the column row of sheet '{sheet.title}'.\n"
+                         "Please ensure all column names are unique.")
+
+    if col_dict is not None:
+        indices = get_list_item_indices(header_list, col_dict)
+    else:
+        indices = None
 
     rows: list[dict[str, Any]] = []
 
@@ -38,13 +49,18 @@ def parse_row_instance(
         if i in list(range(skip_rows)):
             continue
 
-        row_dict = {key: row[indices[key]].value for key in col_dict}
+        if indices is not None:
+            row_dict = {key: row[indices[key]].value for key in col_dict}
 
-        first_header = next(
-            header_alias
-            for header_alias in col_dict
-            if col_dict[header_alias] == header_list[0]
-        )
+            first_header = next(
+                header_alias
+                for header_alias in col_dict
+                if col_dict[header_alias] == header_list[0]
+            )
+
+        else:
+            row_dict = {key: cell.value for key, cell in zip(header_list, row) if key is not None}
+            first_header = header_list[0]
 
         # If the first cell of the header is empty then we ignore the row
         if row_dict[first_header]:
@@ -54,11 +70,11 @@ def parse_row_instance(
 
 
 def parse_row_instance_remainder(
-    sheet: Any, header_row: int, skip_rows: int, col_dict: dict, key_remainder: str
+    sheet: Any, header_row: int, skip_rows: int, col_dict: dict[str, str], key_remainder: str
 ) -> list:
     """
     Reads an Excelsheet. Every row becomes a dictionary with the keys from the col_dict based on the header_row.
-    The columns for which the column name is not present in col_dict are parsed to the dictionary with key 'other'.
+    The columns for which the column name is not present in col_dict are parsed to the dictionary with key key_remainder.
     The values are read from the i + 1 column, where i is the position of the most right column, upto the
     first empty cell.
     """

@@ -114,7 +114,7 @@ def get_stage_by_indices(
     return stage
 
 
-def dm_batch_execute(dm_list: list[DStabilityModel]):
+def dm_batch_execute(dm_list: list[DStabilityModel]) -> list[DStabilityModel]:
     """Function for executing multiple DStabilityModels in parallel.
     The function uses a ProcessPoolExecutor. This is the preferred method for
     CPU-bound tasks.

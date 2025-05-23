@@ -17,11 +17,14 @@ from utils.geometry_utils import geometry_to_polygons
 #  - Eénmaal implementeren van get_by_name (indien a)
 #  - Eénmaal implementeren van check op dubbele namen
 
+# TODO: "Blueprint" is eigenlijk wat ik elders "Config" noem.
+
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
 
     soil_type: str
     top: float
+    is_aquifer: Optional[bool] = None
 
 
 class SoilProfile(BaseModel):
@@ -77,6 +80,7 @@ class SoilProfilePositionSet(BaseModel):
         else:
             raise ValueError(f"Could not find soil profile position with name '{name}'")
 
+
 class SoilProfilePositionSetCollection(BaseModel):
     """Collection of soil profile positions
 
@@ -94,7 +98,6 @@ class SoilProfilePositionSetCollection(BaseModel):
             return position_set
         else:
             raise ValueError(f"Could not find soil profile position set with name '{name}'")
-
 
 
 class SoilProfileCollection(BaseModel):
@@ -119,12 +122,18 @@ class SoilPolygon(BaseModel):
         soil_type (str): Type of the soil
         points (list): List of tuples each representing 2D-coordinates
         dm_layer_id (str): Optional. The id of the layer in de DStabilityModel it belongs to.
-          It is needed for adding state points and consolidations percentages due to uniform loads.
+          It is needed for adding state points and consolidations percentages related 
+          to uniform loads.
+        is_aquifer (bool): Optional. Whether the soil polygon is an aquifer. This is 
+          required when generating the waternets (pore water pressures) using the subsoil.
+          This attribute is ignored when using the methods from_geolib_layer, from_shapely 
+          or from_shapely since this attribute is not present in the input or output of these methods.
     """
 
     soil_type: str
     points: list[tuple[float, float]]
     dm_layer_id: Optional[str] = None
+    is_aquifer: Optional[bool] = None
 
     @classmethod
     def from_geolib_layer(cls, gl_layer: PersistableLayer, soil_type: str) -> Self:
@@ -191,7 +200,6 @@ class Subsoil(BaseModel):
 
         return cls(soil_polygons=soil_polygons)
 
-
     def remove_soil_polygons(self, remove_polygons: list[SoilPolygon]) -> None:
         """Substracts a polygon from the subsoil. This is done by 'clipping' the subsoil
         polygon with the polygon to substract. This is needed for adding soil layers 
@@ -201,7 +209,8 @@ class Subsoil(BaseModel):
 
         Args:
             remove_polygons (list[SoilPolygon]): The polygons to remove"""
-        
+
+        # TODO: Invoer kan beter Shapely Polygon zijn? Dat is algemener
         # Create a new list to store the modified polygons
         new_soil_polygons: list[SoilPolygon] = []
         
@@ -238,6 +247,11 @@ class Subsoil(BaseModel):
         
         # Replace the old list with the new one
         self.soil_polygons = new_soil_polygons
+
+    def get_bottom(self) -> float:
+        """Returns the minimim z-coordinate of the subsoil"""
+
+        return min(point[1] for polygon in self.soil_polygons for point in polygon.points)
 
 
 class RevetmentLayer(BaseModel):
@@ -481,7 +495,7 @@ def subsoil_from_soil_profiles(
         + [(surface_line.points[-1].l, -100)]
     )
     geometry_polygon = Polygon(geometry_points)
-    soil_polygons = []
+    soil_polygons: list[SoilPolygon] = []
 
     for i, soil_profile in enumerate(soil_profiles):
         left = bounds[i]
@@ -508,10 +522,13 @@ def subsoil_from_soil_profiles(
             polygons = geometry_to_polygons(geometry)
 
             for polygon in polygons:
-                soil_polygon = SoilPolygon.from_shapely(
-                    soil_type=layer.soil_type, polygon=polygon
-                )
-                soil_polygons.append(soil_polygon)
+                # Check if polygon is not empty
+                if not polygon.is_empty:
+                    soil_polygon = SoilPolygon.from_shapely(
+                        soil_type=layer.soil_type, polygon=polygon
+                    )
+                    soil_polygon.is_aquifer = layer.is_aquifer
+                    soil_polygons.append(soil_polygon)
 
     subsoil = Subsoil(soil_polygons=soil_polygons)
 
