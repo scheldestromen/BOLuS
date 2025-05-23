@@ -40,24 +40,6 @@ class WaterLevelCollection(BaseModel):
         return water_level_dict
 
 
-class HeadLineMethodType(StrEnum):
-    """
-    Enum defining the type of head line method."""
-
-    OFFSETS = auto()
-    INTERPOLATE_FROM_WATERNET = auto()
-
-
-class RefLineMethodType(StrEnum):
-    """
-    Enum defining the type of ref line method."""
-
-    OFFSETS = auto()
-    INTRUSION = auto()
-    AQUIFER = auto()
-    INTERMEDIATE_AQUIFER = auto()
-
-
 class WaterLevelConfig(BaseModel):
     """
     A WaterLevelConfig is the connection between the generalized water level variables
@@ -85,6 +67,24 @@ class WaterLevelConfig(BaseModel):
 
     name_waternet_scenario: str
     water_levels: dict[str, str | None]
+
+
+class HeadLineMethodType(StrEnum):
+    """
+    Enum defining the type of head line method."""
+
+    OFFSETS = auto()
+    INTERPOLATE_FROM_WATERNET = auto()
+
+
+class RefLineMethodType(StrEnum):
+    """
+    Enum defining the type of ref line method."""
+
+    OFFSETS = auto()
+    INTRUSION = auto()
+    AQUIFER = auto()
+    INTERMEDIATE_AQUIFER = auto()
 
 
 # TODO: Zou gesplitst kunnen worden per methode (net als bij ref. line zou moeten)
@@ -203,15 +203,21 @@ class WaternetConfig(BaseModel):
     @model_validator(mode='after')
     def validate_unique_names(self) -> Self:
         names = [config.name_head_line for config in self.head_line_configs]
-        if len(names) != len(set(names)):
-            raise ValueError("There can only be one head line with the same name. This is not the case for the waternet scenario "
-                             f"'{self.name_waternet_scenario}'")
+        duplicates = [name for name in names if names.count(name) > 1]
+        duplicates = list(set(duplicates))
+
+        if len(duplicates):
+            raise ValueError("There can only be one head line per scenario with the same name. This is not the case for the waternet scenario "
+                             f"'{self.name_waternet_scenario}'. Duplicates names: {', '.join(duplicates)}")
 
         if self.reference_line_configs is not None:
             names = [config.name_ref_line for config in self.reference_line_configs]
-            if len(names) != len(set(names)):
-                raise ValueError("There can only be one reference line with the same name. This is not the case for the waternet scenario "
-                                 f"'{self.name_waternet_scenario}'")
+            duplicates = [name for name in names if names.count(name) > 1]
+            duplicates = list(set(duplicates))
+
+            if len(duplicates):
+                raise ValueError("There can only be one reference line per scenario with the same name. This is not the case for the waternet scenario "
+                                 f"'{self.name_waternet_scenario}'. Duplicates names: {', '.join(duplicates)}")
 
         return self
 

@@ -30,6 +30,13 @@ def parse_row_instance(
 
     header_list = [cell.value for cell in sheet[header_row]]
 
+    # Check if the column names are unique (there could be None column names, but this is allowed)
+    header_list_check = [header for header in header_list if header is not None]
+
+    if len(set(header_list_check)) != len(header_list_check):
+        raise ValueError(f"Duplicate names found in the column row of sheet '{sheet.title}'.\n"
+                         "Please ensure all column names are unique.")
+
     if col_dict is not None:
         indices = get_list_item_indices(header_list, col_dict)
     else:

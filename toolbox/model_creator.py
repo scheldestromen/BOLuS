@@ -25,7 +25,6 @@ class GeneralSettings(BaseModel):
     calculate_l_coordinates: bool
     min_soil_profile_depth: float
     execute_calculations: bool
-    apply_waternet: bool
     output_dir: Optional[str] = None
 
 
@@ -169,7 +168,7 @@ def create_stage(
             surface_line=surface_line,
         )
 
-    if input_structure.settings.apply_waternet:
+    if stage_config.waternet_scenario_name is not None:
         waternet_config = input_structure.waternet_configs.get_by_name(
             stage_config.waternet_scenario_name
         )

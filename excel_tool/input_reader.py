@@ -58,7 +58,7 @@ INPUT_SHEETS = {
     "ref_line_configs": "Referentielijnen",
     "revetment_profile_blueprints": "Bekleding",
     "loads": "Belasting",
-    "hydraulic_pressure": "Waterspanningen",
+    # "hydraulic_pressure": "Waterspanningen",
     "grid_settings": "Gridinstellingen",
     "model_configs": "Berekeningen",
 }
@@ -69,9 +69,14 @@ SETTINGS_NAMES = {
     "Dimensie geometrie": "calculate_l_coordinates",
     "Minimale diepte ondergrond": "min_soil_profile_depth",
     "Rekenen": "execute_calculations",
-    "Waterspanningen toepassen": "apply_waternet",
     "Uitvoermap": "output_dir",
 }
+
+REQUIRED_SETTINGS = [
+    "calculate_l_coordinates",
+    "min_soil_profile_depth",
+    "execute_calculations",
+]
 
 CHAR_POINT_COLS = {
     "name": "LOCATIONID",
@@ -131,6 +136,8 @@ CHAR_POINT_COLS = {
     "z_surface_level_land_side": "Z_Maaiveld binnenwaarts",
 }
 
+REQUIRED_CHAR_POINT_COLS = CHAR_POINT_COLS.keys()
+
 SOIL_COLS = {
     "name": "Naam grondsoort",
     "unsaturated_weight": "Onverzadigd gewicht",
@@ -148,9 +155,9 @@ SOIL_COLS = {
     "shear_stress_ratio_s_std": "S std",
     "strength_exponent_m_mean": "m gem.",
     "strength_exponent_m_std": "m std",
+    "probabilistic_pop": "Probabilistische POP",
     "pop_mean": "POP gem.",
     "pop_std": "POP std",
-    "probabilistic_pop": "Probabilistische POP",
     "correlation_c-phi": "c-φ",
     "correlation_s-m": "S-m",
     "consolidation_traffic_load": "Consolidatie belasting",
@@ -158,12 +165,30 @@ SOIL_COLS = {
     "pattern": "Patroon",
 }
 
+REQUIRED_SOIL_COLS = [
+    "name",
+    "unsaturated_weight",
+    "saturated_weight",
+    "strength_model_above",
+    "strength_model_below",
+    "probabilistic_strength_parameters",
+    "consolidation_traffic_load",
+    "color",
+    "pattern",
+]
+
 SOIL_PROFILE_COLS = {
     "name": "Naam bodemprofiel",
     "soil_type": "Grondsoort",
     "top": "Bovenkant",
     "is_aquifer": "Watervoerend",
 }
+
+REQUIRED_SOIL_PROFILE_COLS = [
+    "name",
+    "soil_type",
+    "top",
+]
 
 WATER_LEVEL_LOCATION_NAME_COL = "Naam locatie"
 
@@ -175,6 +200,8 @@ HEADLINE_OFFSET_METHODS_COLS = {
     "ref_level": "Referentieniveau",
     "offset_value": "Offset / Verhang"
 }
+
+REQUIRED_HEADLINE_OFFSET_METHODS_COLS = HEADLINE_OFFSET_METHODS_COLS.keys()
 
 HEAD_LINE_CONFIG_COLS = {
     "name_waternet_scenario": "Naam waterspanningsscenario",
@@ -189,6 +216,13 @@ HEAD_LINE_CONFIG_COLS = {
     "minimal_offset_to_point": "Minimale offset tot punt",
 }
 
+REQUIRED_HEAD_LINE_CONFIG_COLS = [
+    "name_waternet_scenario",
+    "name_head_line",
+    "is_phreatic",
+    "head_line_method_type",
+]
+
 REF_LINE_CONFIG_COLS = {
     "name_waternet_scenario": "Naam waterspanningsscenario",
     "name_ref_line": "Naam referentielijn",
@@ -200,14 +234,12 @@ REF_LINE_CONFIG_COLS = {
     "intrusion_length": "Indringingslengte",
 }
 
-LOAD_COLS = {
-    "name": "Naam belasting",
-    "magnitude": "Grootte",
-    "angle": "Spreiding",
-    "width": "Breedte",
-    "position": "Positie",
-    "direction": "Richting",
-}
+REQUIRED_REF_LINE_CONFIG_COLS = [
+    "name_waternet_scenario",
+    "name_ref_line",
+    "name_head_line_top",
+    "ref_line_method_type",
+]
 
 REVERTMENT_PROFILE_COLS = {
     "revetment_profile_name": "Naam bekledingsprofiel",
@@ -217,15 +249,28 @@ REVERTMENT_PROFILE_COLS = {
     "soil_type": "Grondsoort",
 }
 
-HYDRAULIC_PRESSURE_COLS = {
-    "calc_name": "Berekening",
-    "scenario": "Scenario",
-    "stage": "Stage",
-    "type": "Type",
-    "line_name": "Naam",
-    "head_line_top": "PL-lijn bovenzijde",
-    "head_line_bottom": "PL-lijn onderzijde",
+REQUIRED_REVERTMENT_PROFILE_COLS = REVERTMENT_PROFILE_COLS.keys()
+
+LOAD_COLS = {
+    "name": "Naam belasting",
+    "magnitude": "Grootte",
+    "angle": "Spreiding",
+    "width": "Breedte",
+    "position": "Positie",
+    "direction": "Richting",
 }
+
+REQUIRED_LOAD_COLS = LOAD_COLS.keys()
+
+# HYDRAULIC_PRESSURE_COLS = {
+#     "calc_name": "Berekening",
+#     "scenario": "Scenario",
+#     "stage": "Stage",
+#     "type": "Type",
+#     "line_name": "Naam",
+#     "head_line_top": "PL-lijn bovenzijde",
+#     "head_line_bottom": "PL-lijn onderzijde",
+# }
 
 GRID_SETTINGS_COLS = {
     "name_set": "Naam set",
@@ -272,6 +317,13 @@ GRID_SETTINGS_COLS = {
     "zone_b_width": "Breedte zone B",
 }
 
+# The remaining parameters are conditional on the slip_plane_model and are excluded here
+REQUIRED_GRID_SETTINGS_COLS = [
+    "name_set",
+    "grid_setting_name",
+    "slip_plane_model",
+]
+
 CALCULATION_COLS = {
     "calc_name": "Naam",
     "scenario_name": "Scenario",
@@ -284,6 +336,15 @@ CALCULATION_COLS = {
     "load_name": "Belasting",
     "grid_settings_set_name": "Gridinstellingen",
 }
+
+REQUIRED_CALCULATION_COLS = [
+    "calc_name",
+    "scenario_name",
+    "stage_name",
+    "geometry_name",
+    "soil_profile_position_name",
+    "apply_state_points",
+]
 
 INPUT_TO_BOOL = {
     "Ja": True,
@@ -370,6 +431,21 @@ INPUT_TO_REF_LEVEL_TYPE = {
 }
 
 
+def check_required_input(
+        input_dict: dict[str, Any],
+        required_keys: list[str],
+        sheet_name: str,
+        key_ui_dict: dict[str, str],
+        ) -> bool:
+    """Checks if the required keys are present in the input dictionary"""
+
+    for key in required_keys:
+        if input_dict[key] is None:
+            raise ValueError(f"Missing value for: '{key_ui_dict[key]}' in sheet: '{sheet_name}'")
+        
+    return True
+
+
 class RawUserInput(BaseModel):
     """Represents the raw user input"""
     # TODO: Dit beter toelichten? Deze hoort hier eigenlijk niet thuis. Dit is niet specifiek Excel-gerelateerd.
@@ -377,10 +453,10 @@ class RawUserInput(BaseModel):
     # TODO: Dit is wellicht een goede plek om de validatie van de input te doen.
     # TODO: De type hints zijn wel een beetje overdreven. Overwegen om dit naar Any te zetten
 
-    settings: dict[str, str | float | None]
+    settings: dict[str, str | float | bool | None]
     surface_lines: dict[str, list[float]]
-    char_points: dict[str, dict[str, float | None]]
-    soil_params: list[dict[str, float | str | None]]
+    char_points: dict[str, dict[str, float]]
+    soil_params: list[dict[str, float | str | bool | None]]
     soil_profiles: dict[str, list[dict[str, float | str | bool | None]]]
     soil_profile_positions: dict[str, dict[str, float | None]]
     water_levels: dict[str, dict[str, float | None]]
@@ -389,10 +465,10 @@ class RawUserInput(BaseModel):
     head_line_configs: dict[str, list[dict[str, str | bool | float | CharPointType | None]]]
     ref_line_configs: dict[str, list[dict[str, str | float | None]]]
     revetment_profile_blueprints: dict[str, list[dict[str, str | float]]]
-    loads: list[dict]
-    hydraulic_pressure: dict
-    grid_settings: dict[str, list]
-    model_configs: list[dict]
+    loads: list[dict[str, str | float | None]]
+    # hydraulic_pressure: dict[str, list[dict[str, str | float | None]]]
+    grid_settings: dict[str, list[dict[str, str | float | None]]]
+    model_configs: list[dict[str, Any]]   # To nested to be of use here
 
 
 class ExcelInputReader(BaseModel):
@@ -418,13 +494,13 @@ class ExcelInputReader(BaseModel):
             ref_line_configs=ExcelInputReader.parse_ref_line_configs(workbook),
             revetment_profile_blueprints=ExcelInputReader.parse_revetment_profile_blueprints(workbook),
             loads=ExcelInputReader.parse_loads(workbook),
-            hydraulic_pressure=ExcelInputReader.parse_hydraulic_pressure(workbook),
+            # hydraulic_pressure=ExcelInputReader.parse_hydraulic_pressure(workbook),
             grid_settings=ExcelInputReader.parse_grid_settings(workbook),
             model_configs=ExcelInputReader.parse_model_configs(workbook),
         )
 
     @staticmethod
-    def parse_settings(workbook: Any) -> dict[str, str | float]:
+    def parse_settings(workbook: Any) -> dict[str, str | float | bool | None]:
         settings = parse_key_value_cols(
             sheet=workbook[INPUT_SHEETS["settings"]],
             header_row=1,
@@ -437,12 +513,14 @@ class ExcelInputReader(BaseModel):
         settings["execute_calculations"] = INPUT_TO_BOOL[
             settings["execute_calculations"]
         ]
-        settings["apply_waternet"] = INPUT_TO_BOOL[
-            settings["apply_waternet"]
-        ]
         settings["calculate_l_coordinates"] = INPUT_TO_CALCULATE_L_COORDINATES[
             settings["calculate_l_coordinates"]
         ]
+
+        inverted_settings_names = {v: k for k, v in SETTINGS_NAMES.items()}
+
+        check_required_input(settings, REQUIRED_SETTINGS, INPUT_SHEETS["settings"], inverted_settings_names)
+
         return settings
 
     @staticmethod
@@ -450,6 +528,12 @@ class ExcelInputReader(BaseModel):
         surface_lines = parse_key_row(
             sheet=workbook[INPUT_SHEETS["surface_lines"]], skip_rows=1
         )
+
+        # Check for duplicate names
+        surface_line_names = surface_lines.keys()
+        if len(surface_line_names) != len(set(surface_line_names)):
+            raise ValueError(f"Duplicate surface line names found: {surface_line_names}.\n"
+                             "Please ensure all surface line names are unique.")
 
         return surface_lines
 
@@ -470,7 +554,7 @@ class ExcelInputReader(BaseModel):
         return char_points
 
     @staticmethod
-    def parse_soil_params(workbook: Any) -> list[dict[str, float | str | None]]:
+    def parse_soil_params(workbook: Any) -> list[dict[str, float | str | bool | None]]:
         soil_params = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["soil_params"]],
             header_row=2,
@@ -487,6 +571,8 @@ class ExcelInputReader(BaseModel):
             soil_param["correlation_c-phi"] = INPUT_TO_BOOL.get(soil_param["correlation_c-phi"])
             soil_param["correlation_s-m"] = INPUT_TO_BOOL.get(soil_param["correlation_s-m"])
 
+            check_required_input(soil_param, REQUIRED_SOIL_COLS, INPUT_SHEETS["soil_params"], SOIL_COLS)
+
         return soil_params
 
     @staticmethod
@@ -500,6 +586,8 @@ class ExcelInputReader(BaseModel):
         for soil_profile in soil_profiles:
             soil_profile["is_aquifer"] = INPUT_TO_BOOL.get(soil_profile["is_aquifer"])
 
+            check_required_input(soil_profile, REQUIRED_SOIL_PROFILE_COLS, INPUT_SHEETS["soil_profiles"], SOIL_PROFILE_COLS)
+
         soil_profiles = group_dicts_by_key(soil_profiles, group_by_key="name")
         return soil_profiles
 
@@ -511,6 +599,11 @@ class ExcelInputReader(BaseModel):
             sheet=workbook[INPUT_SHEETS["soil_profile_positions"]],
             skip_rows=2,
         )
+        # Check for duplicate names
+        soil_profile_names = soil_profile_positions_raw.keys()
+        if len(soil_profile_names) != len(set(soil_profile_names)):
+            raise ValueError(f"Duplicate names found in the sheet '{INPUT_SHEETS['soil_profile_positions']}'.\n"
+                             "Please ensure all names are unique.")
 
         # Process soil profile positions
         soil_profile_positions = {}
@@ -533,6 +626,9 @@ class ExcelInputReader(BaseModel):
             header_row=2,
             skip_rows=2,
         )
+        # Check for duplicate names
+        check_list_of_dicts_for_duplicate_values(water_levels, WATER_LEVEL_LOCATION_NAME_COL)
+
         # Assign name as key and remove name from dict
         water_level_dict = {
             row[WATER_LEVEL_LOCATION_NAME_COL]: remove_key(row, WATER_LEVEL_LOCATION_NAME_COL)
@@ -548,6 +644,9 @@ class ExcelInputReader(BaseModel):
             header_row=2,
             skip_rows=2,
         )
+        # check for duplicate names
+        check_list_of_dicts_for_duplicate_values(water_level_configs, WATER_LEVEL_CONFIG_NAME_COL)
+
         # Assign name as key and remove name from dict
         water_level_configs_dict = {
             row[WATER_LEVEL_CONFIG_NAME_COL]: remove_key(row, WATER_LEVEL_CONFIG_NAME_COL)
@@ -667,30 +766,31 @@ class ExcelInputReader(BaseModel):
 
         return loads
 
+    # TODO: Wellicht voor uitzonderingen?
+    # @staticmethod
+    # def parse_hydraulic_pressure(workbook: Any):
+    #     hydraulic_pressure = parse_row_instance_remainder(
+    #         sheet=workbook[INPUT_SHEETS["hydraulic_pressure"]],
+    #         header_row=1,
+    #         skip_rows=3,
+    #         col_dict=HYDRAULIC_PRESSURE_COLS,
+    #         key_remainder="values",
+    #     )
+
+    #     # Preprocess hydraulic_pressure
+    #     for line_dict in hydraulic_pressure:
+    #         line_dict["type"] = INPUT_TO_WATER_LINE_TYPE.get(line_dict["type"])
+
+    #     # Create structured dict {calc_name: {scenario: {stage: {...}}}}
+    #     hydraulic_pressure = list_to_nested_dict(
+    #         hydraulic_pressure,
+    #         keys=["calc_name", "scenario", "stage"],
+    #         remove_group_key=True,
+    #     )
+    #     return hydraulic_pressure
+
     @staticmethod
-    def parse_hydraulic_pressure(workbook: Any):
-        hydraulic_pressure = parse_row_instance_remainder(
-            sheet=workbook[INPUT_SHEETS["hydraulic_pressure"]],
-            header_row=1,
-            skip_rows=3,
-            col_dict=HYDRAULIC_PRESSURE_COLS,
-            key_remainder="values",
-        )
-
-        # Preprocess hydraulic_pressure
-        for line_dict in hydraulic_pressure:
-            line_dict["type"] = INPUT_TO_WATER_LINE_TYPE.get(line_dict["type"])
-
-        # Create structured dict {calc_name: {scenario: {stage: {...}}}}
-        hydraulic_pressure = list_to_nested_dict(
-            hydraulic_pressure,
-            keys=["calc_name", "scenario", "stage"],
-            remove_group_key=True,
-        )
-        return hydraulic_pressure
-
-    @staticmethod
-    def parse_grid_settings(workbook: Any) -> dict[str, list]:
+    def parse_grid_settings(workbook: Any) -> dict[str, list[dict[str, str | float | None]]]:
         grid_settings = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["grid_settings"]],
             header_row=2,
@@ -732,13 +832,14 @@ class ExcelInputReader(BaseModel):
                 line_dict[key] = INPUT_TO_BOOL.get(line_dict[key])
 
         grid_settings = group_dicts_by_key(grid_settings, group_by_key="name_set")
+        
         for grid_setting in grid_settings.values():
             check_list_of_dicts_for_duplicate_values(grid_setting, "grid_setting_name")
 
         return grid_settings
 
     @staticmethod
-    def parse_model_configs(workbook: Any) -> list[dict]:
+    def parse_model_configs(workbook: Any) -> list[dict[str, str | float | bool | None]]:
         model_config_rows = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["model_configs"]],
             header_row=2,
@@ -775,6 +876,10 @@ class ExcelInputReader(BaseModel):
                 scenario_rows = [
                     row for row in calc_rows if row["scenario_name"] == scenario_name
                 ]
+                # Check for duplicate stage names
+                check_list_of_dicts_for_duplicate_values(scenario_rows, "stage_name")
+
+                # Get the grid_settings_set_name and check if there is one at max.
                 grid_settings_set_name_list = [
                     row["grid_settings_set_name"]
                     for row in scenario_rows
@@ -1081,9 +1186,9 @@ class RawInputToUserInputStructure:
             intersection = set(hlc_scenario_names) & set(wlc_scenario_names)
             difference = union - intersection
 
-            raise ValueError("The head line scenario names and the water level scenario names do not match."
-                             f"The following scenario names are not present in all input sheets:"
-                             f"{difference}")
+            raise ValueError("The head line scenario names and the water level scenario names do not match. "
+                             f"The following scenario names are not present in all input sheets: "
+                             f"{', '.join(difference)}")
 
         waternet_configs: list[WaternetConfig] = []
 
@@ -1112,6 +1217,7 @@ class RawInputToUserInputStructure:
 
         return WaternetConfigCollection(waternet_configs=waternet_configs)
 
+    # TODO: refactor - niet alleen headlines want ook reflines. Dus line_offset_methods
     @staticmethod
     def convert_headline_offset_methods(
             headline_offset_methods_dict: dict[str, list[dict[str, str | float | None]]]) -> LineOffsetMethodCollection:

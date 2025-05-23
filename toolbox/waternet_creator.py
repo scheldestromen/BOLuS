@@ -66,6 +66,16 @@ class LineOffsetMethod(BaseModel):
     name_method: str
     offset_points: list[LineOffsetPoint]
 
+    @model_validator(mode='after')
+    def validate_offset_points(self) -> Self:
+        # Check for duplicate char points
+        char_point_types = [p.char_point_type for p in self.offset_points]
+        if len(set(char_point_types)) != len(char_point_types):
+            raise ValueError(f"Duplicate characteristic points found in the offset method '{self.name_method}'. "
+                             f"Please ensure all characteristic points occur only once at maximum.")
+
+        return self
+
     def _get_reference_level(
             self,
             index: int,
@@ -93,6 +103,7 @@ class LineOffsetMethod(BaseModel):
             if index == 0:
                 raise ValueError(f"The head of the first outward point cannot be related to a previous point. "
                                  f"This is the case for the waternet '{self.name_method}'")
+            # Get the z-value of the previous point - this is the last level in the list
             ref_level = z[-1]
 
         else:
@@ -239,7 +250,7 @@ class Aquifer(BaseModel):
     name_ref_line_intrusion_bottom: Optional[str] = None
 
 
-# TODO wordt niet gebruikt
+# TODO wordt niet gebruikt - Beter naar apparte module verhuizen
 class GetAquifersFromSubsoil(BaseModel):
     @staticmethod
     def _get_and_merge_aquifer_polygons(subsoil: Subsoil) -> list[Polygon]:
@@ -1965,6 +1976,13 @@ class WaternetCreator(BaseModel):
     def create_waternet(self) -> Waternet:
         # Get water levels - this is based on the geometry name since water levels are location bound
         location_water_levels = self.input.water_level_collection.get_by_name(self.input.geometry.name)
+
+        # Check if the water levels are present in the location water levels
+        for k, v in self.input.waternet_config.water_level_config.water_levels.items():
+            if v is not None and v not in location_water_levels:
+                raise ValueError(
+                    f"The water level '{v}' used for the water level variable '{k}' was not found."
+                    )
 
         # Rename the water levels to the generalized water level names
         water_level_set = {
