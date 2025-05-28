@@ -1081,8 +1081,8 @@ class PhreaticLineModifier(BaseModel):
     """Factory for modifying a head line representing a phreatic line"""
 
     geometry: Geometry
-    outward_intersection: Optional[tuple[float, float]] = None
-    inward_intersection: Optional[tuple[float, float]] = None
+    _outward_intersection: Optional[tuple[float, float]] = None
+    _inward_intersection: Optional[tuple[float, float]] = None
 
     def process_outward_intersection_phreatic_line(self, head_line: HeadLine) -> HeadLine:
         surface_level_outward = self.geometry.char_point_profile.get_point_by_type(

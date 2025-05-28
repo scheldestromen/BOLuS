@@ -2,16 +2,19 @@ import numpy as np
 from shapely import GeometryCollection, MultiPolygon, Point, Polygon, LineString, MultiLineString, MultiPoint, LinearRing
 from shapely.ops import orient
 from shapely import offset_curve
-from typing import Literal
+from typing import Literal, Union
+
+# Type alias for all possible Shapely geometry types
+GeometryType = Union[Point, LineString, LinearRing, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection]
 
 
-def geometry_to_polygons(geometry) -> list[Polygon]:
+def geometry_to_polygons(geometry: GeometryType) -> list[Polygon]:
     """
     Reduces any geometry or collection of geometries into a
     flat list of Shapely Polygons.
     """
-    polygons = []
-    queue = [geometry]  # Use a queue to process geometries
+    polygons: list[Polygon] = []
+    queue: list[GeometryType] = [geometry]  # Use a queue to process geometries
 
     while queue:
         current = queue.pop(0)  # Get the first item in the queue
@@ -30,13 +33,13 @@ def geometry_to_polygons(geometry) -> list[Polygon]:
     return polygons
 
 
-def geometry_to_points(geometry) -> list[Point]:
+def geometry_to_points(geometry: GeometryType) -> list[Point]:
     """
     Reduces any Shapely geometry or Shapely collection of geometries into a
     flat list of Shapely Points.
     """
-    points = []
-    queue = [geometry]
+    points: list[Point] = []
+    queue: list[GeometryType] = [geometry]
 
     while queue:
         current = queue.pop(0)
