@@ -1,11 +1,13 @@
 import numpy as np
-from shapely import GeometryCollection, MultiPolygon, Point, Polygon, LineString, MultiLineString, MultiPoint, LinearRing
+from shapely import GeometryCollection, MultiPolygon, Point, Polygon, LineString, MultiLineString, MultiPoint, \
+    LinearRing
 from shapely.ops import orient
 from shapely import offset_curve
 from typing import Literal, Union
 
 # Type alias for all possible Shapely geometry types
-GeometryType = Union[Point, LineString, LinearRing, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection]
+GeometryType = Union[
+    Point, LineString, LinearRing, Polygon, MultiPoint, MultiLineString, MultiPolygon, GeometryCollection]
 
 
 def geometry_to_polygons(geometry: GeometryType) -> list[Polygon]:
@@ -69,8 +71,9 @@ def geometry_to_points(geometry: GeometryType) -> list[Point]:
 
     return points
 
+
 def determine_point_in_polygon(
-    polygon: Polygon, shift: float = 0.01
+        polygon: Polygon, shift: float = 0.01
 ) -> tuple[float, float]:
     """Determines a point in a polygon.
 
@@ -87,7 +90,7 @@ def determine_point_in_polygon(
 
     Returns:
         A tuple of (x, y) coordinates of the point lying inside the polygon"""
-    
+
     centroid = polygon.centroid
 
     # Check if centroid is within the polygon
@@ -105,7 +108,7 @@ def determine_point_in_polygon(
     # Determine unity vector to the nearest point
     dx = nearest_point.x - centroid.x
     dy = nearest_point.y - centroid.y
-    length = (dx**2 + dy**2) ** 0.5
+    length = (dx ** 2 + dy ** 2) ** 0.5
     unit_vector = (dx / length, dy / length)
 
     new_point_coord = (
@@ -152,13 +155,13 @@ def get_polygon_top_or_bottom(polygon: Polygon, top_or_bottom: Literal["top", "b
     if top_or_bottom == "top":
         start = x_min_points[-1]
         end = x_max_points[-1]
-    
+
     # Get the lowest point on x_min and x_max
     # Start is now the lowest point on x_max, because the direction is clockwise
     else:
         start = x_max_points[0]
         end = x_min_points[0]
-        
+
     # Get the index of the start of the top or bottom side
     i_start = poly_points.index(start)
 
@@ -178,7 +181,9 @@ def get_polygon_top_or_bottom(polygon: Polygon, top_or_bottom: Literal["top", "b
 
 
 def offset_line(line: LineString, offset: float, above_or_below: Literal["above", "below"]) -> LineString:
-    """Offsets a line by a given distance.
+    """Offsets a line by a given distance. The offset is applied perpendicular
+    to the given LineString. If the ends of the LineString are non-horizontal
+    then the resulting LineString will have bounds not equal to the given LineString.
 
     Args:
         line: A Shapely LineString
@@ -188,17 +193,17 @@ def offset_line(line: LineString, offset: float, above_or_below: Literal["above"
 
     Returns: 
         A Shapely LineString"""
-    
+
     offset_line_strings = [
         offset_curve(line, distance=offset)
         for offset in [offset, -offset]
-    ] 
+    ]
     offset_lines_coords = [
         [(p[0], p[1]) for p in line.coords]
         for line in offset_line_strings
-    ]           
+    ]
 
-    # Select the higer or lower line - depending on the above_or_below argument
+    # Select the higher or lower line - depending on the above_or_below argument
     if above_or_below == "above":
         offset_line_coords = max(offset_lines_coords, key=lambda lst: max(t[1] for t in lst))
     else:
@@ -211,12 +216,11 @@ def offset_line(line: LineString, offset: float, above_or_below: Literal["above"
 
 
 def point_is_redundant(
-        p1: tuple[float, float], 
-        p2: tuple[float, float], 
-        p3: tuple[float, float], 
+        p1: tuple[float, float],
+        p2: tuple[float, float],
+        p3: tuple[float, float],
         tolerance: float
-        ) -> bool:
-    
+) -> bool:
     x1, y1 = p1
     x2, y2 = p2
     x3, y3 = p3
@@ -234,10 +238,10 @@ def point_is_redundant(
 
 
 def simplify_line(
-        x: list[float], 
-        y: list[float], 
+        x: list[float],
+        y: list[float],
         tolerance: float
-        ) -> tuple[list[float], list[float]]:
+) -> tuple[list[float], list[float]]:
     """Simplifies a line by reducing the number of points.
 
     Per set of three points it is checked if the middle point is 
@@ -277,10 +281,10 @@ def simplify_line(
 
 
 def linear_interpolation(
-        x: float, 
-        xp: list[float], 
+        x: float,
+        xp: list[float],
         fp: list[float]
-    ) -> float:
+) -> float:
     """Performs linear interpolation on a list of x and y coordinates.
     The x-coordinates must be monotonically increasing or decreasing.
     Equal values are NOT allowed.
@@ -292,13 +296,13 @@ def linear_interpolation(
 
     Returns:
         The y-coordinate of the interpolated point"""
-    
+
     # Check if x is within the range of xp
     if x < min(xp) or x > max(xp):
         raise ValueError(
             f"x-coordinate {x} is outside the range of x-coordinates [{min(xp)}, {max(xp)}]"
-            )
-    
+        )
+
     # Check if xp is monotonically increasing or decreasing
     if not np.all(np.diff(xp) > 0) and not np.all(np.diff(xp) < 0):
         raise ValueError(
@@ -306,10 +310,10 @@ def linear_interpolation(
             "(equal values are allowed).\n"
             f"The x-coordinates are: {xp}\n"
             f"The y-coordinates are: {fp}"
-            )
+        )
 
     # Sort the x and y coordinates
     xp, fp = zip(*sorted(zip(xp, fp), key=lambda p: p[0]))
-    
+
     # Perform linear interpolation
     return np.interp(x, xp, fp)

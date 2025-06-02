@@ -1,7 +1,7 @@
 from pydantic import BaseModel, model_validator, Field
 from enum import StrEnum, auto
 from typing import Optional, Self, Literal
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import Polygon, LineString, GeometryCollection
 from shapely.ops import unary_union
 
 from toolbox.geometry import CharPointType, CharPoint
@@ -1266,7 +1266,7 @@ class PhreaticLineModifier(BaseModel):
         polygon_bottom = z_min - 1.
         polygon_top = z_max + 1.
 
-        # Make shapely polygon of the surface line
+        # Make shapely polygon of the surface line (possibly with offset)
         surface_line_points = [
             (surface_line_l[0], polygon_bottom),
             *list(zip(surface_line_l, surface_line_z)),
@@ -1363,12 +1363,16 @@ class PhreaticLineModifier(BaseModel):
         if not isinstance(correction_zone, Polygon):
             return head_line
 
+        surface_line_l_original = [p.l for p in self.geometry.surface_line.points]
+        l_surf_min = min(surface_line_l_original)
+        l_surf_max = max(surface_line_l_original)
+
         # Create a bounding box of the surface line and phreatic line
         bbox = Polygon([
-            (surface_line_l[0], polygon_bottom),
-            (surface_line_l[0], polygon_top),
-            (surface_line_l[-1], polygon_top),
-            (surface_line_l[-1], polygon_bottom),
+            (l_surf_min, polygon_bottom),
+            (l_surf_min, polygon_top),
+            (l_surf_max, polygon_top),
+            (l_surf_max, polygon_bottom),
         ])
 
         # Create a non-correction zone by subtracting the correction zone from the bounding box
@@ -1387,6 +1391,16 @@ class PhreaticLineModifier(BaseModel):
         if isinstance(phreatic_polygon_corrected, Polygon):
             # Extract the coordinates of the corrected phreatic line
             phreatic_line_string = get_polygon_top_or_bottom(phreatic_polygon_corrected, top_or_bottom="top")
+
+        elif isinstance(phreatic_polygon_corrected, GeometryCollection):
+            # Ignore Points and LineStrings (LineStrings can occur in some situations, but are not logical to include)
+            polygons = geometry_to_polygons(phreatic_polygon_corrected)
+
+            if len(polygons) != 1:
+                raise ValueError("Something went wrong when maximizing the phreatic line to the surface level")
+            
+            phreatic_line_string = get_polygon_top_or_bottom(polygons[0], top_or_bottom="top")
+        
         else:
             raise ValueError("Something went wrong when maximizing the phreatic line to the surface level")
 
