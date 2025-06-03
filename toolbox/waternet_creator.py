@@ -1181,7 +1181,7 @@ class PhreaticLineModifier(BaseModel):
         )
 
         if self._inward_intersection is not None:
-            # Delete head line points between the intersection and the last point of the head line
+            # Delete head line points between the intersection and the last point of tkhe head line
             l_inward = surface_level_inward.l
             l_intersection = self._inward_intersection[0]
 
