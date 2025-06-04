@@ -16,8 +16,6 @@ class WaterLine(BaseModel):
 
     The l-coordinates should be monotonically increasing, decreasing 
     or equal.
-
-    Coordinates are rounded to 3 decimal places.
     
     Attributes:
         name (str): Name (label) of the line

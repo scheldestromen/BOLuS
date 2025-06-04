@@ -223,18 +223,18 @@ class Subsoil(BaseModel):
                 
                 if soil_polygon_shapely.intersects(polygon_shapely):
                     should_keep = False
-                    clipped_polygon = soil_polygon_shapely.difference(polygon_shapely)
+                    clipped_polygon = soil_polygon_shapely.difference(polygon_shapely, grid_size=0.001)
                     
                     # Handle different geometry types
                     if isinstance(clipped_polygon, (GeometryCollection, MultiPolygon)):
                         for geom in clipped_polygon.geoms:
-                            if isinstance(geom, Polygon):
+                            if isinstance(geom, Polygon) and not geom.is_empty:
                                 new_soil_polygon = SoilPolygon.from_shapely(
                                     soil_type=soil_polygon.soil_type, polygon=geom
                                 )
                                 new_soil_polygons.append(new_soil_polygon)
 
-                    elif isinstance(clipped_polygon, Polygon):
+                    elif isinstance(clipped_polygon, Polygon) and not clipped_polygon.is_empty:
                         new_soil_polygon = SoilPolygon.from_shapely(
                             soil_type=soil_polygon.soil_type, polygon=clipped_polygon
                         )
@@ -300,7 +300,7 @@ class RevetmentLayer(BaseModel):
         )
 
         # Clip the buffered surface line to the helper polygon
-        clipped_buffer = buffer.intersection(helper_polygon)
+        clipped_buffer = buffer.intersection(helper_polygon, grid_size=0.001)
 
         # Split the clipped buffer by the surface line
         split_buffer = split(clipped_buffer, shapely_surface_line)
@@ -311,6 +311,9 @@ class RevetmentLayer(BaseModel):
         # Get the lower polygon (under the surface line). This is the revetment layer
         min_y_coord = min(p.bounds[1] for p in split_buffer.geoms)
         revetment_layer = next(p for p in split_buffer.geoms if p.bounds[1] == min_y_coord)
+
+        if not isinstance(revetment_layer, Polygon):
+            raise ValueError("Something went wrong creating a revetment layer")
 
         return SoilPolygon.from_shapely(soil_type=self.soil_type, polygon=revetment_layer)
 

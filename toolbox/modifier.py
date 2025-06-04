@@ -322,7 +322,7 @@ def add_calculation_with_grid_settings(
 # TODO: refactor
 def create_d_stability_model(model: Model):
     """Creates new calculations with the given models"""
-
+    print(model.name)
     dm = DStabilityModel()
 
     # Remove standard input
