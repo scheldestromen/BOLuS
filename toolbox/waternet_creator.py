@@ -1,7 +1,7 @@
 from pydantic import BaseModel, model_validator, Field
 from enum import StrEnum, auto
 from typing import Optional, Self, Literal
-from shapely.geometry import Polygon, LineString
+from shapely.geometry import Polygon, LineString, GeometryCollection
 from shapely.ops import unary_union
 
 from toolbox.geometry import CharPointType, CharPoint
@@ -60,6 +60,54 @@ class LineOffsetPoint(BaseModel):
                              f"reference level type is {RefLevelType.FIXED_LEVEL}")
 
         return self
+
+
+def add_outer_points_if_missing(
+        l_coords: list[float],
+        z_coords: list[float],
+        geometry: Geometry
+) -> tuple[list[float], list[float]]:
+    """Add points to the line at the surface level land side and water side if they 
+    are not yet present. The height of the added points is the same as the height of 
+    the last known point on the given line."""
+
+    # Get the l-values of outer characteristic points
+    l_surface_level_land_side = geometry.char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_LAND_SIDE).l
+    l_surface_level_water_side = geometry.char_point_profile.get_point_by_type(CharPointType.SURFACE_LEVEL_WATER_SIDE).l
+
+    # Determine the last land side and water side points known on the line
+    # This is based on the distance from the outer line points to the surface level points
+    if abs(l_coords[0] - l_surface_level_land_side) < abs(l_coords[-1] - l_surface_level_land_side):
+        index_last_land_side_point = 0
+        index_last_water_side_point = -1
+    else:
+        index_last_land_side_point = -1
+        index_last_water_side_point = 0
+
+    # Add the points at the surface level land side and water side if they are not yet present
+    if l_coords[index_last_water_side_point] != l_surface_level_water_side:
+        # Check value of index for ensuring the right point order
+        # If the point has index 0, then it is the first point and we need to insert it
+        if index_last_water_side_point == 0:
+            l_coords.insert(0, l_surface_level_water_side)
+            z_coords.insert(0, z_coords[0])
+        # If the point has index -1, then it is the last point and we need to append it
+        else:
+            l_coords.append(l_surface_level_water_side)
+            z_coords.append(z_coords[-1])
+
+    if l_coords[index_last_land_side_point] != l_surface_level_land_side:
+        # Check value of index for ensuring the right point order
+        # If the point has index 0, then it is the first point and we need to insert it
+        if index_last_land_side_point == 0:
+            l_coords.insert(0, l_surface_level_land_side)
+            z_coords.insert(0, z_coords[0])
+        # If the point has index -1, then it is the last point and we need to append it
+        else:
+            l_coords.append(l_surface_level_land_side)
+            z_coords.append(z_coords[-1])
+
+    return l_coords, z_coords
 
 
 class LineOffsetMethod(BaseModel):
@@ -137,6 +185,7 @@ class LineOffsetMethod(BaseModel):
 
         return head_level
 
+    # TODO: Vervangen voor generieke functie (add_outer_points_if_missing)
     @staticmethod
     def _add_outer_points_if_needed(
         head_line_l: list[float], 
@@ -250,7 +299,7 @@ class Aquifer(BaseModel):
     name_ref_line_intrusion_bottom: Optional[str] = None
 
 
-# TODO wordt niet gebruikt - Beter naar apparte module verhuizen
+# TODO wordt niet gebruikt - Beter naar aparte module verhuizen
 class GetAquifersFromSubsoil(BaseModel):
     @staticmethod
     def _get_and_merge_aquifer_polygons(subsoil: Subsoil) -> list[Polygon]:
@@ -1081,8 +1130,8 @@ class PhreaticLineModifier(BaseModel):
     """Factory for modifying a head line representing a phreatic line"""
 
     geometry: Geometry
-    outward_intersection: Optional[tuple[float, float]] = None
-    inward_intersection: Optional[tuple[float, float]] = None
+    _outward_intersection: Optional[tuple[float, float]] = None
+    _inward_intersection: Optional[tuple[float, float]] = None
 
     def process_outward_intersection_phreatic_line(self, head_line: HeadLine) -> HeadLine:
         surface_level_outward = self.geometry.char_point_profile.get_point_by_type(
@@ -1132,7 +1181,7 @@ class PhreaticLineModifier(BaseModel):
         )
 
         if self._inward_intersection is not None:
-            # Delete head line points between the intersection and the last point of the head line
+            # Delete head line points between the intersection and the last point of tkhe head line
             l_inward = surface_level_inward.l
             l_intersection = self._inward_intersection[0]
 
@@ -1217,7 +1266,7 @@ class PhreaticLineModifier(BaseModel):
         polygon_bottom = z_min - 1.
         polygon_top = z_max + 1.
 
-        # Make shapely polygon of the surface line
+        # Make shapely polygon of the surface line (possibly with offset)
         surface_line_points = [
             (surface_line_l[0], polygon_bottom),
             *list(zip(surface_line_l, surface_line_z)),
@@ -1314,12 +1363,16 @@ class PhreaticLineModifier(BaseModel):
         if not isinstance(correction_zone, Polygon):
             return head_line
 
+        surface_line_l_original = [p.l for p in self.geometry.surface_line.points]
+        l_surf_min = min(surface_line_l_original)
+        l_surf_max = max(surface_line_l_original)
+
         # Create a bounding box of the surface line and phreatic line
         bbox = Polygon([
-            (surface_line_l[0], polygon_bottom),
-            (surface_line_l[0], polygon_top),
-            (surface_line_l[-1], polygon_top),
-            (surface_line_l[-1], polygon_bottom),
+            (l_surf_min, polygon_bottom),
+            (l_surf_min, polygon_top),
+            (l_surf_max, polygon_top),
+            (l_surf_max, polygon_bottom),
         ])
 
         # Create a non-correction zone by subtracting the correction zone from the bounding box
@@ -1338,6 +1391,16 @@ class PhreaticLineModifier(BaseModel):
         if isinstance(phreatic_polygon_corrected, Polygon):
             # Extract the coordinates of the corrected phreatic line
             phreatic_line_string = get_polygon_top_or_bottom(phreatic_polygon_corrected, top_or_bottom="top")
+
+        elif isinstance(phreatic_polygon_corrected, GeometryCollection):
+            # Ignore Points and LineStrings (LineStrings can occur in some situations, but are not logical to include)
+            polygons = geometry_to_polygons(phreatic_polygon_corrected)
+
+            if len(polygons) != 1:
+                raise ValueError("Something went wrong when maximizing the phreatic line to the surface level")
+            
+            phreatic_line_string = get_polygon_top_or_bottom(polygons[0], top_or_bottom="top")
+        
         else:
             raise ValueError("Something went wrong when maximizing the phreatic line to the surface level")
 
@@ -1346,6 +1409,7 @@ class PhreaticLineModifier(BaseModel):
         head_line.z = [p[1] for p in phreatic_points]
 
         return head_line
+
 
 class ReferenceLineCorrector(BaseModel):
     """Corrects the crossing of the phreatic reference line and 
@@ -1596,7 +1660,7 @@ class ReferenceLineCorrector(BaseModel):
             phreatic_ref_line is not None 
             and intrusion_ref_line_related_to_phreatic is not None
             and top_aquifer_intrusion_ref_line_top is not None
-            ):
+        ):
             # Now we have two sets of two lines to check, in the following order:
             # a. intrusion phreatic ref. line and intrusion top aquifer ref. line
             # b. phreatic ref. line and the top aquifer ref. line
@@ -1622,7 +1686,7 @@ class ReferenceLineCorrector(BaseModel):
             phreatic_ref_line is not None 
             and intrusion_ref_line_related_to_phreatic is not None
             and top_aquifer_intrusion_ref_line_top is None
-            ):
+        ):
             # a.
             correct_crossing_reference_lines(
                 top_ref_line=intrusion_ref_line_related_to_phreatic,
@@ -1640,7 +1704,7 @@ class ReferenceLineCorrector(BaseModel):
             )
 
         else:
-            raise ValueError("An error occured correcting the reference lines between the "
+            raise ValueError("An error occurred correcting the reference lines between the "
                              "surface level and the first aquifer. ")
 
         return ref_lines
@@ -1818,6 +1882,11 @@ class WaternetCreator(BaseModel):
                 if rl.head_line_top == head_line_config.name_head_line
                 or rl.head_line_bottom == head_line_config.name_head_line
             ]
+
+            # If there is no coupled ref. line, then it is an aquifer method in 
+            # a calculation where the aquifer is not present. We skip it.
+            if len(coupled_ref_lines) == 0:
+                continue
 
             if len(coupled_ref_lines) > 1:
                 raise ValueError(
@@ -2024,12 +2093,19 @@ class WaternetCreator(BaseModel):
                     soil_bottom=self.input.subsoil.get_bottom()
                 )
                 
-        # Correct the ref. lines with equal l-values to ensure a correct order
+        # Correct the ref. lines with equal l-values to ensure a correct order and
+        # add outer points to the ref. lines if they are not yet present
         for ref_line in ref_lines:
             points = [[l, z] for l, z in zip(ref_line.l, ref_line.z)]
             points = shift_points_with_equal_l_values(points)
             ref_line.l = [p[0] for p in points]
             ref_line.z = [p[1] for p in points]
+
+            ref_line.l, ref_line.z = add_outer_points_if_missing(
+                l_coords=ref_line.l,
+                z_coords=ref_line.z,
+                geometry=self.input.geometry
+            )
 
         # Determine head line at ref line from another stage (if applicable)
         head_lines.extend(self.create_head_lines_interpolate_from_waternet(ref_lines=ref_lines))

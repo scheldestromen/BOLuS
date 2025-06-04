@@ -145,15 +145,12 @@ class ProfileLine(BaseModel):
             dist_from_left = point.distance(left_point)
             point.l = dist_from_left - shift
         
-        self.check_l_coordinates_monotonic()
 
     def set_x_as_l_coordinates(self):
         """Sets the x-coordinates as the l-coordinates"""
 
         for point in self.points:
             point.l = point.x
-        
-        self.check_l_coordinates_monotonic()
 
     def get_z_at_l(self, l: float) -> float:
         """Returns the z-coordinate at a given l-coordinate
@@ -387,7 +384,6 @@ class Geometry(BaseModel):
         self.surface_line.check_l_coordinates_present()
         self.surface_line.check_l_coordinates_monotonic()
         self.char_point_profile.check_l_coordinates_present()
-        self.char_point_profile.check_l_coordinates_monotonic()
 
         # Get subsection of the surface line between the two characteristic points
         from_point = self.char_point_profile.get_point_by_type(from_char_point)
@@ -487,11 +483,13 @@ def create_geometries(
         if calculate_l_coordinates:
             left_point = char_points_profile.get_point_by_type(char_type_left_point)
             surface_line.set_l_coordinates(left_point=left_point, ref_point=ref_point)
+            surface_line.check_l_coordinates_monotonic()
             char_points_profile.set_l_coordinates(
                 left_point=left_point, ref_point=ref_point
             )
         else:
             surface_line.set_x_as_l_coordinates()
+            surface_line.check_l_coordinates_monotonic()
             char_points_profile.set_x_as_l_coordinates()
 
         geometries.append(

@@ -291,6 +291,7 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
 
     # Create a Model for each calculation dictionary
     for model_config in input_structure.model_configs:
+        print(model_config.calc_name)  # TODO: Delete
         scenarios = [
             create_scenario(
                 scenario, model_config.calc_name, geometries, input_structure
