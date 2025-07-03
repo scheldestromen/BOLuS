@@ -5,7 +5,8 @@ from utils.geometry_utils import (
     geometry_to_points,
     determine_point_in_polygon,
     get_polygon_top_or_bottom,
-    offset_line
+    offset_line,
+    is_valid_polygon
 )
 
 
@@ -58,3 +59,12 @@ class TestGeometryUtils(unittest.TestCase):
         result = offset_line(line, offset, "below")
 
         self.assertEqual(result, LineString([(0, -1), (1, -1)]))
+
+    def test_is_valid_polygon(self):
+        polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        invalid_polygon_1 = Polygon([(0, 0), (0.4e-3, 0), (0, 1)])  # Turns to line after rounding
+        invalid_polygon_2 = Polygon([(0, 0), (0.4e-3, 0), (0, 0.4e-3)])  # Turns to point after rounding
+
+        self.assertTrue(is_valid_polygon(polygon))
+        self.assertFalse(is_valid_polygon(invalid_polygon_1))
+        self.assertFalse(is_valid_polygon(invalid_polygon_2))

@@ -9,7 +9,7 @@ from shapely.ops import split
 
 from toolbox.geolib_utils import get_by_id
 from toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
-from utils.geometry_utils import geometry_to_polygons
+from utils.geometry_utils import geometry_to_polygons, is_valid_polygon
 
 
 # TODO: Zou mooi zijn om een baseclass voor collectins te maken. Dan
@@ -210,7 +210,6 @@ class Subsoil(BaseModel):
         Args:
             remove_polygons (list[SoilPolygon]): The polygons to remove"""
 
-        # TODO: Invoer kan beter Shapely Polygon zijn? Dat is algemener
         # Create a new list to store the modified polygons
         new_soil_polygons: list[SoilPolygon] = []
         
@@ -220,21 +219,21 @@ class Subsoil(BaseModel):
             should_keep = True
             for polygon in remove_polygons:
                 polygon_shapely = polygon.to_shapely()
-                
+
                 if soil_polygon_shapely.intersects(polygon_shapely):
                     should_keep = False
-                    clipped_polygon = soil_polygon_shapely.difference(polygon_shapely, grid_size=0.001)
+                    clipped_polygon = soil_polygon_shapely.difference(polygon_shapely)
                     
                     # Handle different geometry types
                     if isinstance(clipped_polygon, (GeometryCollection, MultiPolygon)):
                         for geom in clipped_polygon.geoms:
-                            if isinstance(geom, Polygon) and not geom.is_empty:
+                            if isinstance(geom, Polygon) and is_valid_polygon(geom):
                                 new_soil_polygon = SoilPolygon.from_shapely(
                                     soil_type=soil_polygon.soil_type, polygon=geom
                                 )
                                 new_soil_polygons.append(new_soil_polygon)
 
-                    elif isinstance(clipped_polygon, Polygon) and not clipped_polygon.is_empty:
+                    elif isinstance(clipped_polygon, Polygon) and is_valid_polygon(clipped_polygon):
                         new_soil_polygon = SoilPolygon.from_shapely(
                             soil_type=soil_polygon.soil_type, polygon=clipped_polygon
                         )
@@ -300,7 +299,7 @@ class RevetmentLayer(BaseModel):
         )
 
         # Clip the buffered surface line to the helper polygon
-        clipped_buffer = buffer.intersection(helper_polygon, grid_size=0.001)
+        clipped_buffer = buffer.intersection(helper_polygon, grid_size=1e-3)
 
         # Split the clipped buffer by the surface line
         split_buffer = split(clipped_buffer, shapely_surface_line)
