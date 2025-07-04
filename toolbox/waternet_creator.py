@@ -226,8 +226,7 @@ class LineOffsetMethod(BaseModel):
             ref_levels: dict[str, float]  # key heeft de 'generalized' water level name
     ) -> tuple[list[float], list[float]]:
 
-        # We want to start with the most outward point, so the first point should be the most outward
-        # If the outward is in the positive direction, then the first point is inward and we want to reverse the order of the points
+        # Determine the sorting direction. We want to start with the most outward point
         reverse = geometry.char_point_profile.determine_l_direction_sign(
             Side.WATER_SIDE) == 1  # presence of l-coordinates is also checked
 
@@ -242,7 +241,7 @@ class LineOffsetMethod(BaseModel):
             except ValueError:
                 continue
 
-        # Get a sorted copy of the char points - equal l-values retain their order
+        # Get a sorted copy of the char points - equal l-values retain their order,
         # so it is upto the user to ensure that the char points are in the correct order
         char_points = sorted(char_points, key=lambda p: p.l, reverse=reverse)
 
