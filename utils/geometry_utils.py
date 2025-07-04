@@ -317,3 +317,23 @@ def linear_interpolation(
 
     # Perform linear interpolation
     return np.interp(x, xp, fp)
+
+
+def is_valid_polygon(polygon: Polygon, decimals: int = 3) -> bool:
+    """Check if a polygon is valid if rounding is applied. This is done by
+    checking the area after rounding all points to the given number of
+    decimals. Also checks if the polygon is not empty and if it is valid
+    with the shapely implementation.
+
+    Args:
+        polygon: The polygon to check
+        decimals: The number of decimals to round to
+
+    Returns:
+        bool: True if the polygon is valid, False otherwise"""
+
+    points = [(round(x, decimals), round(y, decimals)) for x, y in polygon.exterior.coords]
+    rounded_polygon = Polygon(points)
+    is_valid = rounded_polygon.is_valid and rounded_polygon.area != 0 and not rounded_polygon.is_empty
+
+    return is_valid
