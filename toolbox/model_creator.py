@@ -109,7 +109,7 @@ def create_stage(
     calc_name: str,
     geometries: List[Geometry],
     input_structure: UserInputStructure,
-    previous_waternets: Optional[dict[str, Waternet]] = None,
+    previous_waternet: Optional[Waternet] = None,
 ) -> Stage:
     """
     Creates a Stage object from the provided input.
@@ -120,7 +120,7 @@ def create_stage(
         calc_name: The name of the calculation.
         geometries: A list of Geometry objects.
         input_structure: The user-provided input structure.
-        previous_waternets: A dict of Waternet objects with as keys the names of the stages.
+        previous_waternet: The previous waternet. If there is no previous stage, this is None.
 
     Returns:
         A Stage object.
@@ -178,7 +178,7 @@ def create_stage(
             waternet_config=waternet_config,
             water_level_collection=input_structure.water_levels,
             offset_method_collection=input_structure.headline_offset_methods,
-            previous_waternets=previous_waternets,
+            previous_waternet=previous_waternet,
         )
         waternet_creator = WaternetCreator(input=waternet_creator_input)
         waternet = waternet_creator.create_waternet()
@@ -239,19 +239,20 @@ def create_scenario(
     
     stages: list[Stage] = []
 
-    for stage in scenario_config.stages:
-        previous_waternets = {
-            stage.name: stage.waternet for stage in stages if stage.waternet is not None
-            }
+    for stage_config in scenario_config.stages:
+        if len(stages) > 0:
+            previous_waternet = stages[-1].waternet
+        else:
+            previous_waternet = None
         
         stages.append(
             create_stage(
-                stage_config=stage,
+                stage_config=stage_config,
                 scenario_name=scenario_config.scenario_name,
                 calc_name=calc_name,
                 geometries=geometries,
                 input_structure=input_structure,
-                previous_waternets=previous_waternets,
+                previous_waternet=previous_waternet,
             )
         )
 

@@ -1076,7 +1076,7 @@ class WaternetCreatorInput(BaseModel):
     water_level_collection: WaterLevelCollection
     offset_method_collection: LineOffsetMethodCollection
     subsoil: Optional[Subsoil] = None
-    previous_waternets: Optional[dict[str, Waternet]] = None
+    previous_waternet: Optional[Waternet] = None    
 
     @model_validator(mode='after')
     def validate_subsoil(self) -> Self:
@@ -1097,31 +1097,18 @@ class WaternetCreatorInput(BaseModel):
         return self
     
     @model_validator(mode='after')
-    def validate_previous_waternets(self) -> Self:
+    def validate_previous_waternet(self) -> Self:
         waternet_methods = [
             hlc for hlc in self.waternet_config.head_line_configs
             if hlc.head_line_method_type == HeadLineMethodType.INTERPOLATE_FROM_WATERNET
             ]
         
-        if waternet_methods and self.previous_waternets is None:
+        if waternet_methods and self.previous_waternet is None:
             raise ValueError(
-                "Previous waternets are required input when creating head lines"
-                f"with the method '{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}'. No waternets are available"
+                "A previous stage with a waternet scenario is required input when creating head lines"
+                f"with the method '{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}'. No waternet is available"
                 f"for generating the head lines '{[hlc.name_head_line for hlc in waternet_methods]}'."
             )
-        
-        for hlc in waternet_methods:
-            waternet_names = list(self.previous_waternets.keys())
-
-            if hlc.interpolate_from_waternet_name not in waternet_names:
-                raise ValueError(
-                    f"The waternet scenario '{hlc.interpolate_from_waternet_name}' is not available for "
-                    f"generating the head line '{hlc.name_head_line}' with the method "
-                    f"'{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}' in "
-                    f"the waternet scenario '{self.waternet_config.name_waternet_scenario}'. Please check if "
-                    f"the scenario '{hlc.interpolate_from_waternet_name}' is applied for every calculation "
-                    f"where '{hlc.name_head_line}' is used."
-                )
         
         return self
     
@@ -1872,10 +1859,6 @@ class WaternetCreator(BaseModel):
             if head_line_config.head_line_method_type != HeadLineMethodType.INTERPOLATE_FROM_WATERNET:
                 continue
 
-            # Validation of presence of name and previous waternet has already been done in the validator
-            interpolate_from_waternet_name = head_line_config.interpolate_from_waternet_name
-            interpolate_from_waternet = self.input.previous_waternets[interpolate_from_waternet_name]
-
             # Get the ref. line that is used to create the head line
             coupled_ref_lines = [
                 rl for rl in ref_lines
@@ -1901,7 +1884,7 @@ class WaternetCreator(BaseModel):
             head_line = InterpolateHeadLineFromWaternet().create_line(
                 head_line_config=head_line_config,
                 ref_line=ref_line,
-                interpolate_from_waternet=interpolate_from_waternet,
+                interpolate_from_waternet=self.input.previous_waternet,
                 surface_level=self.input.geometry.surface_line
             )
 

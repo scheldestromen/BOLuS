@@ -93,7 +93,6 @@ class HeadLineConfig(BaseModel):
     is_phreatic: bool
     head_line_method_type: HeadLineMethodType
     offset_method_name: Optional[str] = None
-    interpolate_from_waternet_name: Optional[str] = None
     apply_minimal_surface_line_offset: Optional[bool] = None
     minimal_surface_line_offset: Optional[float] = None
     minimal_offset_from_point: Optional[CharPointType] = None
@@ -104,17 +103,6 @@ class HeadLineConfig(BaseModel):
         if self.head_line_method_type == HeadLineMethodType.OFFSETS and self.offset_method_name is None:
             raise ValueError(
                 f"An offset method needs to be specified when the headline method is {HeadLineMethodType.OFFSETS}")
-
-        return self
-
-    @model_validator(mode='after')
-    def validate_interpolate_from_waternet_name(self) -> Self:
-        if self.head_line_method_type == HeadLineMethodType.INTERPOLATE_FROM_WATERNET:
-            if self.interpolate_from_waternet_name is None:
-                raise ValueError(
-                    f"A waternet name needs to be specified when the headline method is {HeadLineMethodType.INTERPOLATE_FROM_WATERNET}"
-                    f"This is not the case for the headline '{self.name_head_line}'"
-                    )
 
         return self
 

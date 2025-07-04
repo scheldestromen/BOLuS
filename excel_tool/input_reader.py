@@ -31,10 +31,9 @@ from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           UpliftVanParticleSwarm,
                                           BishopBruteForce)
 from excel_tool.excel_utils import (parse_key_row, parse_key_value_cols,
-                                    parse_row_instance,
-                                    parse_row_instance_remainder)
+                                    parse_row_instance)
 from toolbox.model_creator import GeneralSettings, ModelConfig, UserInputStructure
-from utils.dict_utils import (group_dicts_by_key, list_to_nested_dict,
+from utils.dict_utils import (group_dicts_by_key,
                               remove_key, check_for_missing_keys)
 from utils.list_utils import (check_list_of_dicts_for_duplicate_values,
                               unique_in_order)
@@ -209,7 +208,6 @@ HEAD_LINE_CONFIG_COLS = {
     "is_phreatic": "Freatisch",
     "head_line_method_type": "Methode stijghoogte",
     "offset_method_name": "Offset methode",
-    "interpolate_from_waternet_name": "Stijghoogte afleiden uit scenario",
     "apply_minimal_surface_line_offset": "Minimale offset met het maaiveld toepassen",
     "minimal_surface_line_offset": "Waarde minimale offset",
     "minimal_offset_from_point": "Minimale offset vanaf punt",
@@ -389,7 +387,7 @@ INPUT_TO_WATER_LINE_TYPE = {
 
 INPUT_TO_HEAD_LINE_METHOD_TYPE = {
     "Offset methode": HeadLineMethodType.OFFSETS,
-    "Afleiden uit ander scenario": HeadLineMethodType.INTERPOLATE_FROM_WATERNET,
+    "Afleiden uit vorige stage": HeadLineMethodType.INTERPOLATE_FROM_WATERNET,
 }
 
 INPUT_TO_REF_LINE_METHOD_TYPE = {
