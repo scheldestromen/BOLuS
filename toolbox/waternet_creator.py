@@ -242,7 +242,8 @@ class LineOffsetMethod(BaseModel):
             except ValueError:
                 continue
 
-        # Get a sorted copy of the char points
+        # Get a sorted copy of the char points - equal l-values retain their order
+        # so it is upto the user to ensure that the char points are in the correct order
         char_points = sorted(char_points, key=lambda p: p.l, reverse=reverse)
 
         l: list[float] = []
@@ -1114,7 +1115,8 @@ class WaternetCreatorInput(BaseModel):
     
 
 class PhreaticLineModifier(BaseModel):
-    """Factory for modifying a head line representing a phreatic line"""
+    """Factory for modifying a head line generated with an offset method, 
+    representing a phreatic line"""
 
     geometry: Geometry
     _outward_intersection: Optional[tuple[float, float]] = None
@@ -1123,17 +1125,18 @@ class PhreaticLineModifier(BaseModel):
     def process_outward_intersection_phreatic_line(self, head_line: HeadLine) -> HeadLine:
         surface_level_outward = self.geometry.char_point_profile.get_point_by_type(
             CharPointType.SURFACE_LEVEL_WATER_SIDE)
+        # With the offset method, the first point is always the most outward
         water_level_outward = next(z for l, z in zip(head_line.l, head_line.z) if l == surface_level_outward.l)
 
         self._outward_intersection = self.geometry.get_intersection(
-            level=water_level_outward,  # With the offset method, the first point is the most outward
+            level=water_level_outward,
             from_char_point=CharPointType.DIKE_CREST_WATER_SIDE,
             to_char_point=CharPointType.SURFACE_LEVEL_WATER_SIDE,
             search_direction=Side.WATER_SIDE
         )
 
         if self._outward_intersection is not None:
-            # Delete head line points between the intersection and the first point of the head line
+            # Delete head line points between the intersection and the most outward point
             l_outward = surface_level_outward.l
             l_intersection = self._outward_intersection[0]
 
@@ -1143,8 +1146,10 @@ class PhreaticLineModifier(BaseModel):
                       if not (l_intersection <= l < l_outward
                               or l_intersection >= l > l_outward)]
 
-            points.append(self._outward_intersection)
-            points.sort(key=lambda p: p[0])
+            # Put the intersection at the right location
+            # With the offset method, it is always the second point because
+            # the first point is the most outward and we deleted all points in between
+            points.insert(1, self._outward_intersection)
 
             head_line.l = [p[0] for p in points]
             head_line.z = [p[1] for p in points]
@@ -1178,8 +1183,10 @@ class PhreaticLineModifier(BaseModel):
                       if not (l_intersection <= l < l_inward
                               or l_intersection >= l > l_inward)]
 
-            points.append(self._inward_intersection)
-            points.sort(key=lambda p: p[0])
+            # Put the intersection at the right location
+            # With the offset method, it is always the second to last point because
+            # the last point is the most inward and we deleted all points in between
+            points.insert(-1, self._inward_intersection)
 
             head_line.l = [p[0] for p in points]
             head_line.z = [p[1] for p in points]
