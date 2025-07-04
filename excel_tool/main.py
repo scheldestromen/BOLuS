@@ -17,6 +17,16 @@ INPUT_FILE_PATH = os.path.join(
 
 
 if __name__ == "__main__":
+    abort_input = input(
+        "\nBestaande berekeningen in de uitvoermap worden mogelijk overschreven indien "
+        "deze dezelfde naam hebben als nieuwe berekeningen. Wilt u doorgaan?"
+        "\n\nType het antwoord en druk op enter (j/n)\n"
+    )
+
+    if abort_input.lower() != "j":
+        print("De tool wordt afgebroken...")
+        exit()
+
     # Reading the Excel to RawUserInput
     raw_user_input = ExcelInputReader.read_from_file(INPUT_FILE_PATH)
 
