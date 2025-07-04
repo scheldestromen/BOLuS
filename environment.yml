@@ -1,6 +1,6 @@
 name: venv_bolus
 channels:
-  - https://repo.anaconda.cloud/repo/scheldestromen/standard
+#  - https://repo.anaconda.cloud/repo/scheldestromen/standard  # Tijdelijk - voor aangepaste geolib
   - anaconda
   - defaults
 dependencies:
@@ -9,5 +9,6 @@ dependencies:
   - shapely>=2.0.6,<3
   - pip>=25.0
   - pip:
-    - d-geolib==2.6.0
+#    - d-geolib==2.6.0  # Tijdelijk - voor aangepaste geolib
+    - git+https://github.com/KentropDevelopment/GEOLib.git@240-fix-connect-layers  # Tijdelijk - is de aangepaste geolib
     - pydantic==2.10.2
