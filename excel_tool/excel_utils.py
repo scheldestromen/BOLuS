@@ -95,7 +95,7 @@ def parse_row_instance_remainder(
 
         # Loop through the values until an empty cell is found
         for cell in row[max_index + 1 :]:
-            if cell.value is None:
+            if cell.value is None or cell.value == "":
                 break
             other.append(cell.value)
 
