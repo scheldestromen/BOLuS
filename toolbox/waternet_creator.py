@@ -11,7 +11,7 @@ from toolbox.geometry import Side
 from toolbox.waternet import HeadLine, ReferenceLine, Waternet
 from toolbox.subsoil import Subsoil
 from toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, RefLineMethodType, HeadLineConfig, \
-    ReferenceLineConfig, WaternetConfig
+    ReferenceLineConfig, WaternetConfig, WaterLevelSetConfig
 from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line, simplify_line
 
 
@@ -1071,6 +1071,7 @@ class WaternetCreatorInput(BaseModel):
     geometry: Geometry
     waternet_config: WaternetConfig
     water_level_collection: WaterLevelCollection
+    water_level_set_config: WaterLevelSetConfig
     offset_method_collection: LineOffsetMethodCollection
     subsoil: Optional[Subsoil] = None
     previous_waternet: Optional[Waternet] = None    
@@ -2033,7 +2034,7 @@ class WaternetCreator(BaseModel):
         location_water_levels = self.input.water_level_collection.get_by_name(self.input.geometry.name)
 
         # Check if the water levels are present in the location water levels
-        for k, v in self.input.waternet_config.water_level_config.water_levels.items():
+        for k, v in self.input.water_level_set_config.water_levels.items():
             if v is not None and v not in location_water_levels:
                 raise ValueError(
                     f"The water level '{v}' used for the water level variable '{k}' was not found."
@@ -2042,7 +2043,7 @@ class WaternetCreator(BaseModel):
         # Rename the water levels to the generalized water level names
         water_level_set = {
             k: location_water_levels[v]
-            for k, v in self.input.waternet_config.water_level_config.water_levels.items()
+            for k, v in self.input.water_level_set_config.water_levels.items()
             if v is not None
         }
 

@@ -23,8 +23,8 @@ from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilP
     RevetmentProfileBlueprintCollection
 from toolbox.waternet import WaterLineType, HeadLine, ReferenceLine
 from toolbox.waternet_creator import RefLevelType, OffsetType, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint
-from toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, RefLineMethodType, WaterLevelConfig, \
-    HeadLineConfig, ReferenceLineConfig, WaternetConfig, WaternetConfigCollection
+from toolbox.waternet_config import (WaterLevelCollection, HeadLineMethodType, RefLineMethodType, WaterLevelSetConfig, \
+                                     HeadLineConfig, ReferenceLineConfig, WaternetConfig, WaternetConfigCollection, WaterLevelSetConfigCollection)
 from toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
                                           SlipPlaneModel,
@@ -51,7 +51,7 @@ INPUT_SHEETS = {
     "soil_profiles": "Bodemprofielen",
     "soil_profile_positions": "Bodemopbouw",
     "water_levels": "Waterstanden",
-    "water_level_configs": "Waterspanningsscenario's",
+    "water_level_set_configs": "Waterstandsets",
     "headline_offset_methods": "Offset methodes",
     "head_line_configs": "Stijghoogtes",
     "ref_line_configs": "Referentielijnen",
@@ -191,7 +191,7 @@ REQUIRED_SOIL_PROFILE_COLS = [
 
 WATER_LEVEL_LOCATION_NAME_COL = "Naam locatie"
 
-WATER_LEVEL_CONFIG_NAME_COL = "Naam waterspanningsscenario"
+WATER_LEVEL_CONFIG_NAME_COL = "Naam waterstandset"
 
 HEADLINE_OFFSET_METHODS_COLS = {
     "name": "Naam methode",
@@ -330,6 +330,7 @@ CALCULATION_COLS = {
     "soil_profile_position_name": "Bodemopbouw",
     "apply_state_points": "State points toepassen",
     "waternet_scenario_name": "Waterspanningsscenario",
+    "water_level_set_name": "Waterstandset",
     "revetment_profile_name": "Bekledingsprofiel",
     "load_name": "Belasting",
     "grid_settings_set_name": "Gridinstellingen",
@@ -638,7 +639,7 @@ class ExcelInputReader(BaseModel):
     @staticmethod
     def parse_water_level_configs(workbook: Any) -> dict[str, dict[str, str | None]]:
         water_level_configs = parse_row_instance(
-            sheet=workbook[INPUT_SHEETS["water_level_configs"]],
+            sheet=workbook[INPUT_SHEETS["water_level_set_configs"]],
             header_row=2,
             skip_rows=2,
         )
@@ -928,11 +929,10 @@ class RawInputToUserInputStructure:
                 raw_input.soil_profile_positions
             ),
             water_levels=WaterLevelCollection(water_levels=raw_input.water_levels),
+            water_level_set_configs=RawInputToUserInputStructure.convert_water_level_set_config_collection(
+                raw_input.water_level_configs),
             waternet_configs=RawInputToUserInputStructure.convert_waternet_config_collection(
-                water_level_configs_dict=raw_input.water_level_configs,
-                head_line_configs_dict=raw_input.head_line_configs,
-                ref_line_configs_dict=raw_input.ref_line_configs,
-            ),
+                head_line_configs_dict=raw_input.head_line_configs, ref_line_configs_dict=raw_input.ref_line_configs),
             headline_offset_methods=RawInputToUserInputStructure.convert_headline_offset_methods(
                 raw_input.headline_offset_methods),
             revetment_profile_blueprints=RawInputToUserInputStructure.convert_revetment_profile_blueprint_collection(
@@ -1167,26 +1167,33 @@ class RawInputToUserInputStructure:
         soil_profile_position_collection = SoilProfilePositionSetCollection(sets=sets)
 
         return soil_profile_position_collection
+    
+    @staticmethod
+    def convert_water_level_set_config_collection(
+            water_level_configs_dict: dict[str, dict[str, str | None]]
+    ) -> WaterLevelSetConfigCollection:
+        """Parses the dictionary into a WaterLevelSetConfigCollection
+
+        Args:
+            water_level_configs_dict: The dictionary to parse."""
+        
+        water_level_sets: list[WaterLevelSetConfig] = []
+
+        for name, water_level_config_dict in water_level_configs_dict.items():
+            water_level_config = WaterLevelSetConfig(
+                name_water_level_set=name,
+                water_levels=water_level_config_dict
+            )
+            water_level_sets.append(water_level_config)
+        
+        return WaterLevelSetConfigCollection(water_level_set_configs=water_level_sets)
 
     @staticmethod
     def convert_waternet_config_collection(
-            water_level_configs_dict: dict[str, dict[str, str | None]],
             head_line_configs_dict: dict[str, list[dict[str, str | bool | float | CharPointType]]],
             ref_line_configs_dict: dict[str, list[dict[str, str | None]]]
     ) -> WaternetConfigCollection:
         hlc_scenario_names = list(head_line_configs_dict.keys())
-        wlc_scenario_names = list(water_level_configs_dict.keys())
-
-        # Beide moeten nu in allebei zitten - opzich prima, maar dan kan er geen 'overtollige info' staat
-        # TODO: Na implementatie van reference_line_configs, even opnieuw checken.
-        if set(hlc_scenario_names) != set(wlc_scenario_names):
-            union = set(hlc_scenario_names) | set(wlc_scenario_names)
-            intersection = set(hlc_scenario_names) & set(wlc_scenario_names)
-            difference = union - intersection
-
-            raise ValueError("The head line scenario names and the water level scenario names do not match. "
-                             f"The following scenario names are not present in all input sheets: "
-                             f"{', '.join(difference)}")
 
         waternet_configs: list[WaternetConfig] = []
 
@@ -1195,10 +1202,6 @@ class RawInputToUserInputStructure:
                 HeadLineConfig.model_validate(head_line_config)
                 for head_line_config in head_line_configs_dict[scenario_name]
             ]
-            water_level_config = WaterLevelConfig(
-                name_waternet_scenario=scenario_name,
-                water_levels=water_level_configs_dict[scenario_name]
-            )
 
             ref_line_configs = [
                 ReferenceLineConfig.model_validate(ref_line_config)
@@ -1207,7 +1210,6 @@ class RawInputToUserInputStructure:
 
             waternet_config = WaternetConfig(
                 name_waternet_scenario=scenario_name,
-                water_level_config=water_level_config,
                 head_line_configs=head_line_configs,
                 reference_line_configs=ref_line_configs
             )

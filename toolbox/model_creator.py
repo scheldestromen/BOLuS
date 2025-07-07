@@ -16,7 +16,7 @@ from toolbox.state import create_state_points_from_subsoil
 from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
 from toolbox.waternet import Waternet
 from toolbox.waternet_creator import LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
-from toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection
+from toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection, WaterLevelSetConfigCollection
 
 
 class GeneralSettings(BaseModel):
@@ -43,6 +43,7 @@ class StageConfig(BaseModel):
     geometry_name: str
     soil_profile_position_name: str
     waternet_scenario_name: Optional[str]
+    water_level_set_name: Optional[str]
     revetment_profile_name: Optional[str]
     apply_state_points: bool
     load_name: Optional[str]
@@ -76,7 +77,6 @@ class ModelConfig(BaseModel):
     scenarios: list[ScenarioConfig]
 
 
-# TODO: Hier zit nu zowel de waternetcollection als de WaternetConfigCollection. Hoe dit netjes aan te pakken in de workflow?
 class UserInputStructure(BaseModel):
     """Represents the user-inputted data.
 
@@ -94,6 +94,7 @@ class UserInputStructure(BaseModel):
     soil_profiles: SoilProfileCollection
     soil_profile_positions: SoilProfilePositionSetCollection
     water_levels: WaterLevelCollection
+    water_level_set_configs: WaterLevelSetConfigCollection
     waternet_configs: WaternetConfigCollection
     headline_offset_methods: LineOffsetMethodCollection
     revetment_profile_blueprints: RevetmentProfileBlueprintCollection
@@ -172,11 +173,13 @@ def create_stage(
         waternet_config = input_structure.waternet_configs.get_by_name(
             stage_config.waternet_scenario_name
         )
+        water_level_set_config = input_structure.water_level_set_configs.get_by_name(stage_config.water_level_set_name)
         waternet_creator_input = WaternetCreatorInput(
             geometry=geometry,
             subsoil=subsoil,
             waternet_config=waternet_config,
             water_level_collection=input_structure.water_levels,
+            water_level_set_config=water_level_set_config,
             offset_method_collection=input_structure.headline_offset_methods,
             previous_waternet=previous_waternet,
         )
