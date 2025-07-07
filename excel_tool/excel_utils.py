@@ -141,7 +141,7 @@ def parse_key_row(sheet: Any, skip_rows: int) -> dict:
 
         # Loop through the values until an empty cell is found
         for cell in row[1:]:
-            if cell.value is None:
+            if cell.value is None or cell.value == "":
                 break
             values.append(cell.value)
 

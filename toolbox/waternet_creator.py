@@ -14,9 +14,6 @@ from toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, Re
     ReferenceLineConfig, WaternetConfig
 from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line, simplify_line
 
-# TODO: Idee: Om flexibiliteit te houden - naast het genereren van de waternets - zou ik
-#       een WaternetExceptions o.i.d. kunnen maken waarin specifieke correcties zijn opgegeven.
-#       Deze correcties kunnen dan worden toegepast op de waternetten.
 
 # TODO: Refactor ter bevordering van de leesbaarheid en herleidbaarheid
 #       - methodes in mapje zetten, splitsen in scripts?
