@@ -40,9 +40,9 @@ class WaterLevelCollection(BaseModel):
         return water_level_dict
 
 
-class WaterLevelConfig(BaseModel):
+class WaterLevelSetConfig(BaseModel):
     """
-    A WaterLevelConfig is the connection between the generalized water level variables
+    A WaterLevelSetConfig is the connection between the generalized water level variables
     used in the head_line_configs and the names of the actual water levels that should
     be used, as they are defined in the WaterLevelCollection.
 
@@ -55,18 +55,31 @@ class WaterLevelConfig(BaseModel):
         - 'mean water level'
         - 'polder level'
 
-        The WaterLevelConfig could be defined as follows:
+        The WaterLevelSetConfig could be defined as follows:
 
-            WaterLevelConfig(
-                name_waternet_scenario='daily conditions',
+            WaterLevelSetConfig(
+                name_water_level_set='daily conditions',
                 water_levels={
                     'outer water level': 'mean water level',
                     'inner water level': 'polder level'
                 }
             )"""
 
-    name_waternet_scenario: str
+    name_water_level_set: str
     water_levels: dict[str, str | None]
+
+
+class WaterLevelSetConfigCollection(BaseModel):
+    water_level_set_configs: list[WaterLevelSetConfig]
+
+    def get_by_name(self, name: str) -> WaterLevelSetConfig:
+        water_level_set = next((config for config in self.water_level_set_configs if config.name_water_level_set == name),
+                               None)
+
+        if water_level_set is None:
+            raise ValueError(f"Water level set with name '{name}' not found")
+        
+        return water_level_set
 
 
 class HeadLineMethodType(StrEnum):
@@ -93,7 +106,6 @@ class HeadLineConfig(BaseModel):
     is_phreatic: bool
     head_line_method_type: HeadLineMethodType
     offset_method_name: Optional[str] = None
-    interpolate_from_waternet_name: Optional[str] = None
     apply_minimal_surface_line_offset: Optional[bool] = None
     minimal_surface_line_offset: Optional[float] = None
     minimal_offset_from_point: Optional[CharPointType] = None
@@ -104,17 +116,6 @@ class HeadLineConfig(BaseModel):
         if self.head_line_method_type == HeadLineMethodType.OFFSETS and self.offset_method_name is None:
             raise ValueError(
                 f"An offset method needs to be specified when the headline method is {HeadLineMethodType.OFFSETS}")
-
-        return self
-
-    @model_validator(mode='after')
-    def validate_interpolate_from_waternet_name(self) -> Self:
-        if self.head_line_method_type == HeadLineMethodType.INTERPOLATE_FROM_WATERNET:
-            if self.interpolate_from_waternet_name is None:
-                raise ValueError(
-                    f"A waternet name needs to be specified when the headline method is {HeadLineMethodType.INTERPOLATE_FROM_WATERNET}"
-                    f"This is not the case for the headline '{self.name_head_line}'"
-                    )
 
         return self
 
@@ -184,10 +185,7 @@ class WaternetConfig(BaseModel):
     phreatic line is required.
 
     Attributes:
-        name (str): The name of the waternet configuration
-        water_level_config (WaterLevelConfig): The water level configuration.
-          This is the connection between the water levels used in the waternet and
-          the generalized water level variables used in the head_line_configs.
+        name_waternet_scenario (str): The name of the waternet configuration
         head_line_configs (list[HeadLineConfig]): The head line configurations.
           These are the methods for creating the head lines.
         reference_line_configs (list[ReferenceLineConfig]): The reference line configurations.
@@ -196,7 +194,6 @@ class WaternetConfig(BaseModel):
     """
 
     name_waternet_scenario: str
-    water_level_config: WaterLevelConfig
     head_line_configs: list[HeadLineConfig]
     reference_line_configs: Optional[list[ReferenceLineConfig]] = None  # Optional - if there is only a phreatic line
 

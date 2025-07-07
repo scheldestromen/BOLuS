@@ -11,12 +11,9 @@ from toolbox.geometry import Side
 from toolbox.waternet import HeadLine, ReferenceLine, Waternet
 from toolbox.subsoil import Subsoil
 from toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, RefLineMethodType, HeadLineConfig, \
-    ReferenceLineConfig, WaternetConfig
+    ReferenceLineConfig, WaternetConfig, WaterLevelSetConfig
 from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line, simplify_line
 
-# TODO: Idee: Om flexibiliteit te houden - naast het genereren van de waternets - zou ik
-#       een WaternetExceptions o.i.d. kunnen maken waarin specifieke correcties zijn opgegeven.
-#       Deze correcties kunnen dan worden toegepast op de waternetten.
 
 # TODO: Refactor ter bevordering van de leesbaarheid en herleidbaarheid
 #       - methodes in mapje zetten, splitsen in scripts?
@@ -226,8 +223,7 @@ class LineOffsetMethod(BaseModel):
             ref_levels: dict[str, float]  # key heeft de 'generalized' water level name
     ) -> tuple[list[float], list[float]]:
 
-        # We want to start with the most outward point, so the first point should be the most outward
-        # If the outward is in the positive direction, then the first point is inward and we want to reverse the order of the points
+        # Determine the sorting direction. We want to start with the most outward point
         reverse = geometry.char_point_profile.determine_l_direction_sign(
             Side.WATER_SIDE) == 1  # presence of l-coordinates is also checked
 
@@ -242,7 +238,8 @@ class LineOffsetMethod(BaseModel):
             except ValueError:
                 continue
 
-        # Get a sorted copy of the char points
+        # Get a sorted copy of the char points - equal l-values retain their order,
+        # so it is upto the user to ensure that the char points are in the correct order
         char_points = sorted(char_points, key=lambda p: p.l, reverse=reverse)
 
         l: list[float] = []
@@ -1074,9 +1071,10 @@ class WaternetCreatorInput(BaseModel):
     geometry: Geometry
     waternet_config: WaternetConfig
     water_level_collection: WaterLevelCollection
+    water_level_set_config: WaterLevelSetConfig
     offset_method_collection: LineOffsetMethodCollection
     subsoil: Optional[Subsoil] = None
-    previous_waternets: Optional[dict[str, Waternet]] = None
+    previous_waternet: Optional[Waternet] = None    
 
     @model_validator(mode='after')
     def validate_subsoil(self) -> Self:
@@ -1097,37 +1095,25 @@ class WaternetCreatorInput(BaseModel):
         return self
     
     @model_validator(mode='after')
-    def validate_previous_waternets(self) -> Self:
+    def validate_previous_waternet(self) -> Self:
         waternet_methods = [
             hlc for hlc in self.waternet_config.head_line_configs
             if hlc.head_line_method_type == HeadLineMethodType.INTERPOLATE_FROM_WATERNET
             ]
         
-        if waternet_methods and self.previous_waternets is None:
+        if waternet_methods and self.previous_waternet is None:
             raise ValueError(
-                "Previous waternets are required input when creating head lines"
-                f"with the method '{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}'. No waternets are available"
+                "A previous stage with a waternet scenario is required input when creating head lines"
+                f"with the method '{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}'. No waternet is available"
                 f"for generating the head lines '{[hlc.name_head_line for hlc in waternet_methods]}'."
             )
-        
-        for hlc in waternet_methods:
-            waternet_names = list(self.previous_waternets.keys())
-
-            if hlc.interpolate_from_waternet_name not in waternet_names:
-                raise ValueError(
-                    f"The waternet scenario '{hlc.interpolate_from_waternet_name}' is not available for "
-                    f"generating the head line '{hlc.name_head_line}' with the method "
-                    f"'{HeadLineMethodType.INTERPOLATE_FROM_WATERNET}' in "
-                    f"the waternet scenario '{self.waternet_config.name_waternet_scenario}'. Please check if "
-                    f"the scenario '{hlc.interpolate_from_waternet_name}' is applied for every calculation "
-                    f"where '{hlc.name_head_line}' is used."
-                )
         
         return self
     
 
 class PhreaticLineModifier(BaseModel):
-    """Factory for modifying a head line representing a phreatic line"""
+    """Factory for modifying a head line generated with an offset method, 
+    representing a phreatic line"""
 
     geometry: Geometry
     _outward_intersection: Optional[tuple[float, float]] = None
@@ -1136,17 +1122,18 @@ class PhreaticLineModifier(BaseModel):
     def process_outward_intersection_phreatic_line(self, head_line: HeadLine) -> HeadLine:
         surface_level_outward = self.geometry.char_point_profile.get_point_by_type(
             CharPointType.SURFACE_LEVEL_WATER_SIDE)
+        # With the offset method, the first point is always the most outward
         water_level_outward = next(z for l, z in zip(head_line.l, head_line.z) if l == surface_level_outward.l)
 
         self._outward_intersection = self.geometry.get_intersection(
-            level=water_level_outward,  # With the offset method, the first point is the most outward
+            level=water_level_outward,
             from_char_point=CharPointType.DIKE_CREST_WATER_SIDE,
             to_char_point=CharPointType.SURFACE_LEVEL_WATER_SIDE,
             search_direction=Side.WATER_SIDE
         )
 
         if self._outward_intersection is not None:
-            # Delete head line points between the intersection and the first point of the head line
+            # Delete head line points between the intersection and the most outward point
             l_outward = surface_level_outward.l
             l_intersection = self._outward_intersection[0]
 
@@ -1156,8 +1143,10 @@ class PhreaticLineModifier(BaseModel):
                       if not (l_intersection <= l < l_outward
                               or l_intersection >= l > l_outward)]
 
-            points.append(self._outward_intersection)
-            points.sort(key=lambda p: p[0])
+            # Put the intersection at the right location
+            # With the offset method, it is always the second point because
+            # the first point is the most outward and we deleted all points in between
+            points.insert(1, self._outward_intersection)
 
             head_line.l = [p[0] for p in points]
             head_line.z = [p[1] for p in points]
@@ -1191,8 +1180,10 @@ class PhreaticLineModifier(BaseModel):
                       if not (l_intersection <= l < l_inward
                               or l_intersection >= l > l_inward)]
 
-            points.append(self._inward_intersection)
-            points.sort(key=lambda p: p[0])
+            # Put the intersection at the right location
+            # With the offset method, it is always the second to last point because
+            # the last point is the most inward and we deleted all points in between
+            points.insert(-1, self._inward_intersection)
 
             head_line.l = [p[0] for p in points]
             head_line.z = [p[1] for p in points]
@@ -1405,8 +1396,14 @@ class PhreaticLineModifier(BaseModel):
             raise ValueError("Something went wrong when maximizing the phreatic line to the surface level")
 
         phreatic_points = [(p[0], p[1]) for p in phreatic_line_string.coords]
-        head_line.l = [p[0] for p in phreatic_points]
-        head_line.z = [p[1] for p in phreatic_points]
+
+        l_coords, z_coords = add_outer_points_if_missing(
+            l_coords=[p[0] for p in phreatic_points],
+            z_coords=[p[1] for p in phreatic_points],
+            geometry=self.geometry,
+        )
+        head_line.l = l_coords
+        head_line.z = z_coords
 
         return head_line
 
@@ -1872,10 +1869,6 @@ class WaternetCreator(BaseModel):
             if head_line_config.head_line_method_type != HeadLineMethodType.INTERPOLATE_FROM_WATERNET:
                 continue
 
-            # Validation of presence of name and previous waternet has already been done in the validator
-            interpolate_from_waternet_name = head_line_config.interpolate_from_waternet_name
-            interpolate_from_waternet = self.input.previous_waternets[interpolate_from_waternet_name]
-
             # Get the ref. line that is used to create the head line
             coupled_ref_lines = [
                 rl for rl in ref_lines
@@ -1901,7 +1894,7 @@ class WaternetCreator(BaseModel):
             head_line = InterpolateHeadLineFromWaternet().create_line(
                 head_line_config=head_line_config,
                 ref_line=ref_line,
-                interpolate_from_waternet=interpolate_from_waternet,
+                interpolate_from_waternet=self.input.previous_waternet,
                 surface_level=self.input.geometry.surface_line
             )
 
@@ -2047,7 +2040,7 @@ class WaternetCreator(BaseModel):
         location_water_levels = self.input.water_level_collection.get_by_name(self.input.geometry.name)
 
         # Check if the water levels are present in the location water levels
-        for k, v in self.input.waternet_config.water_level_config.water_levels.items():
+        for k, v in self.input.water_level_set_config.water_levels.items():
             if v is not None and v not in location_water_levels:
                 raise ValueError(
                     f"The water level '{v}' used for the water level variable '{k}' was not found."
@@ -2056,7 +2049,7 @@ class WaternetCreator(BaseModel):
         # Rename the water levels to the generalized water level names
         water_level_set = {
             k: location_water_levels[v]
-            for k, v in self.input.waternet_config.water_level_config.water_levels.items()
+            for k, v in self.input.water_level_set_config.water_levels.items()
             if v is not None
         }
 
