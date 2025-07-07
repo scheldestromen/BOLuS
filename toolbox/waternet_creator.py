@@ -1396,8 +1396,14 @@ class PhreaticLineModifier(BaseModel):
             raise ValueError("Something went wrong when maximizing the phreatic line to the surface level")
 
         phreatic_points = [(p[0], p[1]) for p in phreatic_line_string.coords]
-        head_line.l = [p[0] for p in phreatic_points]
-        head_line.z = [p[1] for p in phreatic_points]
+
+        l_coords, z_coords = add_outer_points_if_missing(
+            l_coords=[p[0] for p in phreatic_points],
+            z_coords=[p[1] for p in phreatic_points],
+            geometry=self.geometry,
+        )
+        head_line.l = l_coords
+        head_line.z = z_coords
 
         return head_line
 
