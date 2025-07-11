@@ -299,7 +299,7 @@ class RevetmentLayer(BaseModel):
         )
 
         # Clip the buffered surface line to the helper polygon
-        clipped_buffer = buffer.intersection(helper_polygon, grid_size=1e-3)
+        clipped_buffer = buffer.intersection(helper_polygon)  # , grid_size=1e-3
 
         # Split the clipped buffer by the surface line
         split_buffer = split(clipped_buffer, shapely_surface_line)
