@@ -11,11 +11,10 @@ from utils.geometry_utils import geometry_to_points, linear_interpolation
 # TODO: Overwegen om validatie methodes toe te voegen.
 #       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.
 # TODO: Overwegen om validatie (b.v. l-coordinates) met Pydantic te doen ('after')
-#       Ook overwegen om l verplicht te maken, dan hoeven we de checks niet meer te doen.
+#       Ook overwegen om l verplicht te maken, dan zijn veel checks niet nodig. (of 2D/3D onderscheid)
 # TODO: Overwegen om logica in CharPointsProfile te checken (bv. volgorde en aanwezigheid punten)
 # TODO: Overwegen om de sortering op l-coordinates automatisch te doen bij bepalen (of aanmaken)
 #       Dat heeft meerwaarde voor de intuïtie.
-# Idee: onderscheid tussen 2D en 3D geometries
 
 
 class CharPointType(StrEnum):
@@ -86,7 +85,6 @@ class CharPoint(Point):
     type: CharPointType
 
 
-# TODO: Gelijk sorteren o.b.v. l-coordinaten wanneer deze berekend worden.
 class ProfileLine(BaseModel):
     """Base class for SurfaceLine and CharPointProfile
     
@@ -348,7 +346,6 @@ class Geometry(BaseModel):
     surface_line: SurfaceLine
     char_point_profile: CharPointsProfile
 
-    # TODO: Unit tests
     def get_intersection(
             self, 
             level: float, 

@@ -12,12 +12,12 @@ from toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
 from utils.geometry_utils import geometry_to_polygons, is_valid_polygon
 
 
-# TODO: Zou mooi zijn om een baseclass voor collectins te maken. Dan
+# TODO: Zou mooi zijn om een baseclass voor collections te maken. Dan
 #  moeten de collections allen de attribute items hebben, en de items de attribute name.
 #  - Eénmaal implementeren van get_by_name (indien a)
 #  - Eénmaal implementeren van check op dubbele namen
 
-# TODO: "Blueprint" is eigenlijk wat ik elders "Config" noem.
+# TODO: "Blueprint" is eigenlijk wat elders "Config" heet.
 
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
@@ -339,12 +339,6 @@ class RevetmentProfile(BaseModel):
 
         return soil_polygons
     
-    def validate_non_overlapping(self) -> None:
-        """Validates that the revetment layers do not overlap"""
-
-        # TODO: Implement this
-        pass
-
 
 class RevetmentLayerBlueprint(BaseModel):
     """Blueprint for creating revetment layers. This acts as a factory for RevetmentLayer instances.

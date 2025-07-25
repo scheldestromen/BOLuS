@@ -445,12 +445,9 @@ def check_required_input(
     return True
 
 
+# TODO: Locatie van RawUserInput en RawInputToUserInputStructure heroverwegen. Niet per se gerelateerd aan Excel.
 class RawUserInput(BaseModel):
     """Represents the raw user input"""
-    # TODO: Dit beter toelichten? Deze hoort hier eigenlijk niet thuis. Dit is niet specifiek Excel-gerelateerd.
-    #  - Refactor, toelichting en type-hints uitwerken
-    # TODO: Dit is wellicht een goede plek om de validatie van de input te doen.
-    # TODO: De type hints zijn wel een beetje overdreven. Overwegen om dit naar Any te zetten
 
     settings: dict[str, str | float | bool | None]
     surface_lines: dict[str, list[float]]
@@ -467,7 +464,7 @@ class RawUserInput(BaseModel):
     loads: list[dict[str, str | float | None]]
     # hydraulic_pressure: dict[str, list[dict[str, str | float | None]]]
     grid_settings: dict[str, list[dict[str, str | float | None]]]
-    model_configs: list[dict[str, Any]]   # To nested to be of use here
+    model_configs: list[dict[str, str | float | bool | None]]
 
 
 class ExcelInputReader(BaseModel):
@@ -655,7 +652,7 @@ class ExcelInputReader(BaseModel):
         return water_level_configs_dict
 
     @staticmethod
-    def parse_headline_offset_methods(workbook: Any) -> dict[str, list[dict[str, str | float]]]:
+    def parse_headline_offset_methods(workbook: Any) -> dict[str, list[dict[str, str | float | CharPointType]]]:
         # Helper dict for mapping the ref_level_type to the offset_type
         REF_LEVEL_TYPE_TO_OFFSET_TYPE = {
             RefLevelType.NAP: OffsetType.VERTICAL,
@@ -715,7 +712,7 @@ class ExcelInputReader(BaseModel):
         return head_line_configs
 
     @staticmethod
-    def parse_ref_line_configs(workbook: Any) -> dict[str, list[dict[str, str | None]]]:
+    def parse_ref_line_configs(workbook: Any) -> dict[str, list[dict[str, str | RefLineMethodType | None]]]:
         ref_line_configs = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["ref_line_configs"]],
             header_row=2,
@@ -765,7 +762,6 @@ class ExcelInputReader(BaseModel):
 
         return loads
 
-    # TODO: Wellicht voor uitzonderingen?
     # @staticmethod
     # def parse_hydraulic_pressure(workbook: Any):
     #     hydraulic_pressure = parse_row_instance_remainder(
@@ -933,7 +929,7 @@ class RawInputToUserInputStructure:
                 raw_input.water_level_configs),
             waternet_configs=RawInputToUserInputStructure.convert_waternet_config_collection(
                 head_line_configs_dict=raw_input.head_line_configs, ref_line_configs_dict=raw_input.ref_line_configs),
-            headline_offset_methods=RawInputToUserInputStructure.convert_headline_offset_methods(
+            headline_offset_methods=RawInputToUserInputStructure.convert_offset_methods(
                 raw_input.headline_offset_methods),
             revetment_profile_blueprints=RawInputToUserInputStructure.convert_revetment_profile_blueprint_collection(
                 raw_input.revetment_profile_blueprints),
@@ -1217,9 +1213,8 @@ class RawInputToUserInputStructure:
 
         return WaternetConfigCollection(waternet_configs=waternet_configs)
 
-    # TODO: refactor - niet alleen headlines want ook reflines. Dus line_offset_methods
     @staticmethod
-    def convert_headline_offset_methods(
+    def convert_offset_methods(
             headline_offset_methods_dict: dict[str, list[dict[str, str | float | None]]]) -> LineOffsetMethodCollection:
         headline_offset_methods: list[LineOffsetMethod] = []
 
@@ -1275,62 +1270,59 @@ class RawInputToUserInputStructure:
 
         return LoadCollection(loads=loads)
 
-    # TODO: Wordt nu niet gebruikt (was voor omzetten rechtstreekse input waternets)
-    @staticmethod
-    def parse_head_lines(
-            lines: list[dict[str, Any]], name_phreatic_line: str
-    ) -> list[HeadLine]:
-        """Parse the head lines from the dictionary
+    # @staticmethod
+    # def parse_head_lines(
+    #         lines: list[dict[str, Any]], name_phreatic_line: str
+    # ) -> list[HeadLine]:
+    #     """Parse the head lines from the dictionary
 
-        Args:
-            lines (list[dict[str, Any]]): The lines to parse
-            name_phreatic_line (str): The name of the phreatic line
+    #     Args:
+    #         lines (list[dict[str, Any]]): The lines to parse
+    #         name_phreatic_line (str): The name of the phreatic line
 
-        Returns:
-            The parsed head lines"""
+    #     Returns:
+    #         The parsed head lines"""
 
-        head_lines: list[HeadLine] = []
-        for line in lines:
-            if line["type"] == WaterLineType.HEADLINE:
-                head_lines.append(
-                    HeadLine(
-                        name=line["line_name"],
-                        is_phreatic=line["line_name"] == name_phreatic_line,
-                        l=line["values"][0::2],
-                        z=line["values"][1::2],
-                    )
-                )
+    #     head_lines: list[HeadLine] = []
+    #     for line in lines:
+    #         if line["type"] == WaterLineType.HEADLINE:
+    #             head_lines.append(
+    #                 HeadLine(
+    #                     name=line["line_name"],
+    #                     is_phreatic=line["line_name"] == name_phreatic_line,
+    #                     l=line["values"][0::2],
+    #                     z=line["values"][1::2],
+    #                 )
+    #             )
 
-        return head_lines
+    #     return head_lines
 
-    # TODO: Wordt nu niet gebruikt (was voor omzetten rechtstreekse input waternets)
-    @staticmethod
-    def parse_ref_lines(lines: list[dict[str, Any]]) -> list[ReferenceLine]:
-        ref_lines: list[ReferenceLine] = []
+    # @staticmethod
+    # def parse_ref_lines(lines: list[dict[str, Any]]) -> list[ReferenceLine]:
+    #     ref_lines: list[ReferenceLine] = []
 
-        for line in lines:
-            if line["type"] == WaterLineType.REFERENCE_LINE:
-                if line["head_line_top"] is None:
-                    raise ValueError(
-                        f"Head line top is not set for reference line {line['line_name']}"
-                    )
+    #     for line in lines:
+    #         if line["type"] == WaterLineType.REFERENCE_LINE:
+    #             if line["head_line_top"] is None:
+    #                 raise ValueError(
+    #                     f"Head line top is not set for reference line {line['line_name']}"
+    #                 )
 
-                if line["head_line_bottom"] is None:
-                    line["head_line_bottom"] = line["head_line_top"]
+    #             if line["head_line_bottom"] is None:
+    #                 line["head_line_bottom"] = line["head_line_top"]
 
-                ref_lines.append(
-                    ReferenceLine(
-                        name=line["line_name"],
-                        l=line["values"][0::2],
-                        z=line["values"][1::2],
-                        head_line_top=line["head_line_top"],
-                        head_line_bottom=line["head_line_bottom"],
-                    )
-                )
+    #             ref_lines.append(
+    #                 ReferenceLine(
+    #                     name=line["line_name"],
+    #                     l=line["values"][0::2],
+    #                     z=line["values"][1::2],
+    #                     head_line_top=line["head_line_top"],
+    #                     head_line_bottom=line["head_line_bottom"],
+    #                 )
+    #             )
 
-        return ref_lines
+    #     return ref_lines
 
-    # TODO: Omschrijven naar WaternetExceptionCollection
     # @staticmethod
     # def convert_waternet_collection(
     #     waternets_dict: dict[str, dict[str, dict[str, list[dict[str, Any]]]]], 

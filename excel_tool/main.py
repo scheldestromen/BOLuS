@@ -46,6 +46,7 @@ if __name__ == "__main__":
     models = input_to_models(input_structure)
 
     # Create new DStabilityModels calculations from the models
+    print("Creating D-Stability calculations...")
     dm_dict = {model.name: create_d_stability_model(model) for model in models}
 
     # Export the DStabilityModels to .stix

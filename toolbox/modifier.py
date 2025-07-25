@@ -107,14 +107,14 @@ def set_subsoil(
 
     return dm
 
-# TODO: correlatie nog implementeren
+
 def add_state_points(
     state_points: list[StatePoint],
     dm: DStabilityModel,
     scenario_index: int,
     stage_index: int,
 ) -> DStabilityModel:
-    """Adds state points to the DStabilityModel
+    """Adds state points to the DStabilityModel. Correlation cannot be added yet
 
     Args:
         state_points: The state points to add to the DStabilityModel
@@ -319,7 +319,6 @@ def add_calculation_with_grid_settings(
     return dm
 
 
-# TODO: refactor
 def create_d_stability_model(model: Model):
     """Creates new calculations with the given models"""
     print(model.name)
