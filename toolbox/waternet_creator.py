@@ -1561,7 +1561,7 @@ class ReferenceLineCorrector(BaseModel):
         the intrusion phreatic ref. line, then both the ref. lines are corrected to below
         the subsoil bottom.
         
-        b. If additionallythe phreatic ref. line crosses the top aquifer ref. line, then the
+        b. If additionally the phreatic ref. line crosses the top aquifer ref. line, then the
         phreatic ref. line is corrected to below the subsoil bottom.
 
         Scenario 5: Phreatic ref. line, intrusion phreatic ref. line, no intrusion top aquifer

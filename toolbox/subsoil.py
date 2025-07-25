@@ -27,6 +27,7 @@ class SoilLayer(BaseModel):
     is_aquifer: Optional[bool] = None
 
 
+# Nice-to-have: onderkant van grondprofiel toevoegen
 class SoilProfile(BaseModel):
     """Representation of a 1D soil profile"""
 
