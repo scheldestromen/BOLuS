@@ -145,7 +145,6 @@ class ProfileLine(BaseModel):
         for point in self.points:
             dist_from_left = point.distance(left_point)
             point.l = dist_from_left - shift
-            point.l = round(point.l, 3)  # Round to 3 decimal places (mm, accuracy of D-Stability)
 
     def set_x_as_l_coordinates(self):
         """Sets the x-coordinates as the l-coordinates"""

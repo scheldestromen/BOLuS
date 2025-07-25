@@ -41,6 +41,7 @@ class Soil(BaseModel):
         
         return self
 
+
 class SoilCollection(BaseModel):
     """Represents a collection of soil types.
 
