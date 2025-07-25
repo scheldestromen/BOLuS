@@ -69,14 +69,13 @@ def get_calculation_settings_by_result_id(
     )
 
 
-# TODO: voor later
 # def get_soil_id_by_layer_id(dm, layer_id, scenario_index, stage_index):
 #     """Functie geeft collectie van grondlagen van een stage
 #
 #     Args:
 #         dm: DStabilityModel van d-geolib
 #         stage_id: stage ID van gewenste stage
-#         layer_id: layer ID van gewenste grondlaag
+#         layer_id: layer ID van tgewenste grondlaag
 #
 #     Returns:
 #         Soil ID van het grondtype in een grondlaag"""

@@ -15,10 +15,6 @@ from toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, Re
 from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line, simplify_line
 
 
-# TODO: Refactor ter bevordering van de leesbaarheid en herleidbaarheid
-#       - methodes in mapje zetten, splitsen in scripts?
-
-
 NAME_DEEP_AQUIFER = "WVP"
 NAME_INTERMEDIATE_AQUIFER = "TZL"
 
@@ -182,7 +178,6 @@ class LineOffsetMethod(BaseModel):
 
         return head_level
 
-    # TODO: Vervangen voor generieke functie (add_outer_points_if_missing)
     @staticmethod
     def _add_outer_points_if_needed(
         head_line_l: list[float], 
@@ -295,37 +290,6 @@ class Aquifer(BaseModel):
     name_ref_line_intrusion_top: Optional[str] = None
     name_ref_line_intrusion_bottom: Optional[str] = None
 
-
-# TODO wordt niet gebruikt - Beter naar aparte module verhuizen
-class GetAquifersFromSubsoil(BaseModel):
-    @staticmethod
-    def _get_and_merge_aquifer_polygons(subsoil: Subsoil) -> list[Polygon]:
-        # Get the aquifers from the subsoil
-        soil_polygons = [sp for sp in subsoil.soil_polygons if sp.is_aquifer]
-        polygons = [sp.to_shapely() for sp in soil_polygons]
-
-        # unify attached aquifers
-        union = unary_union(polygons)
-        polygons = geometry_to_polygons(union)
-
-        return polygons
-    
-    @staticmethod
-    def _check_defined_from_start_to_end(polygon: Polygon, surf_start: float, surf_end: float) -> bool:
-        pass
-
-    @staticmethod
-    def _check_intersects_surface_line(polygon: Polygon, surface_line_line_string: LineString) -> bool:
-        pass
-
-    @staticmethod
-    def _check_underneath_inner_crest(polygon: Polygon, l_inner_crest: float) -> bool:
-        pass
-
-    @staticmethod
-    def get_aquifer_polygons(subsoil: Subsoil, geometry: Geometry) -> list[Polygon]:
-        pass
-    
 
 # TODO: Refactor t.b.v. testbaarheid
 def get_aquifers_from_subsoil(subsoil: Subsoil, geometry: Geometry) -> list[Aquifer]:
@@ -1197,13 +1161,11 @@ class PhreaticLineModifier(BaseModel):
             from_char_point_type: CharPointType,
             to_char_point_type: CharPointType
     ) -> HeadLine:
-        # TODO: Docstring Aanpassen
-        # TODO: wat als één van de charpunten niet bestaat? b.v. teensloot?
         """Applies a minimal surface line offset to the phreatic line.
         
-        If the phreatic line lies above the surface level, then the phreatic line is set 
-        to the surface level. This is to prevent an unrealistic phreatic line. However,
-        for free water surfaces, this correction should not be and is not applied.
+        If the phreatic line lies above the surface level (minus offset), then the phreatic
+        line is set is reduced.  However, for free water surfaces, this correction is
+        not applied.
 
         In case there is a free water surface at both sides of the dike:
           The correction is applied between the intersection points of the free water 
@@ -1212,11 +1174,11 @@ class PhreaticLineModifier(BaseModel):
         In case there is one free water surface:
           The correction is applied between the intersection point of the free water 
           surface and the surface line and with the outer surface line point on the 
-          other side of the dike (CharPointType.SURFACE_LEVEL_LAND_SIDE or 
-          CharPointType.SURFACE_LEVEL_WATER_SIDE).
+          other side of the dike (from_char_point_type or to_char_point_type).
 
         In case there is no free water surface:
-          The correction is applied to the whole surface line.
+          The correction is applied between the given bounds
+          from_char_point_type and to_char_point_type.
 
         The correction is never applied to a ditch defined by character points.
         This is also a free water surface.
@@ -1230,6 +1192,14 @@ class PhreaticLineModifier(BaseModel):
             modify both polygons to include only the part to correct.
           - Determine the intersection (overlapping area) of the two polygons. The top part
             of the intersection is the corrected phreatic line.
+
+        Args:
+            head_line: The head line to modify.
+            offset: The offset to apply to the head line.
+            from_char_point_type: The type of the character point from which the correction should be applied.
+              The arguments from_char_point_type and to_char_point_type are interchangeable.
+            to_char_point_type: The type of the character point to which the correction should be applied.
+              The arguments from_char_point_type and to_char_point_type are interchangeable.
         """
 
         # Get the surface line from the geometry

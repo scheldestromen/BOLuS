@@ -111,7 +111,6 @@ class Waternet(BaseModel):
     ref_lines: list[ReferenceLine]
 
 
-# TODO: Omschrijven naar WaternetExceptionCollection - en toevoegen WaternetException/HeadLineException/ReferenceLineException ?
 # class WaternetCollection(BaseModel):
 #     waternets: list[Waternet]
 
