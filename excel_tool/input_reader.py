@@ -495,11 +495,6 @@ class ExcelInputReader(BaseModel):
             model_configs=ExcelInputReader.parse_model_configs(workbook),
         )
 
-        # dump and write to json
-        import json
-        with open("raw_user_input.json", "w") as f:
-            json.dump(user_input.dict(), f, indent=4)
-
         return RawUserInput(
             settings=ExcelInputReader.parse_settings(workbook),
             surface_lines=ExcelInputReader.parse_surface_lines(workbook),

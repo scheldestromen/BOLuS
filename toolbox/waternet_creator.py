@@ -411,6 +411,7 @@ def shift_points_with_equal_l_values(points: list[list[float]]) -> list[list[flo
 
     return points
 
+
 class LineFromAquiferMethod(BaseModel):
     @staticmethod
     def create_lines(
@@ -500,7 +501,7 @@ class LineIntrusionMethod(BaseModel):
             intrusion_from_ref_line = intrusion_from_ref_lines[i_ref_z_min]
 
         return intrusion_from_ref_line
-	
+
     @staticmethod
     def create_line(
         current_ref_lines: list[ReferenceLine], 
