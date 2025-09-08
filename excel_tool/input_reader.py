@@ -476,25 +476,6 @@ class ExcelInputReader(BaseModel):
 
         workbook = openpyxl.load_workbook(file_path, data_only=True, read_only=True)
 
-        user_input = RawUserInput(
-            settings=ExcelInputReader.parse_settings(workbook),
-            surface_lines=ExcelInputReader.parse_surface_lines(workbook),
-            char_points=ExcelInputReader.parse_char_points(workbook),
-            soil_params=ExcelInputReader.parse_soil_params(workbook),
-            soil_profiles=ExcelInputReader.parse_soil_profiles(workbook),
-            soil_profile_positions=ExcelInputReader.parse_soil_profile_positions(workbook),
-            water_levels=ExcelInputReader.parse_water_levels(workbook),
-            water_level_configs=ExcelInputReader.parse_water_level_configs(workbook),
-            headline_offset_methods=ExcelInputReader.parse_headline_offset_methods(workbook),
-            head_line_configs=ExcelInputReader.parse_head_line_configs(workbook),
-            ref_line_configs=ExcelInputReader.parse_ref_line_configs(workbook),
-            revetment_profile_blueprints=ExcelInputReader.parse_revetment_profile_blueprints(workbook),
-            loads=ExcelInputReader.parse_loads(workbook),
-            # hydraulic_pressure=ExcelInputReader.parse_hydraulic_pressure(workbook),
-            grid_settings=ExcelInputReader.parse_grid_settings(workbook),
-            model_configs=ExcelInputReader.parse_model_configs(workbook),
-        )
-
         return RawUserInput(
             settings=ExcelInputReader.parse_settings(workbook),
             surface_lines=ExcelInputReader.parse_surface_lines(workbook),
