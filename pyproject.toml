@@ -1,6 +1,6 @@
 [project]
 name = "bolus"
-version = "0.2.0c - dev"
+version = "0.2.0c"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
