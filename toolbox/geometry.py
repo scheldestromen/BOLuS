@@ -5,7 +5,10 @@ from typing import Literal, Optional
 import numpy as np
 from pydantic import BaseModel
 from shapely.geometry import LineString
+import csv
 
+from utils.dict_utils import remove_key
+from utils.list_utils import check_list_of_dicts_for_duplicate_values
 from utils.geometry_utils import geometry_to_points, linear_interpolation
 
 # TODO: Overwegen om validatie methodes toe te voegen.
@@ -15,6 +18,65 @@ from utils.geometry_utils import geometry_to_points, linear_interpolation
 # TODO: Overwegen om logica in CharPointsProfile te checken (bv. volgorde en aanwezigheid punten)
 # TODO: Overwegen om de sortering op l-coordinates automatisch te doen bij bepalen (of aanmaken)
 #       Dat heeft meerwaarde voor de intuïtie.
+
+
+CHAR_POINT_CSV_HEADER_DICT = {
+    "LOCATIONID": "name",
+    "X_Maaiveld buitenwaarts": "x_surface_level_water_side",
+    "Y_Maaiveld buitenwaarts": "y_surface_level_water_side",
+    "Z_Maaiveld buitenwaarts": "z_surface_level_water_side",
+    "X_Teen geul": "x_toe_canal",
+    "Y_Teen geul": "y_toe_canal",
+    "Z_Teen geul": "z_toe_canal",
+    "X_Insteek geul": "x_start_canal",
+    "Y_Insteek geul": "y_start_canal",
+    "Z_Insteek geul": "z_start_canal",
+    "X_Teen dijk buitenwaarts": "x_dike_toe_water_side",
+    "Y_Teen dijk buitenwaarts": "y_dike_toe_water_side",
+    "Z_Teen dijk buitenwaarts": "z_dike_toe_water_side",
+    "X_Kruin buitenberm": "x_berm_crest_water_side",
+    "Y_Kruin buitenberm": "y_berm_crest_water_side",
+    "Z_Kruin buitenberm": "z_berm_crest_water_side",
+    "X_Insteek buitenberm": "x_berm_start_water_side",
+    "Y_Insteek buitenberm": "y_berm_start_water_side",
+    "Z_Insteek buitenberm": "z_berm_start_water_side",
+    "X_Kruin buitentalud": "x_dike_crest_water_side",
+    "Y_Kruin buitentalud": "y_dike_crest_water_side",
+    "Z_Kruin buitentalud": "z_dike_crest_water_side",
+    "X_Verkeersbelasting kant buitenwaarts": "x_traffic_load_water_side",
+    "Y_Verkeersbelasting kant buitenwaarts": "y_traffic_load_water_side",
+    "Z_Verkeersbelasting kant buitenwaarts": "z_traffic_load_water_side",
+    "X_Verkeersbelasting kant binnenwaarts": "x_traffic_load_land_side",
+    "Y_Verkeersbelasting kant binnenwaarts": "y_traffic_load_land_side",
+    "Z_Verkeersbelasting kant binnenwaarts": "z_traffic_load_land_side",
+    "X_Kruin binnentalud": "x_dike_crest_land_side",
+    "Y_Kruin binnentalud": "y_dike_crest_land_side",
+    "Z_Kruin binnentalud": "z_dike_crest_land_side",
+    "X_Insteek binnenberm": "x_berm_start_land_side",
+    "Y_Insteek binnenberm": "y_berm_start_land_side",
+    "Z_Insteek binnenberm": "z_berm_start_land_side",
+    "X_Kruin binnenberm": "x_berm_crest_land_side",
+    "Y_Kruin binnenberm": "y_berm_crest_land_side",
+    "Z_Kruin binnenberm": "z_berm_crest_land_side",
+    "X_Teen dijk binnenwaarts": "x_dike_toe_land_side",
+    "Y_Teen dijk binnenwaarts": "y_dike_toe_land_side",
+    "Z_Teen dijk binnenwaarts": "z_dike_toe_land_side",
+    "X_Insteek sloot dijkzijde": "x_ditch_start_water_side",
+    "Y_Insteek sloot dijkzijde": "y_ditch_start_water_side",
+    "Z_Insteek sloot dijkzijde": "z_ditch_start_water_side",
+    "X_Slootbodem dijkzijde": "x_ditch_bottom_water_side",
+    "Y_Slootbodem dijkzijde": "y_ditch_bottom_water_side",
+    "Z_Slootbodem dijkzijde": "z_ditch_bottom_water_side",
+    "X_Slootbodem polderzijde": "x_ditch_bottom_land_side",
+    "Y_Slootbodem polderzijde": "y_ditch_bottom_land_side",
+    "Z_Slootbodem polderzijde": "z_ditch_bottom_land_side",
+    "X_Insteek sloot polderzijde": "x_ditch_start_land_side",
+    "Y_Insteek sloot polderzijde": "y_ditch_start_land_side",
+    "Z_Insteek sloot polderzijde": "z_ditch_start_land_side",
+    "X_Maaiveld binnenwaarts": "x_surface_level_land_side",
+    "Y_Maaiveld binnenwaarts": "y_surface_level_land_side",
+    "Z_Maaiveld binnenwaarts": "z_surface_level_land_side",
+}
 
 
 class CharPointType(StrEnum):
@@ -196,9 +258,9 @@ class CharPointsProfile(ProfileLine):
         char_points: list[CharPoint] = []
 
         for char_type in CharPointType:
-            x = char_points_dict[f"x_{char_type}"]
-            y = char_points_dict[f"y_{char_type}"]
-            z = char_points_dict[f"z_{char_type}"]
+            x = float(char_points_dict[f"x_{char_type}"])
+            y = float(char_points_dict[f"y_{char_type}"])
+            z = float(char_points_dict[f"z_{char_type}"])
 
             if x == -1 and y == -1 and z == -1:
                 continue
@@ -207,6 +269,26 @@ class CharPointsProfile(ProfileLine):
             char_points.append(char_point)
 
         return cls(name=name, points=char_points)
+
+    def to_dict(self) -> dict[str, float | str]:
+        """Returns a dictionary representation of the CharPointsProfile.
+        
+        CharPointTypes that are not included in the CharPointsProfile are added 
+        and assigned a value of -1 for x, y and z-coordinates."""
+
+        char_points_dict: dict[str, float | str] = {"name": self.name}
+
+        for char_type in CharPointType:
+            try:
+                char_point = self.get_point_by_type(char_type)
+            except ValueError:
+                char_point = CharPoint(x=-1, y=-1, z=-1, type=char_type)
+
+            char_points_dict[f"x_{char_point.type.value}"] = char_point.x
+            char_points_dict[f"y_{char_point.type.value}"] = char_point.y
+            char_points_dict[f"z_{char_point.type.value}"] = char_point.z
+
+        return char_points_dict
 
     def get_point_by_type(self, char_type: CharPointType) -> CharPoint:
         """Returns the characteristic point of the given type"""
@@ -312,6 +394,28 @@ class SurfaceLineCollection(BaseModel):
         else:
             raise ValueError(f"Could not find profile with name {name}")
 
+    def to_csv(self, file_path: str):
+        """Writes a CSV representation of the SurfaceLineCollection to a file. 
+        The CSV-file is according to the frequently used surfacelines.csv format as
+        is used in the BOI-software, qDAMEdit and the Exceltool.
+
+        The x, y and z coordinates are exported, the l-coordinates are not.
+        
+        Args:
+            file_path: The path to the file to write to
+        """
+        
+        with open(file_path, "w", newline='') as f:
+            csv_writer = csv.writer(f, delimiter=';')
+
+            # Write header
+            csv_writer.writerow(['LOCATIONID', 'X1', 'Y1', 'Z1', '.....', 'Xn', 'Yn', 'Zn', '(Profiel)'])
+            
+            for surface_line in self.surface_lines:
+                coord_list = [val for point in surface_line.points for val in [point.x, point.y, point.z]]
+                row = [surface_line.name] + coord_list
+                csv_writer.writerow(row)
+
 
 class CharPointsProfileCollection(BaseModel):
     """Representation a collection of CharPointsProfiles.
@@ -331,6 +435,76 @@ class CharPointsProfileCollection(BaseModel):
         else:
             raise ValueError(f"Could not find profile with name {name}")
 
+    @classmethod
+    def from_csv(cls, file_path: str, delimiter: Literal[",", ";"] = ";"):
+        """Instantiates a CharPointsProfileCollection from a CSV file.
+        
+        Args:
+            file_path: The path to the CSV file. The decimal must be a point.
+            delimiter: The delimiter of the CSV file
+        """
+
+        with open(file_path, "r") as f:
+            csv_reader = csv.reader(f, delimiter=delimiter)
+
+            # Get the headers
+            headers = next(csv_reader)
+            row_list: list[dict[str, str | float]] = []
+
+            # Put the rows in a list of dictionaries
+            for row in csv_reader:
+                row_dict = {CHAR_POINT_CSV_HEADER_DICT[header]: value for header, value in zip(headers, row)}
+                row_list.append(row_dict)
+
+        # Check for duplicate names. This is not allowed
+        check_list_of_dicts_for_duplicate_values(row_list, "name")
+
+        # Set the name as key and the points as value
+        char_points = {
+            char_dict["name"]: remove_key(char_dict, "name")
+            for char_dict in row_list
+        }
+
+        # Check if the csv decimal is a point and not a comma for the first row only
+        if char_points:
+            first_char_point_dict = list(char_points.values())[0]
+
+            for _, value in first_char_point_dict.items():
+                if "," in value:
+                    raise ValueError(
+                        "The csv decimal is a comma. This is not allowed. "
+                        "Please set this to a point and save the csv."
+                    )
+
+        # Create the CharPointsProfiles
+        char_points_profiles: list[CharPointsProfile] = []
+
+        for name, points_dict in char_points.items():
+            # .from_dict skips -1 values and starts from the outward side
+            char_points_profile = CharPointsProfile.from_dict(name=name, char_points_dict=points_dict)
+            char_points_profiles.append(char_points_profile)
+
+        return cls(char_points_profiles=char_points_profiles)
+
+    def to_csv(self, file_path: str):
+        """Writes a CSV representation of the CharPointsProfileCollection to a file.
+        The CSV-file is according to the frequently used characteristicpoints.csv format as
+        is used in the BOI-software, qDAMEdit and the Exceltool.
+        
+        Args:
+            file_path: The path to the file to write to
+        """
+
+        with open(file_path, "w", newline='') as f:
+            csv_writer = csv.writer(f, delimiter=';')
+
+            # Write header
+            csv_writer.writerow(CHAR_POINT_CSV_HEADER_DICT.keys())
+            
+            for char_points_profile in self.char_points_profiles:
+                char_points_dict = char_points_profile.to_dict()
+                row = [char_points_dict[header] for header in CHAR_POINT_CSV_HEADER_DICT.values()]
+                csv_writer.writerow(row)
 
 class Geometry(BaseModel):
     """Represents the geometry elements belonging to a cross-section
