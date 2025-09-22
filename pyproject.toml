@@ -10,3 +10,7 @@ dependencies = [
     "shapely>=2.0.6,<3",
     "d-geolib@git+https://github.com/KentropDevelopment/GEOLib.git@240-fix-connect-layers"
 ]
+
+[tool.setuptools.packages.find]
+where = ["bolus"]
+exclude = ["handleiding"]

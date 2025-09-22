@@ -125,3 +125,25 @@ def dm_batch_execute(dm_list: list[DStabilityModel]) -> list[DStabilityModel]:
         results = list(executor.map(DStabilityModel.execute, dm_list))
 
     return results
+
+
+# Aantekeningen
+
+# Gebruik in BOLuS - tab nodig om te verwijzen naar een bestaande berekening, (relatief)pad
+
+# Methode nodig voor het bepalen van de ligging van de referentielijn / aquifer
+#  - O.b.v. watervoerendheid van grondsoort
+#  - Op basis van opgegeven laagnamen (methode DAM) (en dan samenvoegen, of meerdere lagen mogelijk?)
+
+# get_aquifers_from_subsoil is bruikbaar. Enkel zorgen voor:
+#   - Subsoil met polygonen plus aanduiding watervoerendheid (Toe te voegen o.b.v. grondsoort)
+#   - Geometry (SurfaceLine + CharPointsProfile)
+
+# TODO:
+#  - Instelling toevoegen 'gebruik bestaande berekeningen (expirimenteel) + uitlezen in excel_tool
+#  - Tabblad toevoegen 'Bestaande stix's + uitlezen in excel_tool 
+#      --> Meerdere mogelijkheden voor bodemopbouw/geom maken door stage en scenario te laten selecteren?
+#  - Kolom 'Watervoerend' toevoegen in 'Sterkteparameters' met opmerking 'Alleen bij bestaande stix's'
+
+# Aandachtspunten
+#  - een stix heeft meerdere stages/scenarios. De charpoints moeten wel bij de juiste stage passen.

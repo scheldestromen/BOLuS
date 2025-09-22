@@ -6,20 +6,17 @@ from unittest import TestCase
 from geolib.models.dstability.internal import OptionsType
 from geolib.soils import ShearStrengthModelTypePhreaticLevel
 from geolib.models.dstability.internal import PersistableShadingTypeEnum
-from excel_tool.input_reader import (ExcelInputReader, RawUserInput,
-                                     RawInputToUserInputStructure,
-                                     INPUT_TO_BOOL, INPUT_TO_CHAR_POINTS,
-                                     INPUT_TO_SIDE, INPUT_TO_WATER_LINE_TYPE,
-                                     INPUT_TO_SLIP_PLANE_MODEL,
-                                     WaterLineType)
-from toolbox.geometry import CharPointType, Side, Point, SurfaceLineCollection, CharPointsProfileCollection, CharPoint
-from toolbox.soils import SoilCollection, Soil
-from toolbox.subsoil import SoilProfileCollection, SoilProfile, SoilProfilePositionSet,SoilProfilePositionSetCollection, SoilProfilePosition, RevetmentProfileBlueprintCollection, RevetmentProfileBlueprint, RevetmentLayerBlueprint
-from toolbox.loads import LoadCollection, Load
-from toolbox.waternet import Waternet, HeadLine
-from toolbox.calculation_settings import SlipPlaneModel, GridSettingsSetCollection, GridSettingsSet, BishopBruteForce, \
+from bolus.excel_tool import (RawUserInput,
+                              RawInputToUserInputStructure,
+                              WaterLineType)
+from bolus.toolbox.geometry import CharPointType, Side, Point, SurfaceLineCollection, CharPointsProfileCollection, CharPoint
+from bolus.toolbox.soils import SoilCollection, Soil
+from bolus.toolbox import SoilProfileCollection, SoilProfile, SoilProfilePositionSet,SoilProfilePositionSetCollection, SoilProfilePosition, RevetmentProfileBlueprintCollection, RevetmentProfileBlueprint, RevetmentLayerBlueprint
+from bolus.toolbox.loads import LoadCollection, Load
+from bolus.toolbox.waternet import Waternet, HeadLine
+from bolus.toolbox.calculation_settings import SlipPlaneModel, GridSettingsSetCollection, BishopBruteForce, \
     UpliftVanParticleSwarm
-from toolbox.model_creator import GeneralSettings, ModelConfig, StageConfig, ScenarioConfig, UserInputStructure
+from bolus.toolbox.model_creator import GeneralSettings, ModelConfig, StageConfig, ScenarioConfig, UserInputStructure
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.dirname(TEST_DIR)), "fixtures")

@@ -11,16 +11,16 @@ from geolib.models.dstability.states import (DStabilityStatePoint,
                                              PersistableStochasticParameter)
 from shapely import Point
 
-from toolbox.calculation_settings import (BishopBruteForce,
-                                          UpliftVanParticleSwarm)
-from toolbox.geolib_utils import get_by_id, get_stage_by_indices
-from toolbox.geometry import CharPointsProfile, Geometry
-from toolbox.loads import Load
-from toolbox.model import Model
-from toolbox.soils import SoilCollection
-from toolbox.state import StatePoint
-from toolbox.subsoil import Subsoil
-from toolbox.waternet import Waternet
+from bolus.toolbox.calculation_settings import (BishopBruteForce,
+                                                UpliftVanParticleSwarm)
+from bolus.toolbox.geolib_utils import get_by_id, get_stage_by_indices
+from bolus.toolbox.geometry import CharPointsProfile, Geometry
+from bolus.toolbox.loads import Load
+from bolus.toolbox.model import Model
+from bolus.toolbox.soils import SoilCollection
+from bolus.toolbox.state import StatePoint
+from bolus.toolbox.subsoil import Subsoil
+from bolus.toolbox.waternet import Waternet
 
 
 def get_scenario_and_stage_index_by_label(

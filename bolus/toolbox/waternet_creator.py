@@ -4,13 +4,13 @@ from typing import Optional, Self, Literal
 from shapely.geometry import Polygon, LineString, GeometryCollection
 from shapely.ops import unary_union
 
-from toolbox.geometry import CharPointType, CharPoint
-from toolbox.geometry import Geometry
-from toolbox.geometry import SurfaceLine
-from toolbox.geometry import Side
-from toolbox.waternet import HeadLine, ReferenceLine, Waternet
-from toolbox.subsoil import Subsoil
-from toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, RefLineMethodType, HeadLineConfig, \
+from bolus.toolbox.geometry import CharPointType, CharPoint
+from bolus.toolbox.geometry import Geometry
+from bolus.toolbox.geometry import SurfaceLine
+from bolus.toolbox.geometry import Side
+from bolus.toolbox.waternet import HeadLine, ReferenceLine, Waternet
+from bolus.toolbox.subsoil import Subsoil
+from bolus.toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, RefLineMethodType, HeadLineConfig, \
     ReferenceLineConfig, WaternetConfig, WaterLevelSetConfig
 from utils.geometry_utils import get_polygon_top_or_bottom, geometry_to_polygons, offset_line, simplify_line
 

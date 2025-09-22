@@ -6,17 +6,17 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from toolbox.calculation_settings import GridSettingsSetCollection
-from toolbox.geometry import (CharPointType, Geometry,
-                              create_geometries, SurfaceLineCollection, CharPointsProfileCollection)
-from toolbox.loads import LoadCollection
-from toolbox.model import Model, Scenario, Stage
-from toolbox.soils import SoilCollection
-from toolbox.state import create_state_points_from_subsoil
-from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
-from toolbox.waternet import Waternet
-from toolbox.waternet_creator import LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
-from toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection, WaterLevelSetConfigCollection
+from bolus.toolbox.calculation_settings import GridSettingsSetCollection
+from bolus.toolbox.geometry import (CharPointType, Geometry,
+                                    create_geometries, SurfaceLineCollection, CharPointsProfileCollection)
+from bolus.toolbox.loads import LoadCollection
+from bolus.toolbox.model import Model, Scenario, Stage
+from bolus.toolbox.soils import SoilCollection
+from bolus.toolbox.state import create_state_points_from_subsoil
+from bolus.toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
+from bolus.toolbox.waternet import Waternet
+from bolus.toolbox.waternet_creator import LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
+from bolus.toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection, WaterLevelSetConfigCollection
 
 
 class GeneralSettings(BaseModel):

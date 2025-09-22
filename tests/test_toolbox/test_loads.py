@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from toolbox.geometry import CharPointType, Side
-from toolbox.loads import Load, LoadCollection
+from bolus.toolbox.geometry import CharPointType, Side
+from bolus.toolbox.loads import Load, LoadCollection
 
 
 class TestLoad(TestCase):

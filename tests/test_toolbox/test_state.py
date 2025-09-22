@@ -2,9 +2,9 @@ from unittest import TestCase
 
 from geolib.soils import Soil as GLSoil
 
-from toolbox.soils import Soil, SoilCollection
-from toolbox.state import create_state_points_from_subsoil
-from toolbox.subsoil import SoilPolygon, Subsoil
+from bolus.toolbox.soils import Soil, SoilCollection
+from bolus.toolbox.state import create_state_points_from_subsoil
+from bolus.toolbox import SoilPolygon, Subsoil
 
 
 class TestState(TestCase):
