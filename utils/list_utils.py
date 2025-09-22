@@ -1,7 +1,9 @@
 """Module with helper functions for lists"""
 
+from typing import Any
 
-def check_list_of_dicts_for_duplicate_values(dict_list: list[dict], key: str) -> None:
+
+def check_list_of_dicts_for_duplicate_values(dict_list: list[dict[Any, Any]], key: str) -> None:
     """Checks for duplicate values at the specified key.
 
     The list should contain dictionaries with the specified key. The function

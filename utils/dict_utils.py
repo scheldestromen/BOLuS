@@ -16,7 +16,7 @@ def check_for_missing_keys(dict_to_check: dict, required_keys: list[str]) -> Non
         raise ValueError(f"Dictionary is missing required keys: {missing_keys}")
 
 
-def remove_key(d: dict, key: Any):
+def remove_key(d: dict[Any, Any], key: Any) -> dict[Any, Any]:
     """Removes a key from a dictionary and returns the modified dictionary"""
     d.pop(key)
     return d
