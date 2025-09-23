@@ -94,7 +94,6 @@ class UserInputStructure(BaseModel):
     soils: SoilCollection
     soil_profiles: SoilProfileCollection
     soil_profile_positions: SoilProfilePositionSetCollection
-    # subsoils: SubsoilCollection
     water_levels: WaterLevelCollection
     water_level_set_configs: WaterLevelSetConfigCollection
     waternet_configs: WaternetConfigCollection
@@ -135,26 +134,22 @@ def create_stage(
 
     surface_line = geometry.surface_line
 
-    if input_structure.settings.use_existing_subsoils:
-        subsoil = input_structure.subsoils.get_by_name(stage_config.subsoil_name)
-        
-    else:
-        profile_positions = input_structure.soil_profile_positions.get_by_name(
-            stage_config.soil_profile_position_name
-        )
+    profile_positions = input_structure.soil_profile_positions.get_by_name(
+        stage_config.soil_profile_position_name
+    )
 
-        soil_profiles_and_coords = [
-            (input_structure.soil_profiles.get_by_name(position.profile_name), position.l_coord)
-            for position in profile_positions.soil_profile_positions
-        ]
+    soil_profiles_and_coords = [
+        (input_structure.soil_profiles.get_by_name(position.profile_name), position.l_coord)
+        for position in profile_positions.soil_profile_positions
+    ]
 
-        # Create subsoil from the surface line, soil_profiles and the transitions
-        subsoil = subsoil_from_soil_profiles(
-            surface_line=surface_line,
-            soil_profiles=[sp[0] for sp in soil_profiles_and_coords],
-            transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
-            min_soil_profile_depth=input_structure.settings.min_soil_profile_depth,
-        )
+    # Create subsoil from the surface line, soil_profiles and the transitions
+    subsoil = subsoil_from_soil_profiles(
+        surface_line=surface_line,
+        soil_profiles=[sp[0] for sp in soil_profiles_and_coords],
+        transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
+        min_soil_profile_depth=input_structure.settings.min_soil_profile_depth,
+    )
 
     if stage_config.revetment_profile_name is not None:
         revetment_profile_blueprint = input_structure.revetment_profile_blueprints.get_by_name(
