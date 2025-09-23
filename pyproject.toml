@@ -12,4 +12,5 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
+where = ["."]
 exclude = ["handleiding"]
