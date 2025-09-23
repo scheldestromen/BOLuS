@@ -25,7 +25,6 @@ class GeneralSettings(BaseModel):
     calculate_l_coordinates: bool
     min_soil_profile_depth: float
     execute_calculations: bool
-    use_existing_subsoils: bool = False
     output_dir: Optional[str] = None
 
 
