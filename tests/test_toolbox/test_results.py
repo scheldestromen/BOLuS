@@ -10,7 +10,7 @@ from geolib.models.dstability.internal import (BishopBruteForceResult,
                                                UpliftVanParticleSwarmResult,
                                                UpliftVanReliabilityResult)
 
-from toolbox import (DStabilityResultExporter,
+from bolus.toolbox.results import (DStabilityResultExporter,
                      ResultSummary, results_from_dir)
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))

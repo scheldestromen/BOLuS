@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.list_utils import get_list_item_indices
+from bolus.utils.list_utils import get_list_item_indices
 
 
 class TestGetListItemIndices(TestCase):

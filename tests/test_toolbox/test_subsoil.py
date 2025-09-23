@@ -8,9 +8,9 @@ from geolib.models.dstability.internal import (PersistableLayer,
                                                PersistablePoint)
 from shapely import Polygon
 
-from excel_tool import RawInputToUserInputStructure
-from toolbox import Point, SurfaceLine
-from toolbox import (SoilLayer, SoilPolygon, SoilProfile,
+from bolus.excel_tool.input_reader import RawInputToUserInputStructure
+from bolus.toolbox.geometry import Point, SurfaceLine
+from bolus.toolbox.subsoil import (SoilLayer, SoilPolygon, SoilProfile,
                      Subsoil,
                      subsoil_from_soil_profiles)
 

@@ -3,8 +3,8 @@ import os
 from copy import deepcopy
 from unittest import TestCase
 
-from excel_tool import RawInputToUserInputStructure
-from toolbox import (CharPoint, CharPointsProfile,
+from bolus.excel_tool.input_reader import RawInputToUserInputStructure
+from bolus.toolbox.geometry import (CharPoint, CharPointsProfile,
                      CharPointsProfileCollection,
                      CharPointType, Point, SurfaceLine,
                      SurfaceLineCollection,

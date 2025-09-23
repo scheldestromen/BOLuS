@@ -1,6 +1,6 @@
 import unittest
 from shapely import Point, Polygon, LineString, GeometryCollection, MultiPolygon, MultiPoint, MultiLineString, LinearRing
-from utils import (
+from bolus.utils.geometry_utils import (
     geometry_to_polygons,
     geometry_to_points,
     offset_line,

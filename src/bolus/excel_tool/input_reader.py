@@ -12,30 +12,30 @@ from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel, Soil as GLSoi
 from geolib.models.dstability.internal import PersistableShadingTypeEnum
 from pydantic import BaseModel
 
-from toolbox.geometry import (CharPointsProfileCollection,
+from bolus.toolbox.geometry import (CharPointsProfileCollection,
                               CharPointType, Side,
                               SurfaceLine, SurfaceLineCollection,
                               CharPointsProfile)
-from toolbox.loads import LoadCollection, Load
-from toolbox.soils import SoilCollection, Soil
-from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
+from bolus.toolbox.loads import LoadCollection, Load
+from bolus.toolbox.soils import SoilCollection, Soil
+from bolus.toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
     SoilProfilePositionSet, SoilProfilePositionSetCollection, RevetmentLayerBlueprint, RevetmentProfileBlueprint, \
     RevetmentProfileBlueprintCollection
-from toolbox.waternet import WaterLineType
-from toolbox.waternet_creator import RefLevelType, OffsetType, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint
-from toolbox.waternet_config import (WaterLevelCollection, HeadLineMethodType, RefLineMethodType, WaterLevelSetConfig, \
+from bolus.toolbox.waternet import WaterLineType
+from bolus.toolbox.waternet_creator import RefLevelType, OffsetType, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint
+from bolus.toolbox.waternet_config import (WaterLevelCollection, HeadLineMethodType, RefLineMethodType, WaterLevelSetConfig, \
                                      HeadLineConfig, ReferenceLineConfig, WaternetConfig, WaternetConfigCollection, WaterLevelSetConfigCollection)
-from toolbox.calculation_settings import (GridSettingsSetCollection,
+from bolus.toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
                                           SlipPlaneModel,
                                           UpliftVanParticleSwarm,
                                           BishopBruteForce)
-from excel_tool.excel_utils import (parse_key_row, parse_key_value_cols,
+from bolus.excel_tool.excel_utils import (parse_key_row, parse_key_value_cols,
                                     parse_row_instance)
-from toolbox.model_creator import GeneralSettings, ModelConfig, UserInputStructure
-from utils.dict_utils import (group_dicts_by_key,
+from bolus.toolbox.model_creator import GeneralSettings, ModelConfig, UserInputStructure
+from bolus.utils.dict_utils import (group_dicts_by_key,
                               remove_key, check_for_missing_keys)
-from utils.list_utils import (check_list_of_dicts_for_duplicate_values,
+from bolus.utils.list_utils import (check_list_of_dicts_for_duplicate_values,
                               unique_in_order)
 
 
