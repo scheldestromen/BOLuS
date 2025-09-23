@@ -3,12 +3,12 @@ import os
 from copy import deepcopy
 from unittest import TestCase
 
-from bolus.excel_tool import RawInputToUserInputStructure
-from bolus.toolbox.geometry import (CharPoint, CharPointsProfile,
-                                    CharPointsProfileCollection,
-                                    CharPointType, Point, SurfaceLine,
-                                    SurfaceLineCollection,
-                                    create_geometries)
+from excel_tool import RawInputToUserInputStructure
+from toolbox import (CharPoint, CharPointsProfile,
+                     CharPointsProfileCollection,
+                     CharPointType, Point, SurfaceLine,
+                     SurfaceLineCollection,
+                     create_geometries)
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")

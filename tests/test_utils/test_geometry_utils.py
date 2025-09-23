@@ -1,10 +1,8 @@
 import unittest
 from shapely import Point, Polygon, LineString, GeometryCollection, MultiPolygon, MultiPoint, MultiLineString, LinearRing
-from utils.geometry_utils import (
+from utils import (
     geometry_to_polygons,
     geometry_to_points,
-    determine_point_in_polygon,
-    get_polygon_top_or_bottom,
     offset_line,
     is_valid_polygon
 )

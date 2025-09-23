@@ -9,7 +9,7 @@ import csv
 
 from utils.dict_utils import remove_key
 from utils.list_utils import check_list_of_dicts_for_duplicate_values
-from utils.geometry_utils import geometry_to_points, linear_interpolation
+from utils import geometry_to_points, linear_interpolation
 
 # TODO: Overwegen om validatie methodes toe te voegen.
 #       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.

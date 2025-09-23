@@ -5,7 +5,7 @@ from unittest import TestCase
 from geolib.models import DStabilityModel
 from geolib.models.dstability.internal import CalculationSettings
 
-from bolus.toolbox.geolib_utils import (
+from toolbox import (
     get_all_calculations, get_by_id, get_calculation_settings_by_result_id,
     get_stage_by_indices)
 

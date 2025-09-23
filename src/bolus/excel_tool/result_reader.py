@@ -4,7 +4,7 @@ Read results from a directory of .stix files
 
 import os
 
-from bolus.toolbox.results import results_from_dir
+from toolbox.results import results_from_dir
 
 if __name__ == "__main__":
     directory = input("Voer het pad naar map met .stix-bestanden in en druk op enter "

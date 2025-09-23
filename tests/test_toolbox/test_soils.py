@@ -3,7 +3,7 @@ from unittest import TestCase
 from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel
 from geolib.soils.soil import Soil as GLSoil
 
-from bolus.toolbox.soils import Soil, SoilCollection
+from toolbox import Soil, SoilCollection
 
 
 class TestSoil(TestCase):

@@ -3,7 +3,7 @@ from typing import Optional, Self
 
 from pydantic import BaseModel, model_validator
 
-from bolus.toolbox.geometry import CharPointType
+from toolbox.geometry import CharPointType
 
 
 class WaterLevelCollection(BaseModel):

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from bolus.toolbox.geometry import CharPointType, Side
+from toolbox.geometry import CharPointType, Side
 
 
 # TODO: LoadBlueprint maken (net als bij revetment)

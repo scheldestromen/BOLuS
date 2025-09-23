@@ -7,9 +7,9 @@ from pydantic import BaseModel, model_validator
 from shapely.geometry import Polygon, LineString, GeometryCollection, MultiPolygon
 from shapely.ops import split
 
-from bolus.toolbox.geolib_utils import get_by_id
-from bolus.toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
-from utils.geometry_utils import geometry_to_polygons, is_valid_polygon
+from toolbox.geolib_utils import get_by_id
+from toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
+from utils import geometry_to_polygons, is_valid_polygon
 
 
 # TODO: Zou mooi zijn om een baseclass voor collections te maken. Dan

@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from bolus.excel_tool import RawInputToUserInputStructure
-from bolus.toolbox.waternet import (HeadLine, ReferenceLine, WaterLineType,
-                                    Waternet)
+from excel_tool import RawInputToUserInputStructure
+from toolbox.waternet import (HeadLine, ReferenceLine, WaterLineType,
+                              Waternet)
 
 
 class TestHeadLine(TestCase):

@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, model_validator
 import numpy as np
 
-from utils.geometry_utils import linear_interpolation
+from utils import linear_interpolation
 
 
 class WaterLineType(StrEnum):

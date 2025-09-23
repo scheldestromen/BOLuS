@@ -20,7 +20,7 @@ from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from pydantic import BaseModel
 
-from bolus.toolbox.modifier import parse_d_stability_models
+from toolbox.modifier import parse_d_stability_models
 from utils.file_utils import get_files_by_extension
 from utils.list_utils import get_list_item_indices
 

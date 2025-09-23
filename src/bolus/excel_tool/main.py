@@ -5,11 +5,11 @@ Main module for excel_tool
 import os
 from pathlib import Path
 
-from bolus.toolbox.geolib_utils import dm_batch_execute
-from bolus.toolbox.modifier import create_d_stability_model
-from bolus.toolbox.results import DStabilityResultExporter
-from bolus.toolbox.model_creator import input_to_models
-from bolus.excel_tool.input_reader import ExcelInputReader, RawInputToUserInputStructure
+from toolbox.geolib_utils import dm_batch_execute
+from toolbox.modifier import create_d_stability_model
+from toolbox.results import DStabilityResultExporter
+from toolbox.model_creator import input_to_models
+from excel_tool.input_reader import ExcelInputReader, RawInputToUserInputStructure
 
 INPUT_FILE_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "Invoer BOLuS.xlsx"
