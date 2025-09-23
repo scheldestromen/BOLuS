@@ -247,8 +247,6 @@ def create_scenario(
         stages.append(
             create_stage(
                 stage_config=stage_config,
-                scenario_name=scenario_config.scenario_name,
-                calc_name=calc_name,
                 geometries=geometries,
                 input_structure=input_structure,
                 previous_waternet=previous_waternet,
