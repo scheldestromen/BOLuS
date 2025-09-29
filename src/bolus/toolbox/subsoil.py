@@ -136,13 +136,14 @@ class SoilPolygon(BaseModel):
     points: list[tuple[float, float]]
     dm_layer_id: Optional[str] = None
     is_aquifer: Optional[bool] = None
+    name: Optional[str] = None
 
     @classmethod
     def from_geolib_layer(cls, gl_layer: PersistableLayer, soil_type: str) -> Self:
         """Creates a SoilPolygon from a GEOLib PersistableLayer"""
 
         points = [(point.X, point.Z) for point in gl_layer.Points]
-        return cls(soil_type=soil_type, points=points, dm_layer_id=gl_layer.Id)
+        return cls(soil_type=soil_type, points=points, dm_layer_id=gl_layer.Id, name=gl_layer.Label)
 
     def to_geolib_points(self) -> list[GLPoint]:
         """Returns a list of GEOLib points"""
