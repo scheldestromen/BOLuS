@@ -1,4 +1,5 @@
 from typing import Optional, Self
+from enum import StrEnum, auto
 
 from geolib import DStabilityModel
 from geolib.geometry.one import Point as GLPoint
@@ -18,6 +19,11 @@ from bolus.utils.geometry_utils import geometry_to_polygons, is_valid_polygon
 #  - Eénmaal implementeren van check op dubbele namen
 
 # TODO: "Blueprint" is eigenlijk wat elders "Config" heet.
+
+class SubsoilInputType(StrEnum):
+    FROM_SOIL_PROFILE_POSITION = auto()
+    FROM_SUBSOIL_COLLECTION = auto()
+
 
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
@@ -178,11 +184,16 @@ class Subsoil(BaseModel):
         soil_polygons (list): List of SoilPolygon instances"""
 
     soil_polygons: list[SoilPolygon]
-    name: str = ""
+    name: Optional[str] = None
 
     @classmethod
     def from_geolib(
-        cls, dm: DStabilityModel, scenario_index: int, stage_index: int
+        cls, 
+        dm: DStabilityModel, 
+        scenario_index: int, 
+        stage_index: int, 
+        name: Optional[str] = None,
+        use_soil_name: bool = False
     ) -> Self:
         soil_layers = dm._get_soil_layers(
             scenario_index=scenario_index, stage_index=stage_index
@@ -197,12 +208,17 @@ class Subsoil(BaseModel):
             soil = get_by_id(collection=dm.soils.Soils, item_id=soil_layer.SoilId)
             layer = geometry.get_layer(id=soil_layer.LayerId)
 
+            if use_soil_name:
+                soil_type = soil.Name
+            else:
+                soil_type = soil.Code
+
             soil_polygon = SoilPolygon.from_geolib_layer(
-                soil_type=soil.Code, gl_layer=layer
+                soil_type=soil_type, gl_layer=layer
             )
             soil_polygons.append(soil_polygon)
 
-        return cls(soil_polygons=soil_polygons)
+        return cls(soil_polygons=soil_polygons, name=name)
 
     def remove_soil_polygons(self, remove_polygons: list[SoilPolygon]) -> None:
         """Substracts a polygon from the subsoil. This is done by 'clipping' the subsoil
@@ -261,20 +277,6 @@ class SubsoilCollection(BaseModel):
     """Collection of subsoils"""
 
     subsoils: list[Subsoil]
-
-    def from_dms(
-        self,
-        dm_list: list[DStabilityModel],
-        scenario_index: int,
-        stage_index: int
-    ) -> Self:
-        """Creates a SubsoilCollection from a list of DStabilityModels"""
-
-        for dm in dm_list:
-            subsoil = Subsoil.from_geolib(dm=dm, scenario_index=scenario_index, stage_index=stage_index)
-            self.subsoils.append(subsoil)
-
-        return self
 
     def get_by_name(self, name: str) -> Subsoil:
         """Returns the Subsoil with the given name"""

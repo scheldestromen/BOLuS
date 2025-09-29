@@ -13,7 +13,7 @@ from bolus.toolbox.loads import LoadCollection
 from bolus.toolbox.model import Model, Scenario, Stage
 from bolus.toolbox.soils import SoilCollection
 from bolus.toolbox.state import create_state_points_from_subsoil
-from bolus.toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
+from bolus.toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection, SubsoilCollection, SubsoilInputType
 from bolus.toolbox.waternet import Waternet
 from bolus.toolbox.waternet_creator import LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
 from bolus.toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection, WaterLevelSetConfigCollection
@@ -47,6 +47,8 @@ class StageConfig(BaseModel):
     revetment_profile_name: Optional[str]
     apply_state_points: bool
     load_name: Optional[str]
+    subsoil_input_type: SubsoilInputType = SubsoilInputType.FROM_SOIL_PROFILE_POSITION
+    subsoil_name: Optional[str] = None
 
 
 class ScenarioConfig(BaseModel):
@@ -102,6 +104,7 @@ class UserInputStructure(BaseModel):
     # waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection
     model_configs: list[ModelConfig]
+    subsoils: Optional[SubsoilCollection] = None  # Tijdelijk optioneel - tot implementatie in invoersheet
     
 
 def create_stage(
@@ -133,22 +136,37 @@ def create_stage(
 
     surface_line = geometry.surface_line
 
-    profile_positions = input_structure.soil_profile_positions.get_by_name(
-        stage_config.soil_profile_position_name
-    )
+    if stage_config.subsoil_input_type == SubsoilInputType.FROM_SOIL_PROFILE_POSITION:
+        profile_positions = input_structure.soil_profile_positions.get_by_name(
+            stage_config.soil_profile_position_name
+        )
 
-    soil_profiles_and_coords = [
-        (input_structure.soil_profiles.get_by_name(position.profile_name), position.l_coord)
-        for position in profile_positions.soil_profile_positions
-    ]
+        soil_profiles_and_coords = [
+            (input_structure.soil_profiles.get_by_name(position.profile_name), position.l_coord)
+            for position in profile_positions.soil_profile_positions
+        ]
 
-    # Create subsoil from the surface line, soil_profiles and the transitions
-    subsoil = subsoil_from_soil_profiles(
-        surface_line=surface_line,
-        soil_profiles=[sp[0] for sp in soil_profiles_and_coords],
-        transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
-        min_soil_profile_depth=input_structure.settings.min_soil_profile_depth,
-    )
+        # Create subsoil from the surface line, soil_profiles and the transitions
+        subsoil = subsoil_from_soil_profiles(
+            surface_line=surface_line,
+            soil_profiles=[sp[0] for sp in soil_profiles_and_coords],
+            transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
+            min_soil_profile_depth=input_structure.settings.min_soil_profile_depth,
+        )
+    elif stage_config.subsoil_input_type == SubsoilInputType.FROM_SUBSOIL_COLLECTION:
+        if stage_config.subsoil_name is None:
+            raise ValueError(
+                "Subsoil name is required when using subsoil input type FROM_SUBSOIL_COLLECTION"
+            )
+        if input_structure.subsoils is None:
+            raise ValueError(
+                "Subsoil collection is required when using subsoil input type FROM_SUBSOIL_COLLECTION"
+            )
+        subsoil = input_structure.subsoils.get_by_name(stage_config.subsoil_name)
+    else:
+        raise ValueError(
+            f"Invalid subsoil input type: {stage_config.subsoil_input_type}"
+        )
 
     if stage_config.revetment_profile_name is not None:
         revetment_profile_blueprint = input_structure.revetment_profile_blueprints.get_by_name(
