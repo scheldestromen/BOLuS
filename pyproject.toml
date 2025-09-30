@@ -14,3 +14,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 exclude = ["handleiding"]
+
+[tool.setuptools.package-data]
+bolus = ["toolbox/templates/*.xlsx"]
