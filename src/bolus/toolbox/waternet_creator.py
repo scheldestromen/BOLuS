@@ -2081,6 +2081,7 @@ class WaternetCreator(BaseModel):
         
         ref_lines.extend(self.create_ref_lines_aquifers_method())
         ref_lines.extend(self.create_ref_lines_offset_method(water_level_set=water_level_set))
+        ref_lines.extend(self.create_ref_lines_with_custom_lines())
         ref_lines.extend(self.create_ref_lines_intrusion_method(current_ref_lines=ref_lines))
 
         # Correct the crossing of reference lines between the surface level and the first aquifer
@@ -2104,10 +2105,6 @@ class WaternetCreator(BaseModel):
                     ref_lines=ref_lines,
                     soil_bottom=self.input.subsoil.get_bottom()
                 )
-
-        # Add the custom lines as last, with the above with no correction, to not interfere with the other methods
-        # The user is responsible for the correct schematization of the waternet when using custom lines
-        ref_lines.extend(self.create_ref_lines_with_custom_lines())
 
         # Correct the ref. lines with equal l-values to ensure a correct order and
         # add outer points to the ref. lines if they are not yet present
