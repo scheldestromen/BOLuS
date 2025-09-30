@@ -8,7 +8,7 @@ from bolus.toolbox.geometry import CharPointType, CharPoint
 from bolus.toolbox.geometry import Geometry
 from bolus.toolbox.geometry import SurfaceLine
 from bolus.toolbox.geometry import Side
-from bolus.toolbox.waternet import HeadLine, ReferenceLine, Waternet
+from bolus.toolbox.waternet import HeadLine, ReferenceLine, Waternet, WaterLineCollection
 from bolus.toolbox.subsoil import Subsoil
 from bolus.toolbox.waternet_config import WaterLevelCollection, HeadLineMethodType, RefLineMethodType, HeadLineConfig, \
     ReferenceLineConfig, WaternetConfig, WaterLevelSetConfig
@@ -1038,8 +1038,10 @@ class WaternetCreatorInput(BaseModel):
     water_level_collection: WaterLevelCollection
     water_level_set_config: WaterLevelSetConfig
     offset_method_collection: LineOffsetMethodCollection
+    custom_lines: WaterLineCollection
     subsoil: Optional[Subsoil] = None
-    previous_waternet: Optional[Waternet] = None    
+    previous_waternet: Optional[Waternet] = None   
+
 
     @model_validator(mode='after')
     def validate_subsoil(self) -> Self:
@@ -1829,6 +1831,28 @@ class WaternetCreator(BaseModel):
         
         return head_lines
 
+    def create_head_lines_with_custom_lines(self) -> list[HeadLine]:
+        head_lines: list[HeadLine] = []
+
+        for head_line_config in self.input.waternet_config.head_line_configs:
+            # Get the method to create the head line
+            if head_line_config.head_line_method_type != HeadLineMethodType.CUSTOM_LINE:
+                continue
+
+            water_line = self.input.custom_lines.get_by_name(head_line_config.custom_line_name)
+
+            # Create the head line
+            head_line = HeadLine(
+                name=head_line_config.name_head_line,
+                is_phreatic=head_line_config.is_phreatic,
+                l=water_line.l,
+                z=water_line.z
+            )
+
+            head_lines.append(head_line)
+        
+        return head_lines
+
     def create_head_lines_interpolate_from_waternet(
             self,
             ref_lines: list[ReferenceLine]
@@ -1872,6 +1896,29 @@ class WaternetCreator(BaseModel):
             head_lines.append(head_line)
         
         return head_lines
+
+    def create_ref_lines_with_custom_lines(self) -> list[ReferenceLine]:
+        ref_lines: list[ReferenceLine] = []
+        ref_line_configs = self.input.waternet_config.reference_line_configs
+        
+        for ref_line_config in ref_line_configs:
+            if ref_line_config.ref_line_method_type != RefLineMethodType.CUSTOM_LINE:
+                continue
+
+            water_line = self.input.custom_lines.get_by_name(ref_line_config.custom_line_name)
+
+            # Create the reference line
+            ref_line = ReferenceLine(
+                name=ref_line_config.name_ref_line,
+                l=water_line.l,
+                z=water_line.z,
+                head_line_top=ref_line_config.name_head_line_top,
+                head_line_bottom=ref_line_config.name_head_line_bottom
+            )
+
+            ref_lines.append(ref_line)
+
+        return ref_lines
 
     def create_ref_lines_aquifers_method(self) -> list[ReferenceLine]:
         ref_lines: list[ReferenceLine] = []
@@ -2027,6 +2074,7 @@ class WaternetCreator(BaseModel):
         # Create the head lines - first only with offsets
         head_lines: list[HeadLine] = []
         head_lines.extend(self.create_head_lines_with_offsets(water_level_set=water_level_set))
+        head_lines.extend(self.create_head_lines_with_custom_lines())
 
         # Create the reference lines - The order is important here
         ref_lines: list[ReferenceLine] = []
@@ -2056,7 +2104,11 @@ class WaternetCreator(BaseModel):
                     ref_lines=ref_lines,
                     soil_bottom=self.input.subsoil.get_bottom()
                 )
-                
+
+        # Add the custom lines as last, with the above with no correction, to not interfere with the other methods
+        # The user is responsible for the correct schematization of the waternet when using custom lines
+        ref_lines.extend(self.create_ref_lines_with_custom_lines())
+
         # Correct the ref. lines with equal l-values to ensure a correct order and
         # add outer points to the ref. lines if they are not yet present
         for ref_line in ref_lines:

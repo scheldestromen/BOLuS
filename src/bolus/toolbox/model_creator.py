@@ -14,7 +14,7 @@ from bolus.toolbox.model import Model, Scenario, Stage
 from bolus.toolbox.soils import SoilCollection
 from bolus.toolbox.state import create_state_points_from_subsoil
 from bolus.toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection, SubsoilCollection, SubsoilInputType
-from bolus.toolbox.waternet import Waternet
+from bolus.toolbox.waternet import WaterLineCollection, Waternet
 from bolus.toolbox.waternet_creator import LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
 from bolus.toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection, WaterLevelSetConfigCollection
 
@@ -99,9 +99,9 @@ class UserInputStructure(BaseModel):
     water_level_set_configs: WaterLevelSetConfigCollection
     waternet_configs: WaternetConfigCollection
     headline_offset_methods: LineOffsetMethodCollection
+    custom_lines: WaterLineCollection
     revetment_profile_blueprints: RevetmentProfileBlueprintCollection
     loads: LoadCollection
-    # waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection
     model_configs: list[ModelConfig]
     subsoils: Optional[SubsoilCollection] = None  # Tijdelijk optioneel - tot implementatie in invoersheet
@@ -195,6 +195,7 @@ def create_stage(
             water_level_collection=input_structure.water_levels,
             water_level_set_config=water_level_set_config,
             offset_method_collection=input_structure.headline_offset_methods,
+            custom_lines=input_structure.custom_lines,
             previous_waternet=previous_waternet,
         )
         waternet_creator = WaternetCreator(input=waternet_creator_input)

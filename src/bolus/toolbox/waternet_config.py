@@ -88,6 +88,7 @@ class HeadLineMethodType(StrEnum):
 
     OFFSETS = auto()
     INTERPOLATE_FROM_WATERNET = auto()
+    CUSTOM_LINE = auto()
 
 
 class RefLineMethodType(StrEnum):
@@ -98,6 +99,7 @@ class RefLineMethodType(StrEnum):
     INTRUSION = auto()
     AQUIFER = auto()
     INTERMEDIATE_AQUIFER = auto()
+    CUSTOM_LINE = auto()
 
 
 # TODO: Zou gesplitst kunnen worden per methode (net als bij ref. line zou moeten)
@@ -106,6 +108,7 @@ class HeadLineConfig(BaseModel):
     is_phreatic: bool
     head_line_method_type: HeadLineMethodType
     offset_method_name: Optional[str] = None
+    custom_line_name: Optional[str] = None
     apply_minimal_surface_line_offset: Optional[bool] = None
     minimal_surface_line_offset: Optional[float] = None
     minimal_offset_from_point: Optional[CharPointType] = None
@@ -115,7 +118,10 @@ class HeadLineConfig(BaseModel):
     def validate_head_line_method(self) -> Self:
         if self.head_line_method_type == HeadLineMethodType.OFFSETS and self.offset_method_name is None:
             raise ValueError(
-                f"An offset method needs to be specified when the headline method is {HeadLineMethodType.OFFSETS}")
+                f"An offset method needs to be specified when the head line method is `{HeadLineMethodType.OFFSETS}`")
+
+        if self.head_line_method_type == HeadLineMethodType.CUSTOM_LINE and self.custom_line_name is None:
+            raise ValueError(f"A custom line name needs to be specified when the head line method is `{HeadLineMethodType.CUSTOM_LINE}`")
 
         return self
 
@@ -144,6 +150,7 @@ class ReferenceLineConfig(BaseModel):
     name_head_line_bottom: Optional[str] = None
     ref_line_method_type: RefLineMethodType
     offset_method_name: Optional[str] = None
+    custom_line_name: Optional[str] = None
     intrusion_from_ref_line: Optional[str] = None
     intrusion_length: Optional[float] = None
 
@@ -152,6 +159,9 @@ class ReferenceLineConfig(BaseModel):
         if self.ref_line_method_type == RefLineMethodType.OFFSETS and self.offset_method_name is None:
             raise ValueError(
                 f"An offset method needs to be specified when the ref line method is {RefLineMethodType.OFFSETS}")
+
+        if self.ref_line_method_type == RefLineMethodType.CUSTOM_LINE and self.custom_line_name is None:
+            raise ValueError(f"A custom line name needs to be specified when the ref line method is `{RefLineMethodType.CUSTOM_LINE}`")
 
         if self.ref_line_method_type == RefLineMethodType.INTRUSION:
             if self.intrusion_length is None:
@@ -238,7 +248,7 @@ class WaternetConfig(BaseModel):
         return self
 
     @model_validator(mode='after')
-    def validate_intrusion_from_ref_line_excists(self) -> Self:
+    def validate_intrusion_from_ref_line_exists(self) -> Self:
         if self.reference_line_configs is not None:
             ref_line_names_referenced = [
                 config.intrusion_from_ref_line for config in self.reference_line_configs
