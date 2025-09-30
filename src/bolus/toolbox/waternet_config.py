@@ -130,10 +130,11 @@ class HeadLineConfig(BaseModel):
         if self.apply_minimal_surface_line_offset and not self.is_phreatic:
             raise ValueError("A minimal surface line offset can only be applied to a phreatic line")
 
-        if self.head_line_method_type == HeadLineMethodType.CUSTOM_LINE:
+        if self.head_line_method_type == HeadLineMethodType.CUSTOM_LINE and self.apply_minimal_surface_line_offset is True:
             raise ValueError(
                 f"A minimal surface line offset is not applicable when "
-                f"the head line method is `{HeadLineMethodType.CUSTOM_LINE}`"
+                f"the head line method is `{HeadLineMethodType.CUSTOM_LINE}`. "
+                f"This is the case for the custom line '{self.custom_line_name}'"
             )
 
         if self.apply_minimal_surface_line_offset:
