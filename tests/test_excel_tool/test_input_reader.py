@@ -92,7 +92,6 @@ class TestRawInputToUserInputStructure(TestCase):
             settings={
                 "min_soil_profile_depth": 10.0, 
                 "execute_calculations": True,
-                "apply_waternet": True,
                 "calculate_l_coordinates": True,
                 "output_dir": None
                 },
@@ -196,13 +195,80 @@ class TestRawInputToUserInputStructure(TestCase):
                     "Soil Profile 2": 20,
                 },
             },
+            water_levels={
+                "Profile 1": {
+                    "polder level": 1.0,
+                    "mean water level": 2.0,
+                    "extreme water level": 5.0,
+                },
+            },
+            water_level_configs={
+                "Daily": {
+                    "polder level": "polder level",
+                    "water level": "mean water level",
+                },
+                "Extreme": {
+                    "polder level": "polder level",
+                    "water level": "extreme water level",
+                },
+            },
+            headline_offset_methods={
+                "Phreatic": [
+                    {
+                        "char_point_type": "surface_level_water_side",
+                        "offset_value": 0.0,
+                        "ref_level_type": "fixed_level",
+                        "ref_level_name": "water level",
+                        "offset_type": "vertical"
+                    },
+                    {
+                        "char_point_type": "surface_level_land_side",
+                        "offset_value": 0.5,
+                        "ref_level_type": "fixed_level",
+                        "ref_level_name": "polder level",
+                        "offset_type": "vertical"
+                    },
+                ],
+            },
+            custom_lines={
+                "custom line 1": [0, 1, 2, 3, 4, 5],
+            },
+            head_line_configs={
+                "Daily": [
+                    {
+                        "name_head_line": "Phreatic",
+                        "is_phreatic": True,
+                        "head_line_method_type": "offsets",
+                        "offset_method_name": "Phreatic",
+                        "custom_line_name": None,
+                        "apply_minimal_surface_line_offset": True,
+                        "minimal_surface_line_offset": 0.2,
+                        "minimal_offset_from_point": "dike_crest_land_side",
+                        "minimal_offset_to_point": "surface_level_land_side"
+                    },
+                ],
+            },
+            ref_line_configs={
+                "Daily": [
+                    {
+                        "name_ref_line": "Phreatic bottom",
+                        "name_head_line_top": "Phreatic",
+                        "name_head_line_bottom": None,
+                        "ref_line_method_type": "custom_line",
+                        "offset_method_name": None,
+                        "custom_line_name": "custom line 1",
+                        "intrusion_from_ref_line": None,
+                        "intrusion_length": None
+                    },
+                    ],
+            },
             revetment_profile_blueprints={
-                "Grasbekleding": [
-                    {"revetment_profile_name": "Grasbekleding",
-                    "from_char_point": CharPointType.DIKE_CREST_LAND_SIDE,
-                    "to_char_point": CharPointType.DIKE_TOE_LAND_SIDE,
-                    "thickness": 0.5,
-                    "soil_type": "Clay",
+                "Grass Revetment": [
+                    {
+                        "from_char_point": CharPointType.DIKE_CREST_LAND_SIDE,
+                        "to_char_point": CharPointType.DIKE_TOE_LAND_SIDE,
+                        "thickness": 0.5,
+                        "soil_type": "Clay",
                     }
                 ]
             },
@@ -214,33 +280,25 @@ class TestRawInputToUserInputStructure(TestCase):
                 "position": "dike_crest_land_side",
                 "direction": "water_side",
             }],
-            hydraulic_pressure={
-                "calc1": {
-                    "scenario1": {
-                        "stage1": [{
-                            "type": WaterLineType.HEADLINE,
-                            "line_name": "phreatic",
-                            "values": [0, 2, 50, 1],
-                        }]
-                    }
-                }
-            },
             grid_settings={"Set 1": [self.bishop_dict]
             },
             model_configs=[{
                 "calc_name": "Calc 1",
                 "scenarios": [{
-                    "scenario_name": "Scenario 1",
+                    "scenario_name": "Basic",
                     "grid_settings_set_name": "Set 1",
                     "stages": [
                         {
-                            "stage_name": "Stage 1",
+                            "scenario_name": "Basic",
+                            "stage_name": "Daily",
                             "geometry_name": "Profile 1",
                             "soil_profile_position_name": "Calc 1",
                             "apply_state_points": True,
-                            "revetment_profile_name": "Grasbekleding",
+                            "waternet_scenario_name": "Daily",
+                            "water_level_set_name": "Daily",
+                            "revetment_profile_name": "Grass Revetment",
                             "load_name": "Traffic",
-                            "grid_settings_set_name": "Set 1",
+                            "grid_settings_set_name": "Set 1"
                         }
                     ]
                 }]
@@ -254,7 +312,6 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertIsInstance(settings, GeneralSettings)
         self.assertEqual(settings.min_soil_profile_depth, 10.0)
         self.assertTrue(settings.execute_calculations)
-        self.assertTrue(settings.apply_waternet)
         self.assertTrue(settings.calculate_l_coordinates)
         self.assertEqual(settings.output_dir, None)
 
@@ -391,39 +448,6 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertEqual(load.magnitude, 13.0)
         self.assertEqual(load.position, CharPointType.DIKE_CREST_LAND_SIDE)
         self.assertEqual(load.direction, Side.WATER_SIDE)
-
-    def test_convert_waternet_collection(self):
-        """Test converting waternet collection"""
-
-        waternets = RawInputToUserInputStructure.convert_waternet_collection(
-            self.raw_input.hydraulic_pressure,
-            name_phreatic_line="phreatic"
-        )
-        self.assertIsInstance(waternets, WaternetCollection)
-        self.assertEqual(len(waternets.waternets), 1)
-        waternet = waternets.waternets[0]
-        self.assertIsInstance(waternet, Waternet)
-        self.assertEqual(waternet.calc_name, "calc1")
-        self.assertEqual(waternet.scenario_name, "scenario1")
-        self.assertEqual(waternet.stage_name, "stage1")
-        self.assertEqual(len(waternet.head_lines), 1)
-        head_line = waternet.head_lines[0]
-        self.assertIsInstance(head_line, HeadLine)
-        self.assertEqual(head_line.l, [0, 50])
-        self.assertEqual(head_line.z, [2, 1])
-        self.assertTrue(head_line.is_phreatic)
-        self.assertEqual(head_line.name, "phreatic")
-
-    def test_convert_waternet_collection_empty_lines(self):
-        """Test creating a collection with empty lines list"""
-        empty_dict = {"calc1": {"scenario1": {"stage1": []}}}
-
-        collection = RawInputToUserInputStructure.convert_waternet_collection(
-            empty_dict, name_phreatic_line="headline1"
-        )
-        waternet = collection.waternets[0]
-        self.assertEqual(len(waternet.head_lines), 0)
-        self.assertEqual(len(waternet.ref_lines), 0)
 
     def test_from_dict_uplift_van_particle_swarm(self):
         grid_settings = RawInputToUserInputStructure.grid_settings_from_dict(
