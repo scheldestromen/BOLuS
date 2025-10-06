@@ -2,21 +2,21 @@
 Creates d_stability_toolbox Model objects from the user input
 """
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel
 
-from toolbox.calculation_settings import GridSettingsSetCollection
-from toolbox.geometry import (CharPointType, Geometry,
+from bolus.toolbox.calculation_settings import GridSettingsSetCollection
+from bolus.toolbox.geometry import (CharPointType, Geometry,
                               create_geometries, SurfaceLineCollection, CharPointsProfileCollection)
-from toolbox.loads import LoadCollection
-from toolbox.model import Model, Scenario, Stage
-from toolbox.soils import SoilCollection
-from toolbox.state import create_state_points_from_subsoil
-from toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection
-from toolbox.waternet import Waternet
-from toolbox.waternet_creator import LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
-from toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection, WaterLevelSetConfigCollection
+from bolus.toolbox.loads import LoadCollection
+from bolus.toolbox.model import Model, Scenario, Stage
+from bolus.toolbox.soils import SoilCollection
+from bolus.toolbox.state import create_state_points_from_subsoil
+from bolus.toolbox.subsoil import subsoil_from_soil_profiles, SoilProfileCollection, SoilProfilePositionSetCollection, add_revetment_profile_to_subsoil, RevetmentProfileBlueprintCollection, SubsoilCollection, SubsoilInputType
+from bolus.toolbox.waternet import WaterLineCollection, Waternet
+from bolus.toolbox.waternet_creator import LineOffsetMethodCollection, WaternetCreatorInput, WaternetCreator
+from bolus.toolbox.waternet_config import WaterLevelCollection, WaternetConfigCollection, WaterLevelSetConfigCollection
 
 
 class GeneralSettings(BaseModel):
@@ -26,6 +26,10 @@ class GeneralSettings(BaseModel):
     min_soil_profile_depth: float
     execute_calculations: bool
     output_dir: Optional[str] = None
+    char_type_left_point: Literal[
+        CharPointType.SURFACE_LEVEL_LAND_SIDE, 
+        CharPointType.SURFACE_LEVEL_WATER_SIDE
+        ] = CharPointType.SURFACE_LEVEL_LAND_SIDE
 
 
 class StageConfig(BaseModel):
@@ -47,6 +51,8 @@ class StageConfig(BaseModel):
     revetment_profile_name: Optional[str]
     apply_state_points: bool
     load_name: Optional[str]
+    subsoil_input_type: SubsoilInputType = SubsoilInputType.FROM_SOIL_PROFILE_POSITION
+    subsoil_name: Optional[str] = None
 
 
 class ScenarioConfig(BaseModel):
@@ -97,17 +103,16 @@ class UserInputStructure(BaseModel):
     water_level_set_configs: WaterLevelSetConfigCollection
     waternet_configs: WaternetConfigCollection
     headline_offset_methods: LineOffsetMethodCollection
+    custom_lines: WaterLineCollection
     revetment_profile_blueprints: RevetmentProfileBlueprintCollection
     loads: LoadCollection
-    # waternets: WaternetCollection
     grid_settings: GridSettingsSetCollection
     model_configs: list[ModelConfig]
+    subsoils: Optional[SubsoilCollection] = None  # Tijdelijk optioneel - tot implementatie in invoersheet
     
 
 def create_stage(
     stage_config: StageConfig,
-    scenario_name: str,
-    calc_name: str,
     geometries: List[Geometry],
     input_structure: UserInputStructure,
     previous_waternet: Optional[Waternet] = None,
@@ -117,8 +122,6 @@ def create_stage(
 
     Args:
         stage_config: Stage configuration.
-        scenario_name: The name of the scenario.
-        calc_name: The name of the calculation.
         geometries: A list of Geometry objects.
         input_structure: The user-provided input structure.
         previous_waternet: The previous waternet. If there is no previous stage, this is None.
@@ -137,22 +140,37 @@ def create_stage(
 
     surface_line = geometry.surface_line
 
-    profile_positions = input_structure.soil_profile_positions.get_by_name(
-        stage_config.soil_profile_position_name
-    )
+    if stage_config.subsoil_input_type == SubsoilInputType.FROM_SOIL_PROFILE_POSITION:
+        profile_positions = input_structure.soil_profile_positions.get_by_name(
+            stage_config.soil_profile_position_name
+        )
 
-    soil_profiles_and_coords = [
-        (input_structure.soil_profiles.get_by_name(position.profile_name), position.l_coord)
-        for position in profile_positions.soil_profile_positions
-    ]
+        soil_profiles_and_coords = [
+            (input_structure.soil_profiles.get_by_name(position.profile_name), position.l_coord)
+            for position in profile_positions.soil_profile_positions
+        ]
 
-    # Create subsoil from the surface line, soil_profiles and the transitions
-    subsoil = subsoil_from_soil_profiles(
-        surface_line=surface_line,
-        soil_profiles=[sp[0] for sp in soil_profiles_and_coords],
-        transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
-        min_soil_profile_depth=input_structure.settings.min_soil_profile_depth,
-    )
+        # Create subsoil from the surface line, soil_profiles and the transitions
+        subsoil = subsoil_from_soil_profiles(
+            surface_line=surface_line,
+            soil_profiles=[sp[0] for sp in soil_profiles_and_coords],
+            transitions=[sp[1] for sp in soil_profiles_and_coords][1:],  # Skip the first coords, it's None
+            min_soil_profile_depth=input_structure.settings.min_soil_profile_depth,
+        )
+    elif stage_config.subsoil_input_type == SubsoilInputType.FROM_SUBSOIL_COLLECTION:
+        if stage_config.subsoil_name is None:
+            raise ValueError(
+                "Subsoil name is required when using subsoil input type FROM_SUBSOIL_COLLECTION"
+            )
+        if input_structure.subsoils is None:
+            raise ValueError(
+                "Subsoil collection is required when using subsoil input type FROM_SUBSOIL_COLLECTION"
+            )
+        subsoil = input_structure.subsoils.get_by_name(stage_config.subsoil_name)
+    else:
+        raise ValueError(
+            f"Invalid subsoil input type: {stage_config.subsoil_input_type}"
+        )
 
     if stage_config.revetment_profile_name is not None:
         revetment_profile_blueprint = input_structure.revetment_profile_blueprints.get_by_name(
@@ -181,6 +199,7 @@ def create_stage(
             water_level_collection=input_structure.water_levels,
             water_level_set_config=water_level_set_config,
             offset_method_collection=input_structure.headline_offset_methods,
+            custom_lines=input_structure.custom_lines,
             previous_waternet=previous_waternet,
         )
         waternet_creator = WaternetCreator(input=waternet_creator_input)
@@ -188,12 +207,6 @@ def create_stage(
 
     else:
         waternet = None
-
-    # waternet = input_structure.waternets.get_waternet(
-    #     calc_name=calc_name,
-    #     scenario_name=scenario_name,
-    #     stage_name=stage_config.stage_name,
-    # ) if input_structure.settings.apply_waternet else None
 
     load = (
         input_structure.loads.get_by_name(stage_config.load_name)
@@ -224,7 +237,6 @@ def create_stage(
 
 def create_scenario(
     scenario_config: ScenarioConfig,
-    calc_name: str,
     geometries: List[Geometry],
     input_structure: UserInputStructure,
 ) -> Scenario:
@@ -233,7 +245,6 @@ def create_scenario(
 
     Args:
         scenario_config: Scenario configuration.
-        calc_name: The name of the calculation.
         geometries: A list of Geometry objects.
         input_structure: The user-provided input structure.
 
@@ -251,8 +262,6 @@ def create_scenario(
         stages.append(
             create_stage(
                 stage_config=stage_config,
-                scenario_name=scenario_config.scenario_name,
-                calc_name=calc_name,
                 geometries=geometries,
                 input_structure=input_structure,
                 previous_waternet=previous_waternet,
@@ -289,7 +298,7 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
     geometries = create_geometries(
         surface_line_collection=input_structure.surface_lines,
         char_point_collection=input_structure.char_points,
-        char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE,  # TODO: Invoer maken voor deze parameter
+        char_type_left_point=input_structure.settings.char_type_left_point,
         calculate_l_coordinates=input_structure.settings.calculate_l_coordinates,
     )
 
@@ -299,7 +308,7 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
         print(model_config.calc_name)
         scenarios = [
             create_scenario(
-                scenario, model_config.calc_name, geometries, input_structure
+                scenario, geometries, input_structure
             )
             for scenario in model_config.scenarios
         ]

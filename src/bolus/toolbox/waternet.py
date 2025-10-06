@@ -1,9 +1,9 @@
 from enum import StrEnum, auto
-from typing import Optional
+from typing import Optional, Self
 from pydantic import BaseModel, model_validator
 import numpy as np
 
-from utils.geometry_utils import linear_interpolation
+from bolus.utils.geometry_utils import linear_interpolation
 
 
 class WaterLineType(StrEnum):
@@ -72,6 +72,49 @@ class WaterLine(BaseModel):
 
         return linear_interpolation(x=l, xp=self.l, fp=self.z)
 
+    @classmethod
+    def from_list(cls, name: str, point_list: list[float]) -> Self:
+        """Instantiates a WaterLine from a flat list of points
+
+        Args:
+            name: The name of the SurfaceLine
+            point_list: A flat list of points [l1, z1, l2, z2, ...]"""
+
+        l = point_list[0::2]
+        z = point_list[1::2]
+
+        if not len(l) == len(z):
+            raise ValueError(
+                f"An incorrect number of points is given for the water line with"
+                f"name {name}. The length of `point_list` should be dividable by "
+                f"two so that every point has a l and z coordinate."
+            )
+
+        return cls(name=name, l=l, z=z)
+
+
+class WaterLineCollection(BaseModel):
+    water_lines: list[WaterLine]
+
+    def get_by_name(self, name: str) -> WaterLine:
+        """Returns the waterline with the given name
+
+        Args:
+            name: The name of the waterline
+
+        Returns:
+            The water line with the given name"""
+
+        water_line = next(
+            (water_line for water_line in self.water_lines if water_line.name == name),
+            None,
+        )
+
+        if water_line:
+            return water_line
+ 
+        raise ValueError(f"Could not find water line with name '{name}'")
+
 
 class HeadLine(WaterLine):
     """Represents a headline
@@ -109,38 +152,3 @@ class Waternet(BaseModel):
 
     head_lines: list[HeadLine]
     ref_lines: list[ReferenceLine]
-
-
-# class WaternetCollection(BaseModel):
-#     waternets: list[Waternet]
-
-#     def get_waternet(
-#         self, calc_name: str, scenario_name: str, stage_name: str
-#     ) -> Waternet:
-#         """Returns the waternet with the given calc_name, scenario_name and stage_name
-
-#         Args:
-#             calc_name: The name of the calculation
-#             scenario_name: The name of the scenario
-#             stage_name: The name of the stage
-
-#         Returns:
-#             The waternet with the given calc_name, scenario_name and stage_name"""
-
-#         waternet = next(
-#             (
-#                 waternet
-#                 for waternet in self.waternets
-#                 if waternet.calc_name == calc_name
-#                 and waternet.scenario_name == scenario_name
-#                 and waternet.stage_name == stage_name
-#             ),
-#             None,
-#         )
-#         if waternet:
-#             return waternet
-
-#         raise ValueError(
-#             f"Could not find waternet with calc_name {calc_name}, scenario_name {scenario_name} "
-#             f"and stage_name {stage_name}"
-#         )

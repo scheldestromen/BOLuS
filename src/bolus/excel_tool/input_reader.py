@@ -12,31 +12,32 @@ from geolib.soils.soil import ShearStrengthModelTypePhreaticLevel, Soil as GLSoi
 from geolib.models.dstability.internal import PersistableShadingTypeEnum
 from pydantic import BaseModel
 
-from toolbox.geometry import (CharPointsProfileCollection,
+from bolus.toolbox.geometry import (CharPointsProfileCollection,
                               CharPointType, Side,
                               SurfaceLine, SurfaceLineCollection,
                               CharPointsProfile)
-from toolbox.loads import LoadCollection, Load
-from toolbox.soils import SoilCollection, Soil
-from toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
+from bolus.toolbox.loads import LoadCollection, Load
+from bolus.toolbox.soils import SoilCollection, Soil
+from bolus.toolbox.subsoil import SoilProfileCollection, SoilLayer, SoilProfile, SoilProfilePosition, \
     SoilProfilePositionSet, SoilProfilePositionSetCollection, RevetmentLayerBlueprint, RevetmentProfileBlueprint, \
     RevetmentProfileBlueprintCollection
-from toolbox.waternet import WaterLineType, HeadLine, ReferenceLine
-from toolbox.waternet_creator import RefLevelType, OffsetType, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint
-from toolbox.waternet_config import (WaterLevelCollection, HeadLineMethodType, RefLineMethodType, WaterLevelSetConfig, \
+from bolus.toolbox.waternet import WaterLineType
+from bolus.toolbox.waternet_creator import RefLevelType, OffsetType, LineOffsetMethodCollection, LineOffsetMethod, LineOffsetPoint
+from bolus.toolbox.waternet_config import (WaterLevelCollection, HeadLineMethodType, RefLineMethodType, WaterLevelSetConfig, \
                                      HeadLineConfig, ReferenceLineConfig, WaternetConfig, WaternetConfigCollection, WaterLevelSetConfigCollection)
-from toolbox.calculation_settings import (GridSettingsSetCollection,
+from bolus.toolbox.calculation_settings import (GridSettingsSetCollection,
                                           GridSettingsSet,
                                           SlipPlaneModel,
                                           UpliftVanParticleSwarm,
                                           BishopBruteForce)
-from excel_tool.excel_utils import (parse_key_row, parse_key_value_cols,
+from bolus.excel_tool.excel_utils import (parse_key_row, parse_key_value_cols,
                                     parse_row_instance)
-from toolbox.model_creator import GeneralSettings, ModelConfig, UserInputStructure
-from utils.dict_utils import (group_dicts_by_key,
+from bolus.toolbox.model_creator import GeneralSettings, ModelConfig, UserInputStructure
+from bolus.utils.dict_utils import (group_dicts_by_key,
                               remove_key, check_for_missing_keys)
-from utils.list_utils import (check_list_of_dicts_for_duplicate_values,
+from bolus.utils.list_utils import (check_list_of_dicts_for_duplicate_values,
                               unique_in_order)
+from bolus.toolbox.waternet import WaterLine, WaterLineCollection
 
 
 # Filter to suppress only the specific warning about Data Validation extension
@@ -53,11 +54,11 @@ INPUT_SHEETS = {
     "water_levels": "Waterstanden",
     "water_level_set_configs": "Waterstandsets",
     "headline_offset_methods": "Offset methodes",
+    "custom_lines": "Handmatige lijnen",
     "head_line_configs": "Stijghoogtes",
     "ref_line_configs": "Referentielijnen",
     "revetment_profile_blueprints": "Bekleding",
     "loads": "Belasting",
-    # "hydraulic_pressure": "Waterspanningen",
     "grid_settings": "Gridinstellingen",
     "model_configs": "Berekeningen",
 }
@@ -208,6 +209,7 @@ HEAD_LINE_CONFIG_COLS = {
     "is_phreatic": "Freatisch",
     "head_line_method_type": "Methode stijghoogte",
     "offset_method_name": "Offset methode",
+    "custom_line_name": "Naam handmatige lijn",
     "apply_minimal_surface_line_offset": "Minimale offset met het maaiveld toepassen",
     "minimal_surface_line_offset": "Waarde minimale offset",
     "minimal_offset_from_point": "Minimale offset vanaf punt",
@@ -228,6 +230,7 @@ REF_LINE_CONFIG_COLS = {
     "name_head_line_bottom": "PL-lijn onderzijde",
     "ref_line_method_type": "Plaatsing referentielijn",
     "offset_method_name": "Offset methode",
+    "custom_line_name": "Naam handmatige lijn",
     "intrusion_from_ref_line": "Indringing vanaf referentielijn",
     "intrusion_length": "Indringingslengte",
 }
@@ -259,16 +262,6 @@ LOAD_COLS = {
 }
 
 REQUIRED_LOAD_COLS = LOAD_COLS.keys()
-
-# HYDRAULIC_PRESSURE_COLS = {
-#     "calc_name": "Berekening",
-#     "scenario": "Scenario",
-#     "stage": "Stage",
-#     "type": "Type",
-#     "line_name": "Naam",
-#     "head_line_top": "PL-lijn bovenzijde",
-#     "head_line_bottom": "PL-lijn onderzijde",
-# }
 
 GRID_SETTINGS_COLS = {
     "name_set": "Naam set",
@@ -389,6 +382,7 @@ INPUT_TO_WATER_LINE_TYPE = {
 INPUT_TO_HEAD_LINE_METHOD_TYPE = {
     "Offset methode": HeadLineMethodType.OFFSETS,
     "Afleiden uit vorige stage": HeadLineMethodType.INTERPOLATE_FROM_WATERNET,
+    "Handmatige lijn": HeadLineMethodType.CUSTOM_LINE,
 }
 
 INPUT_TO_REF_LINE_METHOD_TYPE = {
@@ -396,6 +390,7 @@ INPUT_TO_REF_LINE_METHOD_TYPE = {
     "Watervoerende laag": RefLineMethodType.AQUIFER,
     "Watervoerende tussenlaag": RefLineMethodType.INTERMEDIATE_AQUIFER,
     "Indringingslengte": RefLineMethodType.INTRUSION,
+    "Handmatige lijn": RefLineMethodType.CUSTOM_LINE,
 }
 
 INPUT_TO_SLIP_PLANE_MODEL = {
@@ -458,11 +453,11 @@ class RawUserInput(BaseModel):
     water_levels: dict[str, dict[str, float | None]]
     water_level_configs: dict[str, dict[str, str | None]]
     headline_offset_methods: dict[str, list[dict[str, str | float | None]]]
+    custom_lines: dict[str, list[float]]
     head_line_configs: dict[str, list[dict[str, str | bool | float | CharPointType | None]]]
     ref_line_configs: dict[str, list[dict[str, str | float | None]]]
     revetment_profile_blueprints: dict[str, list[dict[str, str | float]]]
     loads: list[dict[str, str | float | None]]
-    # hydraulic_pressure: dict[str, list[dict[str, str | float | None]]]
     grid_settings: dict[str, list[dict[str, str | float | None]]]
     model_configs: list[dict[str, Any]]
 
@@ -486,11 +481,11 @@ class ExcelInputReader(BaseModel):
             water_levels=ExcelInputReader.parse_water_levels(workbook),
             water_level_configs=ExcelInputReader.parse_water_level_configs(workbook),
             headline_offset_methods=ExcelInputReader.parse_headline_offset_methods(workbook),
+            custom_lines=ExcelInputReader.parse_custom_lines(workbook),
             head_line_configs=ExcelInputReader.parse_head_line_configs(workbook),
             ref_line_configs=ExcelInputReader.parse_ref_line_configs(workbook),
             revetment_profile_blueprints=ExcelInputReader.parse_revetment_profile_blueprints(workbook),
             loads=ExcelInputReader.parse_loads(workbook),
-            # hydraulic_pressure=ExcelInputReader.parse_hydraulic_pressure(workbook),
             grid_settings=ExcelInputReader.parse_grid_settings(workbook),
             model_configs=ExcelInputReader.parse_model_configs(workbook),
         )
@@ -689,6 +684,21 @@ class ExcelInputReader(BaseModel):
         return headline_offset_methods
 
     @staticmethod
+    def parse_custom_lines(workbook: Any) -> dict[str, list[float]]:
+        custom_lines = parse_key_row(
+            sheet=workbook[INPUT_SHEETS["custom_lines"]],
+            skip_rows=2,
+        )
+
+        # Check for duplicate names
+        custom_line_names = custom_lines.keys()
+        if len(custom_line_names) != len(set(custom_line_names)):
+            raise ValueError(f"Duplicate custom line names found: {custom_line_names}.\n"
+                             "Please ensure all custom line names are unique.")
+
+        return custom_lines
+
+    @staticmethod
     def parse_head_line_configs(workbook: Any) -> dict[str, list[dict[str, str | bool | float | CharPointType | None]]]:
         head_line_configs = parse_row_instance(
             sheet=workbook[INPUT_SHEETS["head_line_configs"]],
@@ -761,28 +771,6 @@ class ExcelInputReader(BaseModel):
             line_dict["position"] = INPUT_TO_CHAR_POINTS.get(line_dict["position"])
 
         return loads
-
-    # @staticmethod
-    # def parse_hydraulic_pressure(workbook: Any):
-    #     hydraulic_pressure = parse_row_instance_remainder(
-    #         sheet=workbook[INPUT_SHEETS["hydraulic_pressure"]],
-    #         header_row=1,
-    #         skip_rows=3,
-    #         col_dict=HYDRAULIC_PRESSURE_COLS,
-    #         key_remainder="values",
-    #     )
-
-    #     # Preprocess hydraulic_pressure
-    #     for line_dict in hydraulic_pressure:
-    #         line_dict["type"] = INPUT_TO_WATER_LINE_TYPE.get(line_dict["type"])
-
-    #     # Create structured dict {calc_name: {scenario: {stage: {...}}}}
-    #     hydraulic_pressure = list_to_nested_dict(
-    #         hydraulic_pressure,
-    #         keys=["calc_name", "scenario", "stage"],
-    #         remove_group_key=True,
-    #     )
-    #     return hydraulic_pressure
 
     @staticmethod
     def parse_grid_settings(workbook: Any) -> dict[str, list[dict[str, str | float | None]]]:
@@ -931,12 +919,10 @@ class RawInputToUserInputStructure:
                 head_line_configs_dict=raw_input.head_line_configs, ref_line_configs_dict=raw_input.ref_line_configs),
             headline_offset_methods=RawInputToUserInputStructure.convert_offset_methods(
                 raw_input.headline_offset_methods),
+            custom_lines=RawInputToUserInputStructure.convert_water_lines(raw_input.custom_lines),
             revetment_profile_blueprints=RawInputToUserInputStructure.convert_revetment_profile_blueprint_collection(
                 raw_input.revetment_profile_blueprints),
             loads=RawInputToUserInputStructure.convert_loads(raw_input.loads),
-            # waternets=RawInputToUserInputStructure.convert_waternet_collection(
-            #     raw_input.hydraulic_pressure, name_phreatic_line=NAME_PHREATIC_LINE
-            # ),
             grid_settings=RawInputToUserInputStructure.convert_grid_settings_set_collection(raw_input.grid_settings),
             model_configs=RawInputToUserInputStructure.convert_model_configs(raw_input.model_configs),
         )
@@ -1228,6 +1214,20 @@ class RawInputToUserInputStructure:
         return LineOffsetMethodCollection(offset_methods=headline_offset_methods)
 
     @staticmethod
+    def convert_water_lines(custom_lines_dict: dict[str, list[float]]) -> WaterLineCollection:
+        """Parses the dictionary into a WaterLineCollection
+        
+        Args:
+            custom_lines_dict: The dictionary to parse."""
+
+        water_lines: list[WaterLine] = []
+
+        for name, point_list in custom_lines_dict.items():
+            water_lines.append(WaterLine.from_list(name=name, point_list=point_list))
+
+        return WaterLineCollection(water_lines=water_lines)
+
+    @staticmethod
     def convert_revetment_profile_blueprint_collection(
             revetment_profile_dict: dict[str, list[dict[str, Any]]]
     ) -> RevetmentProfileBlueprintCollection:
@@ -1269,92 +1269,6 @@ class RawInputToUserInputStructure:
         loads = [Load.model_validate(load_dict) for load_dict in loads_dicts]
 
         return LoadCollection(loads=loads)
-
-    # @staticmethod
-    # def parse_head_lines(
-    #         lines: list[dict[str, Any]], name_phreatic_line: str
-    # ) -> list[HeadLine]:
-    #     """Parse the head lines from the dictionary
-
-    #     Args:
-    #         lines (list[dict[str, Any]]): The lines to parse
-    #         name_phreatic_line (str): The name of the phreatic line
-
-    #     Returns:
-    #         The parsed head lines"""
-
-    #     head_lines: list[HeadLine] = []
-    #     for line in lines:
-    #         if line["type"] == WaterLineType.HEADLINE:
-    #             head_lines.append(
-    #                 HeadLine(
-    #                     name=line["line_name"],
-    #                     is_phreatic=line["line_name"] == name_phreatic_line,
-    #                     l=line["values"][0::2],
-    #                     z=line["values"][1::2],
-    #                 )
-    #             )
-
-    #     return head_lines
-
-    # @staticmethod
-    # def parse_ref_lines(lines: list[dict[str, Any]]) -> list[ReferenceLine]:
-    #     ref_lines: list[ReferenceLine] = []
-
-    #     for line in lines:
-    #         if line["type"] == WaterLineType.REFERENCE_LINE:
-    #             if line["head_line_top"] is None:
-    #                 raise ValueError(
-    #                     f"Head line top is not set for reference line {line['line_name']}"
-    #                 )
-
-    #             if line["head_line_bottom"] is None:
-    #                 line["head_line_bottom"] = line["head_line_top"]
-
-    #             ref_lines.append(
-    #                 ReferenceLine(
-    #                     name=line["line_name"],
-    #                     l=line["values"][0::2],
-    #                     z=line["values"][1::2],
-    #                     head_line_top=line["head_line_top"],
-    #                     head_line_bottom=line["head_line_bottom"],
-    #                 )
-    #             )
-
-    #     return ref_lines
-
-    # @staticmethod
-    # def convert_waternet_collection(
-    #     waternets_dict: dict[str, dict[str, dict[str, list[dict[str, Any]]]]], 
-    #     name_phreatic_line: str
-    # ) -> WaternetCollection:
-    #     """Parse dict to WaternetCollection
-
-    #     Args:
-    #         waternets_dict: Dictionary with structure {calc_name: {scenario: {stage: [line_dicts]}}}
-    #         name_phreatic_line: The name of the phreatic line
-
-    #     Returns:
-    #         WaternetCollection: Collection of waternet objects"""
-
-    #     waternets: list[Waternet] = []
-
-    #     for calc_name, calc_dict in waternets_dict.items():
-    #         for scenario_name, scenario_dict in calc_dict.items():
-    #             for stage_name, lines in scenario_dict.items():
-    #                 head_lines = RawInputToUserInputStructure.parse_head_lines(lines, name_phreatic_line)
-    #                 ref_lines = RawInputToUserInputStructure.parse_ref_lines(lines)
-    #                 waternets.append(
-    #                     Waternet(
-    #                         calc_name=calc_name,
-    #                         scenario_name=scenario_name,
-    #                         stage_name=stage_name,
-    #                         head_lines=head_lines,
-    #                         ref_lines=ref_lines,
-    #                     )
-    #                 )
-
-    #     return WaternetCollection(waternets=waternets)
 
     @staticmethod
     def grid_settings_from_dict(grid_setting_dict: dict):

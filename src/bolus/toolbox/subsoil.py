@@ -1,4 +1,5 @@
 from typing import Optional, Self
+from enum import StrEnum, auto
 
 from geolib import DStabilityModel
 from geolib.geometry.one import Point as GLPoint
@@ -7,9 +8,9 @@ from pydantic import BaseModel, model_validator
 from shapely.geometry import Polygon, LineString, GeometryCollection, MultiPolygon
 from shapely.ops import split
 
-from toolbox.geolib_utils import get_by_id
-from toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
-from utils.geometry_utils import geometry_to_polygons, is_valid_polygon
+from bolus.toolbox.geolib_utils import get_by_id
+from bolus.toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
+from bolus.utils.geometry_utils import geometry_to_polygons, is_valid_polygon
 
 
 # TODO: Zou mooi zijn om een baseclass voor collections te maken. Dan
@@ -18,6 +19,11 @@ from utils.geometry_utils import geometry_to_polygons, is_valid_polygon
 #  - Eénmaal implementeren van check op dubbele namen
 
 # TODO: "Blueprint" is eigenlijk wat elders "Config" heet.
+
+class SubsoilInputType(StrEnum):
+    FROM_SOIL_PROFILE_POSITION = auto()
+    FROM_SUBSOIL_COLLECTION = auto()
+
 
 class SoilLayer(BaseModel):
     """Representation of a 1D soil layer"""
@@ -110,6 +116,7 @@ class SoilProfileCollection(BaseModel):
         """Returns the SoilProfile with the given name"""
 
         profile = next((prof for prof in self.profiles if prof.name == name), None)
+
         if profile:
             return profile
         else:
@@ -135,13 +142,14 @@ class SoilPolygon(BaseModel):
     points: list[tuple[float, float]]
     dm_layer_id: Optional[str] = None
     is_aquifer: Optional[bool] = None
+    name: Optional[str] = None
 
     @classmethod
     def from_geolib_layer(cls, gl_layer: PersistableLayer, soil_type: str) -> Self:
         """Creates a SoilPolygon from a GEOLib PersistableLayer"""
 
         points = [(point.X, point.Z) for point in gl_layer.Points]
-        return cls(soil_type=soil_type, points=points, dm_layer_id=gl_layer.Id)
+        return cls(soil_type=soil_type, points=points, dm_layer_id=gl_layer.Id, name=gl_layer.Label)
 
     def to_geolib_points(self) -> list[GLPoint]:
         """Returns a list of GEOLib points"""
@@ -170,16 +178,22 @@ class Subsoil(BaseModel):
     SoilPolygon's belonging to the same cross-sectional schematization.
 
     There is no check on whether soil polygons are overlapping.
-    This should be implemented Subsoil and Geometry modifications are implemented
+    This should be implemented.
 
     Attributes:
         soil_polygons (list): List of SoilPolygon instances"""
 
     soil_polygons: list[SoilPolygon]
+    name: Optional[str] = None
 
     @classmethod
     def from_geolib(
-        cls, dm: DStabilityModel, scenario_index: int, stage_index: int
+        cls, 
+        dm: DStabilityModel, 
+        scenario_index: int, 
+        stage_index: int, 
+        name: Optional[str] = None,
+        use_soil_name: bool = False
     ) -> Self:
         soil_layers = dm._get_soil_layers(
             scenario_index=scenario_index, stage_index=stage_index
@@ -194,12 +208,17 @@ class Subsoil(BaseModel):
             soil = get_by_id(collection=dm.soils.Soils, item_id=soil_layer.SoilId)
             layer = geometry.get_layer(id=soil_layer.LayerId)
 
+            if use_soil_name:
+                soil_type = soil.Name
+            else:
+                soil_type = soil.Code
+
             soil_polygon = SoilPolygon.from_geolib_layer(
-                soil_type=soil.Code, gl_layer=layer
+                soil_type=soil_type, gl_layer=layer
             )
             soil_polygons.append(soil_polygon)
 
-        return cls(soil_polygons=soil_polygons)
+        return cls(soil_polygons=soil_polygons, name=name)
 
     def remove_soil_polygons(self, remove_polygons: list[SoilPolygon]) -> None:
         """Substracts a polygon from the subsoil. This is done by 'clipping' the subsoil
@@ -213,7 +232,7 @@ class Subsoil(BaseModel):
 
         # Create a new list to store the modified polygons
         new_soil_polygons: list[SoilPolygon] = []
-        
+
         for soil_polygon in self.soil_polygons:
             soil_polygon_shapely = soil_polygon.to_shapely()
 
@@ -224,7 +243,7 @@ class Subsoil(BaseModel):
                 if soil_polygon_shapely.intersects(polygon_shapely):
                     should_keep = False
                     clipped_polygon = soil_polygon_shapely.difference(polygon_shapely)
-                    
+
                     # Handle different geometry types
                     if isinstance(clipped_polygon, (GeometryCollection, MultiPolygon)):
                         for geom in clipped_polygon.geoms:
@@ -240,11 +259,11 @@ class Subsoil(BaseModel):
                         )
                         new_soil_polygons.append(new_soil_polygon)
                     break  # No need to check other layers once we've clipped this polygon
-            
+
             # If the polygon wasn't clipped, keep it
             if should_keep:
                 new_soil_polygons.append(soil_polygon)
-        
+
         # Replace the old list with the new one
         self.soil_polygons = new_soil_polygons
 
@@ -252,6 +271,22 @@ class Subsoil(BaseModel):
         """Returns the minimim z-coordinate of the subsoil"""
 
         return min(point[1] for polygon in self.soil_polygons for point in polygon.points)
+
+
+class SubsoilCollection(BaseModel):
+    """Collection of subsoils"""
+
+    subsoils: list[Subsoil]
+
+    def get_by_name(self, name: str) -> Subsoil:
+        """Returns the Subsoil with the given name"""
+
+        subsoil = next((subsoil for subsoil in self.subsoils if subsoil.name == name), None)
+
+        if subsoil:
+            return subsoil
+        else:
+            raise ValueError(f"Could not find subsoil with name '{name}'")
 
 
 class RevetmentLayer(BaseModel):
@@ -292,9 +327,9 @@ class RevetmentLayer(BaseModel):
         helper_right = max(self.l_coords)
         helper_polygon = Polygon(
             [
-                (helper_left, helper_top), 
-                (helper_right, helper_top), 
-                (helper_right, helper_bottom), 
+                (helper_left, helper_top),
+                (helper_right, helper_top),
+                (helper_right, helper_bottom),
                 (helper_left, helper_bottom)
             ]
         )
@@ -338,7 +373,7 @@ class RevetmentProfile(BaseModel):
             soil_polygons.append(soil_polygon)
 
         return soil_polygons
-    
+
 
 class RevetmentLayerBlueprint(BaseModel):
     """Blueprint for creating revetment layers. This acts as a factory for RevetmentLayer instances.
@@ -362,17 +397,17 @@ class RevetmentLayerBlueprint(BaseModel):
         Returns:
             RevetmentLayer: A concrete revetment layer with l_coords derived from char_points.
         """
-        char_points = [char_point_profile.get_point_by_type(char_point_type) 
+        char_points = [char_point_profile.get_point_by_type(char_point_type)
                       for char_point_type in self.char_point_types]
-        
+
         # Ensure both l coordinates are not None
         if char_points[0].l is None or char_points[1].l is None:
             raise ValueError("Characteristic points must have l-coordinates")
-            
+
         l_coords = (float(char_points[0].l), float(char_points[1].l))
-        
+
         return RevetmentLayer(
-            soil_type=self.soil_type, 
+            soil_type=self.soil_type,
             thickness=self.thickness,
             l_coords=l_coords
         )
@@ -391,7 +426,7 @@ class RevetmentProfileBlueprint(BaseModel):
 
     name: str
     layer_blueprints: Optional[list[RevetmentLayerBlueprint]] = None
-    
+
     def create_revetment_profile(self, char_point_profile: CharPointsProfile) -> RevetmentProfile:
         """Creates a revetment profile from the blueprints.
         
@@ -403,12 +438,12 @@ class RevetmentProfileBlueprint(BaseModel):
         """
         if not self.layer_blueprints:
             raise ValueError("No layer blueprints available")
-        
+
         revetment_layers = [
-            blueprint.create_revetment_layer(char_point_profile) 
+            blueprint.create_revetment_layer(char_point_profile)
             for blueprint in self.layer_blueprints
             ]
-            
+
         return RevetmentProfile(layers=revetment_layers)
 
 
@@ -424,14 +459,14 @@ class RevetmentProfileBlueprintCollection(BaseModel):
         """Returns the RevetmentProfileBlueprint with the given name"""
 
         profile_blueprint = next(
-            (profile_blueprint for profile_blueprint in self.profile_blueprints if profile_blueprint.name == name), 
+            (profile_blueprint for profile_blueprint in self.profile_blueprints if profile_blueprint.name == name),
             None
             )
         if profile_blueprint:
             return profile_blueprint
         else:
             raise ValueError(f"Could not find revetment profile blueprint with name '{name}'")
-        
+
 
 def subsoil_from_soil_profiles(
     surface_line: SurfaceLine,

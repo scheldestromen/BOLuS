@@ -3,7 +3,7 @@ from typing import Optional, Self
 
 from pydantic import BaseModel, model_validator
 
-from toolbox.geometry import CharPointType
+from bolus.toolbox.geometry import CharPointType
 
 
 class WaterLevelCollection(BaseModel):
@@ -88,6 +88,7 @@ class HeadLineMethodType(StrEnum):
 
     OFFSETS = auto()
     INTERPOLATE_FROM_WATERNET = auto()
+    CUSTOM_LINE = auto()
 
 
 class RefLineMethodType(StrEnum):
@@ -98,6 +99,7 @@ class RefLineMethodType(StrEnum):
     INTRUSION = auto()
     AQUIFER = auto()
     INTERMEDIATE_AQUIFER = auto()
+    CUSTOM_LINE = auto()
 
 
 # TODO: Zou gesplitst kunnen worden per methode (net als bij ref. line zou moeten)
@@ -106,6 +108,7 @@ class HeadLineConfig(BaseModel):
     is_phreatic: bool
     head_line_method_type: HeadLineMethodType
     offset_method_name: Optional[str] = None
+    custom_line_name: Optional[str] = None
     apply_minimal_surface_line_offset: Optional[bool] = None
     minimal_surface_line_offset: Optional[float] = None
     minimal_offset_from_point: Optional[CharPointType] = None
@@ -115,7 +118,10 @@ class HeadLineConfig(BaseModel):
     def validate_head_line_method(self) -> Self:
         if self.head_line_method_type == HeadLineMethodType.OFFSETS and self.offset_method_name is None:
             raise ValueError(
-                f"An offset method needs to be specified when the headline method is {HeadLineMethodType.OFFSETS}")
+                f"An offset method needs to be specified when the head line method is `{HeadLineMethodType.OFFSETS}`")
+
+        if self.head_line_method_type == HeadLineMethodType.CUSTOM_LINE and self.custom_line_name is None:
+            raise ValueError(f"A custom line name needs to be specified when the head line method is `{HeadLineMethodType.CUSTOM_LINE}`")
 
         return self
 
@@ -123,6 +129,13 @@ class HeadLineConfig(BaseModel):
     def validate_minimal_surface_line_offset(self) -> Self:
         if self.apply_minimal_surface_line_offset and not self.is_phreatic:
             raise ValueError("A minimal surface line offset can only be applied to a phreatic line")
+
+        if self.head_line_method_type == HeadLineMethodType.CUSTOM_LINE and self.apply_minimal_surface_line_offset is True:
+            raise ValueError(
+                f"A minimal surface line offset is not applicable when "
+                f"the head line method is `{HeadLineMethodType.CUSTOM_LINE}`. "
+                f"This is the case for the custom line '{self.custom_line_name}'"
+            )
 
         if self.apply_minimal_surface_line_offset:
             if self.minimal_surface_line_offset is None:
@@ -144,6 +157,7 @@ class ReferenceLineConfig(BaseModel):
     name_head_line_bottom: Optional[str] = None
     ref_line_method_type: RefLineMethodType
     offset_method_name: Optional[str] = None
+    custom_line_name: Optional[str] = None
     intrusion_from_ref_line: Optional[str] = None
     intrusion_length: Optional[float] = None
 
@@ -152,6 +166,9 @@ class ReferenceLineConfig(BaseModel):
         if self.ref_line_method_type == RefLineMethodType.OFFSETS and self.offset_method_name is None:
             raise ValueError(
                 f"An offset method needs to be specified when the ref line method is {RefLineMethodType.OFFSETS}")
+
+        if self.ref_line_method_type == RefLineMethodType.CUSTOM_LINE and self.custom_line_name is None:
+            raise ValueError(f"A custom line name needs to be specified when the ref line method is `{RefLineMethodType.CUSTOM_LINE}`")
 
         if self.ref_line_method_type == RefLineMethodType.INTRUSION:
             if self.intrusion_length is None:
@@ -225,6 +242,8 @@ class WaternetConfig(BaseModel):
         if self.reference_line_configs is not None:
             assigned_head_line_names = [config.name_head_line_top for config in self.reference_line_configs]
             assigned_head_line_names.extend([config.name_head_line_bottom for config in self.reference_line_configs])
+            # Filter None values
+            assigned_head_line_names = [name for name in assigned_head_line_names if name is not None]
         else:
             assigned_head_line_names = []
 
@@ -234,11 +253,21 @@ class WaternetConfig(BaseModel):
             raise ValueError("There are head lines that are not assigned to a reference line. "
                              f"This is the case for the head lines '{', '.join(non_assigned_head_line_names)}' "
                              f"in the waternet scenario '{self.name_waternet_scenario}'")
+        
+        # Check if the assigned head line names are actually defined in the head line configs
+        all_head_line_names = [hlc.name_head_line for hlc in self.head_line_configs]
+
+        for head_line_name in assigned_head_line_names:
+            if head_line_name not in all_head_line_names:
+                raise ValueError(
+                    f"The head line '{head_line_name}' is assigned to a reference line "
+                    f"in the waternet scenario '{self.name_waternet_scenario}' "
+                    f"but is not defined in the head line configs")
 
         return self
 
     @model_validator(mode='after')
-    def validate_intrusion_from_ref_line_excists(self) -> Self:
+    def validate_intrusion_from_ref_line_exists(self) -> Self:
         if self.reference_line_configs is not None:
             ref_line_names_referenced = [
                 config.intrusion_from_ref_line for config in self.reference_line_configs

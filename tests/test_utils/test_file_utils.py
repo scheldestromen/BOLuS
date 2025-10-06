@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from utils.file_utils import get_files_by_extension
+from bolus.utils.file_utils import get_files_by_extension
 
 
 class TestGetFilesByExtension(TestCase):

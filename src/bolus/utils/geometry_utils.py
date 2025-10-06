@@ -51,7 +51,6 @@ def geometry_to_points(geometry: GeometryType) -> list[Point]:
             points.append(current)
 
         elif isinstance(current, LinearRing):
-            print([Point(x, y) for x, y in current.coords[:-1]])
             points.extend([Point(x, y) for x, y in current.coords[:-1]])  # The last point is repeated
 
         # If the current geometry is a line, add its points to the list

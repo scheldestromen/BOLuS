@@ -1,0 +1,19 @@
+[project]
+name = "bolus"
+version = "0.2.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.10.2,<3",
+    "openpyxl>=3.1.5,<4",
+    "shapely>=2.0.6,<3",
+    "d-geolib@git+https://github.com/KentropDevelopment/GEOLib.git@240-fix-connect-layers"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["handleiding"]
+
+[tool.setuptools.package-data]
+bolus = ["toolbox/templates/*.xlsx"]

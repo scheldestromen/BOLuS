@@ -7,9 +7,9 @@ from pydantic import BaseModel
 from shapely.geometry import LineString
 import csv
 
-from utils.dict_utils import remove_key
-from utils.list_utils import check_list_of_dicts_for_duplicate_values
-from utils.geometry_utils import geometry_to_points, linear_interpolation
+from bolus.utils.dict_utils import remove_key
+from bolus.utils.list_utils import check_list_of_dicts_for_duplicate_values
+from bolus.utils.geometry_utils import geometry_to_points, linear_interpolation
 
 # TODO: Overwegen om validatie methodes toe te voegen.
 #       Als iemand zelf een Geometry maakt is het niet gegarandeerd dat deze correct is.
@@ -19,6 +19,7 @@ from utils.geometry_utils import geometry_to_points, linear_interpolation
 # TODO: Overwegen om de sortering op l-coordinates automatisch te doen bij bepalen (of aanmaken)
 #       Dat heeft meerwaarde voor de intuïtie.
 
+SURFACE_LINE_CSV_HEADER = ['LOCATIONID', 'X1', 'Y1', 'Z1', '.....', 'Xn', 'Yn', 'Zn', '(Profiel)']
 
 CHAR_POINT_CSV_HEADER_DICT = {
     "LOCATIONID": "name",
@@ -166,6 +167,13 @@ class ProfileLine(BaseModel):
 
         # CharPoints can have equal l-coordinates (e.g. the crest and traffic load)
         l_coords = [point.l for point in self.points]
+
+        if any(l is None for l in l_coords):
+            raise ValueError(
+                f"The l-coordinates are not (all) calculated for profile `{self.name}` "
+                f"Make sure to set the l-coordinates."
+            )
+
         monotonical = np.all(np.diff(l_coords) >= 0) or np.all(np.diff(l_coords) <= 0)
 
         if not monotonical:
@@ -272,6 +280,16 @@ class CharPointsProfile(ProfileLine):
 
     def to_dict(self) -> dict[str, float | str]:
         """Returns a dictionary representation of the CharPointsProfile.
+
+        The dict keys are the CharPointTypes with a cooridate indication 
+        and also the name of the profile. For example:
+        {
+            "name": "Profile_1",
+            "x_surface_level_water_side": 2,
+            "y_surface_level_water_side": 1,
+            "z_surface_level_water_side": 3,
+            ...
+        }
         
         CharPointTypes that are not included in the CharPointsProfile are added 
         and assigned a value of -1 for x, y and z-coordinates."""
@@ -367,8 +385,8 @@ class SurfaceLine(ProfileLine):
 
         if not len(x) == len(y) == len(z):
             raise ValueError(
-                f"An incorrect number of points is given for the surface line with"
-                f"name {name}. The length of `point_list` should be dividable by "
+                f"An incorrect number of points is given for the surface line with "
+                f"name `{name}`. The length of `point_list` should be dividable by "
                 f"three so that every point has a x, y and z coordinate."
             )
 
@@ -394,6 +412,40 @@ class SurfaceLineCollection(BaseModel):
         else:
             raise ValueError(f"Could not find profile with name {name}")
 
+    @classmethod
+    def from_csv(cls, file_path: str, delimiter: Literal[",", ";"] = ";"):
+        """Instantiates a SurfaceLineCollection from a CSV file.
+        The csv file is according to the frequently used surfacelines.csv format as
+        is used in the BOI-software, qDAMEdit and the Exceltool.
+        
+        Args:
+            file_path: The path to the CSV file. The decimal must be a point.
+            delimiter: The delimiter of the CSV file
+        """
+        
+        surface_lines: list[SurfaceLine] = []
+
+        with open(file_path, "r") as f:
+            csv_reader = csv.reader(f, delimiter=delimiter)
+            
+            # Skip the header line
+            next(csv_reader)
+
+            for row in csv_reader:
+                name = row[0]
+                point_list = row[1:]
+
+                if any("," in value for value in point_list):
+                    raise ValueError(
+                        "The csv decimal is a comma. This is not allowed. "
+                        "Please set this to a point and save the csv."
+                    )
+                    
+                surface_line = SurfaceLine.from_list(name=name, point_list=[float(value) for value in point_list])
+                surface_lines.append(surface_line)
+
+        return cls(surface_lines=surface_lines)
+
     def to_csv(self, file_path: str):
         """Writes a CSV representation of the SurfaceLineCollection to a file. 
         The CSV-file is according to the frequently used surfacelines.csv format as
@@ -409,7 +461,7 @@ class SurfaceLineCollection(BaseModel):
             csv_writer = csv.writer(f, delimiter=';')
 
             # Write header
-            csv_writer.writerow(['LOCATIONID', 'X1', 'Y1', 'Z1', '.....', 'Xn', 'Yn', 'Zn', '(Profiel)'])
+            csv_writer.writerow(SURFACE_LINE_CSV_HEADER)
             
             for surface_line in self.surface_lines:
                 coord_list = [val for point in surface_line.points for val in [point.x, point.y, point.z]]
@@ -438,6 +490,8 @@ class CharPointsProfileCollection(BaseModel):
     @classmethod
     def from_csv(cls, file_path: str, delimiter: Literal[",", ";"] = ";"):
         """Instantiates a CharPointsProfileCollection from a CSV file.
+        The csv file is according to the frequently used characteristicpoints.csv format as
+        is used in the BOI-software, qDAMEdit and the Exceltool.
         
         Args:
             file_path: The path to the CSV file. The decimal must be a point.
@@ -469,12 +523,11 @@ class CharPointsProfileCollection(BaseModel):
         if char_points:
             first_char_point_dict = list(char_points.values())[0]
 
-            for _, value in first_char_point_dict.items():
-                if "," in value:
-                    raise ValueError(
-                        "The csv decimal is a comma. This is not allowed. "
-                        "Please set this to a point and save the csv."
-                    )
+            if any("," in value for value in first_char_point_dict.values()):
+                raise ValueError(
+                    "The csv decimal is a comma. This is not allowed. "
+                    "Please set this to a point and save the csv."
+                )
 
         # Create the CharPointsProfiles
         char_points_profiles: list[CharPointsProfile] = []

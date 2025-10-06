@@ -7,15 +7,13 @@ from geolib.models.dstability.analysis import (
     DStabilityUpliftVanParticleSwarmAnalysisMethod)
 from geolib.models.dstability.internal import OptionsType
 
-from excel_tool.input_reader import RawInputToUserInputStructure
-from toolbox.calculation_settings import (BishopBruteForce,
-                                          GridSettings,
+from bolus.toolbox.calculation_settings import (BishopBruteForce,
                                           GridSettingsSet,
                                           GridSettingsSetCollection,
                                           SlipPlaneModel,
                                           UpliftVanParticleSwarm)
-from toolbox.geometry import (CharPoint, CharPointsProfile,
-                              CharPointType, Side)
+from bolus.toolbox.geometry import (CharPoint, CharPointsProfile,
+                     CharPointType, Side)
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(TEST_DIR), "fixtures")

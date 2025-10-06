@@ -6,9 +6,9 @@ from typing import Literal, Self, Optional
 
 from pydantic import BaseModel, model_validator
 
-from toolbox.soils import SoilCollection
-from toolbox.subsoil import Subsoil
-from utils.geometry_utils import determine_point_in_polygon
+from bolus.toolbox.soils import SoilCollection
+from bolus.toolbox.subsoil import Subsoil
+from bolus.utils.geometry_utils import determine_point_in_polygon
 
 
 class StatePoint(BaseModel):

@@ -1,12 +1,11 @@
 import unittest
 from shapely import Point, Polygon, LineString, GeometryCollection, MultiPolygon, MultiPoint, MultiLineString, LinearRing
-from utils.geometry_utils import (
+from bolus.utils.geometry_utils import (
     geometry_to_polygons,
     geometry_to_points,
-    determine_point_in_polygon,
-    get_polygon_top_or_bottom,
     offset_line,
-    is_valid_polygon
+    is_valid_polygon,
+    linear_interpolation
 )
 
 
@@ -25,7 +24,8 @@ class TestGeometryUtils(unittest.TestCase):
 
         result = geometry_to_polygons(geometry_collection)
         self.assertEqual(len(result), 3)
-        self.assertTrue(all(isinstance(p, Polygon) for p in result))
+        # Result should only contain polygons
+        self.assertTrue(all(p.geom_type == "Polygon" for p in result))
         self.assertTrue(all(p in result for p in [polygon, mpoly_1, mpoly_2]))
 
     def test_geometry_to_points(self):
@@ -68,3 +68,35 @@ class TestGeometryUtils(unittest.TestCase):
         self.assertTrue(is_valid_polygon(polygon))
         self.assertFalse(is_valid_polygon(invalid_polygon_1))
         self.assertFalse(is_valid_polygon(invalid_polygon_2))
+
+    def test_linear_interpolation_basic_linear(self):
+        x = [0.0, 1.0, 2.0, 3.0]
+        y = [0.0, 10.0, 20.0, 30.0]
+        self.assertEqual(linear_interpolation(1.5, x, y), 15.0)
+
+    def test_linear_interpolation_decreasing_x(self):
+        x = [5.0, 3.0, 1.0]
+        y = [10.0, 6.0, 2.0]
+        self.assertEqual(linear_interpolation(4.0, x, y), 8.0)
+
+    def test_linear_interpolation_out_of_range_raises(self):
+        x = [0.0, 1.0, 2.0]
+        y = [0.0, 1.0, 2.0]
+        with self.assertRaises(ValueError):
+            linear_interpolation(-0.1, x, y)
+        with self.assertRaises(ValueError):
+            linear_interpolation(2.1, x, y)
+
+    def test_linear_interpolation_non_monotonic_raises(self):
+        # Not strictly increasing or decreasing should raise
+        x = [0.0, 2.0, 1.0]
+        y = [0.0, 4.0, 1.0]
+        with self.assertRaises(ValueError):
+            linear_interpolation(1.5, x, y)
+
+    def test_linear_interpolation_equal_x_values_raises(self):
+        # Equal x values are not allowed per implementation checks
+        x = [0.0, 1.0, 1.0, 2.0]
+        y = [0.0, 1.0, 1.0, 2.0]
+        with self.assertRaises(ValueError):
+            linear_interpolation(1.5, x, y)
