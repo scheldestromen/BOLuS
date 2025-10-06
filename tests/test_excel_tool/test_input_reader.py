@@ -7,20 +7,20 @@ from geolib.models.dstability.internal import OptionsType
 from geolib.soils import ShearStrengthModelTypePhreaticLevel
 from geolib.models.dstability.internal import PersistableShadingTypeEnum
 from bolus.excel_tool.input_reader import (RawUserInput,
-                        RawInputToUserInputStructure,
-                        WaterLineType)
+                        RawInputToUserInputStructure)
 from bolus.toolbox.geometry import CharPointType, Side, Point, SurfaceLineCollection, CharPointsProfileCollection, CharPoint
 from bolus.toolbox.soils import SoilCollection, Soil
 from bolus.toolbox.subsoil import SoilProfileCollection, SoilProfile, SoilProfilePositionSet,SoilProfilePositionSetCollection, SoilProfilePosition, RevetmentProfileBlueprintCollection, RevetmentProfileBlueprint, RevetmentLayerBlueprint
 from bolus.toolbox.loads import LoadCollection, Load
-from bolus.toolbox.waternet import Waternet, HeadLine
+from bolus.toolbox.waternet import WaterLineCollection
+from bolus.toolbox.waternet_config import HeadLineMethodType, RefLineMethodType, WaterLevelSetConfigCollection
+from bolus.toolbox.waternet_creator import LineOffsetMethodCollection, RefLevelType, OffsetType
 from bolus.toolbox.calculation_settings import SlipPlaneModel, GridSettingsSetCollection, BishopBruteForce, \
     UpliftVanParticleSwarm
 from bolus.toolbox.model_creator import GeneralSettings, ModelConfig, StageConfig, ScenarioConfig, UserInputStructure
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.dirname(TEST_DIR)), "fixtures")
-TEST_INPUT_FILE = os.path.join(FIXTURE_DIR, "test_input.xlsx")
 
 
 class TestExcelInputReader(TestCase):
@@ -429,7 +429,7 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertEqual(len(revetment_profile_blueprints.profile_blueprints), 1)
         revetment_profile_blueprint = revetment_profile_blueprints.profile_blueprints[0]
         self.assertIsInstance(revetment_profile_blueprint, RevetmentProfileBlueprint)
-        self.assertEqual(revetment_profile_blueprint.name, "Grasbekleding")
+        self.assertEqual(revetment_profile_blueprint.name, "Grass Revetment")
         revetment_layer = revetment_profile_blueprint.layer_blueprints[0]
         self.assertIsInstance(revetment_layer, RevetmentLayerBlueprint)
         self.assertEqual(revetment_layer.soil_type, "Clay")
@@ -448,6 +448,86 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertEqual(load.magnitude, 13.0)
         self.assertEqual(load.position, CharPointType.DIKE_CREST_LAND_SIDE)
         self.assertEqual(load.direction, Side.WATER_SIDE)
+
+    def test_convert_water_level_set_config_collection(self):
+        """Test converting water level set config collection"""
+
+        wl_set_collection = RawInputToUserInputStructure.convert_water_level_set_config_collection(
+            self.raw_input.water_level_configs
+        )
+        self.assertIsInstance(wl_set_collection, WaterLevelSetConfigCollection)
+        self.assertEqual(len(wl_set_collection.water_level_set_configs), 2)
+        daily = wl_set_collection.get_by_name("Daily")
+        self.assertEqual(daily.water_levels["polder level"], "polder level")
+        self.assertEqual(daily.water_levels["water level"], "mean water level")
+        extreme = wl_set_collection.get_by_name("Extreme")
+        self.assertEqual(extreme.water_levels["polder level"], "polder level")
+        self.assertEqual(extreme.water_levels["water level"], "extreme water level")
+
+    def test_convert_waternet_config_collection(self):
+        """Test converting waternet config collection"""
+
+        waternet_confs = RawInputToUserInputStructure.convert_waternet_config_collection(
+            head_line_configs_dict=self.raw_input.head_line_configs,
+            ref_line_configs_dict=self.raw_input.ref_line_configs,
+        )
+        self.assertEqual(len(waternet_confs.waternet_configs), 1)
+        conf = waternet_confs.get_by_name("Daily")
+        self.assertEqual(conf.name_waternet_scenario, "Daily")
+        
+        # Head line config
+        self.assertEqual(len(conf.head_line_configs), 1)
+        hlc = conf.head_line_configs[0]
+        self.assertEqual(hlc.name_head_line, "Phreatic")
+        self.assertTrue(hlc.is_phreatic)
+        self.assertEqual(hlc.head_line_method_type, HeadLineMethodType.OFFSETS)
+        self.assertEqual(hlc.offset_method_name, "Phreatic")
+        self.assertTrue(hlc.apply_minimal_surface_line_offset)
+        self.assertEqual(hlc.minimal_surface_line_offset, 0.2)
+        self.assertEqual(hlc.minimal_offset_from_point, CharPointType.DIKE_CREST_LAND_SIDE)
+        self.assertEqual(hlc.minimal_offset_to_point, CharPointType.SURFACE_LEVEL_LAND_SIDE)
+
+        # Reference line config
+        self.assertEqual(len(conf.reference_line_configs), 1)
+        rlc = conf.reference_line_configs[0]
+        self.assertEqual(rlc.name_ref_line, "Phreatic bottom")
+        self.assertEqual(rlc.ref_line_method_type, RefLineMethodType.CUSTOM_LINE)
+        self.assertEqual(rlc.custom_line_name, "custom line 1")
+
+    def test_convert_offset_methods(self):
+        """Test converting headline offset methods"""
+
+        offset_methods = RawInputToUserInputStructure.convert_offset_methods(
+            self.raw_input.headline_offset_methods
+        )
+        self.assertIsInstance(offset_methods, LineOffsetMethodCollection)
+        self.assertEqual(len(offset_methods.offset_methods), 1)
+        method = offset_methods.get_by_name("Phreatic")
+        self.assertEqual(method.name_method, "Phreatic")
+        self.assertEqual(len(method.offset_points), 2)
+        p0 = method.offset_points[0]
+        self.assertEqual(p0.char_point_type, CharPointType.SURFACE_LEVEL_WATER_SIDE)
+        self.assertEqual(p0.ref_level_type, RefLevelType.FIXED_LEVEL)
+        self.assertEqual(p0.ref_level_name, "water level")
+        self.assertEqual(p0.offset_type, OffsetType.VERTICAL)
+        self.assertEqual(p0.offset_value, 0.0)
+        p1 = method.offset_points[1]
+        self.assertEqual(p1.char_point_type, CharPointType.SURFACE_LEVEL_LAND_SIDE)
+        self.assertEqual(p1.ref_level_type, RefLevelType.FIXED_LEVEL)
+        self.assertEqual(p1.ref_level_name, "polder level")
+        self.assertEqual(p1.offset_type, OffsetType.VERTICAL)
+        self.assertEqual(p1.offset_value, 0.5)
+
+        
+    def test_convert_water_lines(self):
+        """Test converting custom water lines to WaterLineCollection"""
+
+        water_lines = RawInputToUserInputStructure.convert_water_lines(self.raw_input.custom_lines)
+        self.assertIsInstance(water_lines, WaterLineCollection)
+        self.assertEqual(len(water_lines.water_lines), 1)
+        wl = water_lines.get_by_name("custom line 1")
+        self.assertEqual(wl.l, [0, 2, 4])
+        self.assertEqual(wl.z, [1, 3, 5])
 
     def test_from_dict_uplift_van_particle_swarm(self):
         grid_settings = RawInputToUserInputStructure.grid_settings_from_dict(
@@ -513,17 +593,17 @@ class TestRawInputToUserInputStructure(TestCase):
         self.assertEqual(len(config.scenarios), 1)
         scenario = config.scenarios[0]
         self.assertIsInstance(scenario, ScenarioConfig)
-        self.assertEqual(scenario.scenario_name, "Scenario 1")
+        self.assertEqual(scenario.scenario_name, "Basic")
         self.assertEqual(len(scenario.stages), 1)
         self.assertEqual(scenario.grid_settings_set_name, "Set 1")
 
         stage = scenario.stages[0]
         self.assertIsInstance(stage, StageConfig)
-        self.assertEqual(stage.stage_name, "Stage 1")
+        self.assertEqual(stage.stage_name, "Daily")
         self.assertTrue(stage.apply_state_points)
         self.assertEqual(stage.geometry_name, "Profile 1")
         self.assertEqual(stage.soil_profile_position_name, "Calc 1")
-        self.assertEqual(stage.revetment_profile_name, "Grasbekleding")
+        self.assertEqual(stage.revetment_profile_name, "Grass Revetment")
         self.assertEqual(stage.load_name, "Traffic")
 
     def test_convert(self):
