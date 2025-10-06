@@ -2,7 +2,7 @@
 Creates d_stability_toolbox Model objects from the user input
 """
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -26,6 +26,10 @@ class GeneralSettings(BaseModel):
     min_soil_profile_depth: float
     execute_calculations: bool
     output_dir: Optional[str] = None
+    char_type_left_point: Literal[
+        CharPointType.SURFACE_LEVEL_LAND_SIDE, 
+        CharPointType.SURFACE_LEVEL_WATER_SIDE
+        ] = CharPointType.SURFACE_LEVEL_LAND_SIDE
 
 
 class StageConfig(BaseModel):
@@ -204,12 +208,6 @@ def create_stage(
     else:
         waternet = None
 
-    # waternet = input_structure.waternets.get_waternet(
-    #     calc_name=calc_name,
-    #     scenario_name=scenario_name,
-    #     stage_name=stage_config.stage_name,
-    # ) if input_structure.settings.apply_waternet else None
-
     load = (
         input_structure.loads.get_by_name(stage_config.load_name)
         if stage_config.load_name is not None
@@ -239,7 +237,6 @@ def create_stage(
 
 def create_scenario(
     scenario_config: ScenarioConfig,
-    calc_name: str,
     geometries: List[Geometry],
     input_structure: UserInputStructure,
 ) -> Scenario:
@@ -248,7 +245,6 @@ def create_scenario(
 
     Args:
         scenario_config: Scenario configuration.
-        calc_name: The name of the calculation.
         geometries: A list of Geometry objects.
         input_structure: The user-provided input structure.
 
@@ -302,7 +298,7 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
     geometries = create_geometries(
         surface_line_collection=input_structure.surface_lines,
         char_point_collection=input_structure.char_points,
-        char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE,  # TODO: Invoer maken voor deze parameter
+        char_type_left_point=input_structure.settings.char_type_left_point,
         calculate_l_coordinates=input_structure.settings.calculate_l_coordinates,
     )
 
@@ -312,7 +308,7 @@ def input_to_models(input_structure: UserInputStructure) -> List[Model]:
         print(model_config.calc_name)
         scenarios = [
             create_scenario(
-                scenario, model_config.calc_name, geometries, input_structure
+                scenario, geometries, input_structure
             )
             for scenario in model_config.scenarios
         ]

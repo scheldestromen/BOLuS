@@ -39,16 +39,16 @@ class TestPoint(TestCase):
 class TestProfileLine(TestCase):
     def setUp(self):
         self.points = [
-            Point(x=8, y=6, z=0),
-            Point(x=24, y=18, z=0),
-            Point(x=32, y=24, z=3),
-            Point(x=36, y=27, z=3),
-            Point(x=48, y=36, z=0),
-            Point(x=52, y=39, z=0),
-            Point(x=54, y=40.5, z=-1),
-            Point(x=56, y=42, z=-1),
-            Point(x=58, y=43.5, z=0),
-            Point(x=72, y=54, z=0),
+            Point(x=8, y=6, z=0),  # l = 0
+            Point(x=24, y=18, z=0),  # l = 20
+            Point(x=32, y=24, z=3),  # l = 30
+            Point(x=36, y=27, z=3),  # l = 35
+            Point(x=48, y=36, z=0),  # l = 50
+            Point(x=52, y=39, z=0),  # l = 55
+            Point(x=54, y=40.5, z=-1),  # l = 57.5
+            Point(x=56, y=42, z=-1),  # l = 60
+            Point(x=58, y=43.5, z=0),  # l = 62.5
+            Point(x=72, y=54, z=0),  # l = 80
         ]
         self.expected_l_first_is_left_point = [
             0,
@@ -64,7 +64,18 @@ class TestProfileLine(TestCase):
         ]
         self.expected_l_last_is_left_point = [80, 60, 50, 45, 30, 25, 22.5, 20, 17.5, 0]
 
-        self.points_reversed = deepcopy(self.points).reverse()
+        self.points_non_monotonic = [
+            Point(x=8, y=6, z=0),
+            Point(x=24, y=18, z=0),
+            Point(x=32, y=24, z=3),
+            Point(x=36, y=27, z=3),
+            Point(x=52, y=39, z=0),  # non-monotonic point
+            Point(x=48, y=36, z=0),
+            Point(x=54, y=40.5, z=-1),
+            Point(x=56, y=42, z=-1),
+            Point(x=58, y=43.5, z=0),
+            Point(x=72, y=54, z=0),
+        ]
 
     def test_check_l_coordinates_present_true(self):
         surface_line = SurfaceLine(
@@ -109,7 +120,50 @@ class TestProfileLine(TestCase):
         expected_l = [l - 45 for l in self.expected_l_last_is_left_point]
 
         self.assertEqual(actual_l, expected_l)
+    
+    def test_set_x_as_l_coordinates(self):
+        """Test if the x-coordinates are set as the l-coordinates"""
 
+        surface_line = SurfaceLine(name="test", points=self.points)
+        surface_line.set_x_as_l_coordinates()
+        actual_l = [p.l for p in surface_line.points]
+        self.assertEqual(actual_l, [p.x for p in surface_line.points])
+
+    def test_check_l_coordinates_l_not_calculated(self):
+        """Test if an error is raised if the l-coordinates are not calculated"""
+        surface_line = SurfaceLine(name="test", points=self.points)
+
+        # l not calculated so should throw an error
+        with self.assertRaises(ValueError):
+            surface_line.check_l_coordinates_monotonic()
+
+    def test_check_l_coordinates_monotonic_true(self):
+        """Test if the l-coordinates are monotonic. They are."""
+
+        surface_line = SurfaceLine(name="test", points=self.points)
+        surface_line.set_l_coordinates(left_point=surface_line.points[0])
+        surface_line.check_l_coordinates_monotonic()
+        self.assertIsNone(surface_line.check_l_coordinates_monotonic())
+
+    def test_check_l_coordinates_monotonic_false(self):
+        """Test if the l-coordinates are not monotonic. They are not."""
+        surface_line = SurfaceLine(name="test", points=self.points_non_monotonic)
+
+        with self.assertRaises(ValueError):
+            surface_line.check_l_coordinates_monotonic()
+    
+    def test_get_z_at_l(self):
+        """Test if the z-coordinate is returned at the given l-coordinate"""
+        surface_line = SurfaceLine(name="test", points=self.points)
+        surface_line.set_l_coordinates(left_point=surface_line.points[0])
+
+        self.assertEqual(surface_line.get_z_at_l(20), 0)  # at point
+        self.assertEqual(surface_line.get_z_at_l(30), 3)  # at point
+        self.assertEqual(surface_line.get_z_at_l(25), 1.5)  # in between
+
+        # out of range - should raise an error
+        with self.assertRaises(ValueError):
+            surface_line.get_z_at_l(100)
 
 class TestCharPointsProfile(TestCase):
     def setUp(self):
@@ -140,6 +194,15 @@ class TestCharPointsProfile(TestCase):
         with self.assertRaises(ValueError):
             char_points_profile.get_point_by_type(CharPointType.BERM_CREST_WATER_SIDE)
 
+    def test_to_dict(self):
+        char_points_profile = CharPointsProfile.from_dict(
+            name="test", char_points_dict=self.char_points_dict
+        )
+        char_points_dict_out = char_points_profile.to_dict()
+        char_points_profile_reproduced = CharPointsProfile.from_dict(
+            name="test", char_points_dict=char_points_dict_out
+        )
+        self.assertEqual(char_points_profile_reproduced, char_points_profile)
 
 class TestSurfaceLine(TestCase):
     def test_from_list(self):
@@ -186,6 +249,18 @@ class TestSurfaceLineCollection(TestCase):
     def test_get_by_name_not_available(self):
         with self.assertRaises(ValueError):
             self.surface_line_collection.get_by_name("non_existent_name")
+
+    def test_to_csv(self):
+        self.surface_line_collection.to_csv(file_path=os.path.join(FIXTURE_DIR, "surface_line_collection_to_csv.csv"))
+        self.assertTrue(os.path.exists(os.path.join(FIXTURE_DIR, "surface_line_collection_to_csv.csv")))
+        os.remove(os.path.join(FIXTURE_DIR, "surface_line_collection_to_csv.csv"))
+
+    def test_from_csv(self):
+        surface_line_collection = SurfaceLineCollection.from_csv(
+            file_path=os.path.join(FIXTURE_DIR, "surface_line_collection_example.csv")
+        )
+        self.assertEqual(surface_line_collection.surface_lines[0].name, "Profile 1")
+        self.assertEqual(surface_line_collection.surface_lines[0].points[0], Point(x=0, y=1, z=2))
 
 
 class TestCharPointsProfileCollection(TestCase):
@@ -237,6 +312,20 @@ class TestCharPointsProfileCollection(TestCase):
         with self.assertRaises(ValueError):
             self.char_collection.get_by_name("non_existent_name")
 
+    def test_to_csv(self):
+        self.char_collection.to_csv(file_path=os.path.join(FIXTURE_DIR, "char_points_profile_collection_to_csv.csv"))
+        self.assertTrue(os.path.exists(os.path.join(FIXTURE_DIR, "char_points_profile_collection_to_csv.csv")))
+        os.remove(os.path.join(FIXTURE_DIR, "char_points_profile_collection_to_csv.csv"))
+
+    def test_from_csv(self):
+        char_points_profile_collection = CharPointsProfileCollection.from_csv(
+            file_path=os.path.join(FIXTURE_DIR, "char_points_profile_collection_example.csv")
+        )
+        self.assertEqual(char_points_profile_collection.char_points_profiles[0].name, "Profile 1")
+        self.assertEqual(char_points_profile_collection.char_points_profiles[0].points[0], CharPoint(x=1, y=2, z=3, type=CharPointType.DIKE_CREST_WATER_SIDE))
+        self.assertEqual(char_points_profile_collection.char_points_profiles[1].points[0], CharPoint(x=13, y=14, z=15, type=CharPointType.SURFACE_LEVEL_WATER_SIDE))
+        self.assertEqual(char_points_profile_collection.char_points_profiles[1].points[1], CharPoint(x=10, y=11, z=12, type=CharPointType.SURFACE_LEVEL_LAND_SIDE))
+
 
 class TestGeometry(TestCase):
     def setUp(self):
@@ -273,3 +362,5 @@ class TestGeometry(TestCase):
                 char_point_collection=self.char_line_collection,
                 char_type_left_point=CharPointType.SURFACE_LEVEL_LAND_SIDE,
             )
+
+    # TODO test get_intersection

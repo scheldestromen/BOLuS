@@ -242,6 +242,8 @@ class WaternetConfig(BaseModel):
         if self.reference_line_configs is not None:
             assigned_head_line_names = [config.name_head_line_top for config in self.reference_line_configs]
             assigned_head_line_names.extend([config.name_head_line_bottom for config in self.reference_line_configs])
+            # Filter None values
+            assigned_head_line_names = [name for name in assigned_head_line_names if name is not None]
         else:
             assigned_head_line_names = []
 
@@ -251,6 +253,16 @@ class WaternetConfig(BaseModel):
             raise ValueError("There are head lines that are not assigned to a reference line. "
                              f"This is the case for the head lines '{', '.join(non_assigned_head_line_names)}' "
                              f"in the waternet scenario '{self.name_waternet_scenario}'")
+        
+        # Check if the assigned head line names are actually defined in the head line configs
+        all_head_line_names = [hlc.name_head_line for hlc in self.head_line_configs]
+
+        for head_line_name in assigned_head_line_names:
+            if head_line_name not in all_head_line_names:
+                raise ValueError(
+                    f"The head line '{head_line_name}' is assigned to a reference line "
+                    f"in the waternet scenario '{self.name_waternet_scenario}' "
+                    f"but is not defined in the head line configs")
 
         return self
 

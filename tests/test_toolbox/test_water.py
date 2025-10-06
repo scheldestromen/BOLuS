@@ -1,8 +1,6 @@
 from unittest import TestCase
 
-from bolus.excel_tool.input_reader import RawInputToUserInputStructure
-from bolus.toolbox.waternet import (HeadLine, ReferenceLine, WaterLineType,
-                              Waternet)
+from bolus.toolbox.waternet import HeadLine, ReferenceLine, Waternet
 
 
 class TestHeadLine(TestCase):
@@ -49,9 +47,6 @@ class TestWaternet(TestCase):
             )
         ]
         self.waternet = Waternet(
-            calc_name="test_calc",
-            scenario_name="test_scenario",
-            stage_name="test_stage",
             head_lines=head_lines,
             ref_lines=ref_lines,
         )
