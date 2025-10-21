@@ -220,21 +220,21 @@ class Subsoil(BaseModel):
 
         return cls(soil_polygons=soil_polygons, name=name)
 
-    def remove_soil_polygons(self, remove_polygons: list[SoilPolygon]) -> None:
-        """Substracts a polygon from the subsoil. This is done by 'clipping' the subsoil
-        polygon with the polygon to substract. This is needed for adding soil layers 
+    def remove_polygons(self, remove_polygons: list[Polygon]) -> None:
+        """Substracts polygons from the subsoil. This is done by 'clipping' the subsoil
+        polygon with the polygons to substract. This is needed for adding soil layers 
         to the subsoil that overlap with the subsoil, like a revetment layer.
 
         This method modifies the subsoil in place.
 
         Args:
-            remove_polygons (list[SoilPolygon]): The polygons to remove"""
+            remove_polygons (list[Polygon]): The shapely polygons to remove"""
 
         # Create a new list to store the modified polygons
         new_soil_polygons: list[SoilPolygon] = []
 
         # Create a single polygon from the list of polygons to remove
-        remove_polygon = unary_union([polygon.to_shapely() for polygon in remove_polygons])
+        remove_polygon = unary_union([polygon for polygon in remove_polygons])
 
         # Loop through all soil polygons in the subsoil
         for soil_polygon in self.soil_polygons:
@@ -591,7 +591,8 @@ def add_revetment_profile_to_subsoil(
     revetment_polygons = revetment_profile.to_soil_polygons(surface_line=surface_line)
 
     # Subtract the revetment polygons from the subsoil (so they don't overlap)
-    subsoil.remove_soil_polygons(revetment_polygons)
+    remove_polygons = [polygon.to_shapely() for polygon in revetment_polygons]
+    subsoil.remove_polygons(remove_polygons)
 
     # Add the revetment polygons to the subsoil
     subsoil.soil_polygons.extend(revetment_polygons)
