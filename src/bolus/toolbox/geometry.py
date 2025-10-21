@@ -440,7 +440,11 @@ class SurfaceLineCollection(BaseModel):
                         "The csv decimal is a comma. This is not allowed. "
                         "Please set this to a point and save the csv."
                     )
-                    
+                
+                # Possibly some empty cells were read - get values upto the first empty one
+                if any(value == "" for value in point_list):
+                    point_list = point_list[:point_list.index("")]
+
                 surface_line = SurfaceLine.from_list(name=name, point_list=[float(value) for value in point_list])
                 surface_lines.append(surface_line)
 
@@ -648,6 +652,19 @@ class Geometry(BaseModel):
 
         # Return the intersection point
         return intersection_point.x, intersection_point.y
+
+
+class GeometryCollection(BaseModel):
+    geometries: list[Geometry] = []
+
+    def get_by_name(self, name: str) -> Geometry:
+        """Returns the soil with the given name"""
+        geom = next((geom for geom in self.geometries if geom.name == name), None)
+
+        if geom is None:
+            raise NameError(f"Could not find geometry with name `{name}`")
+
+        return geom
 
 
 def create_geometries(

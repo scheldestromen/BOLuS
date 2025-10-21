@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 from unittest import TestCase
+from copy import deepcopy
 
 from geolib import DStabilityModel
 from geolib.models.dstability.internal import (PersistableLayer,
@@ -86,6 +87,21 @@ class TestSoilPolygon(TestCase):
 
 
 class TestSubsoil(TestCase):
+    def setUp(self):
+        """
+        The subsoil looks like this:
+        1  _________________
+           |       |       |
+        0  |_______|_______|
+           0       1       2
+        """
+        self.subsoil = Subsoil(
+            soil_polygons=[
+                SoilPolygon(soil_type="sand", points=[(0, 0), (0, 1), (1, 1), (1, 0)], is_aquifer=True),
+                SoilPolygon(soil_type="clay", points=[(1, 0), (1, 1), (2, 1), (2, 0)], is_aquifer=False),
+            ]
+        )
+
     def test_from_geolib(self):
         dm = DStabilityModel()
         dm.parse(Path(os.path.join(DSTABILITY_DIR, "test_1.stix")))
@@ -96,6 +112,74 @@ class TestSubsoil(TestCase):
 
         self.assertIsInstance(subsoil, Subsoil)
         self.assertEqual(len(subsoil.soil_polygons), 14)
+
+    def test_remove_soil_polygons(self):
+        remove_polygons = [
+            Polygon([(0.5, 0.5), (0.5, 1), (1.5, 1), (1.5, 0.5)]), # Polygon that intersects both layers
+        ]
+        self.subsoil.remove_polygons(remove_polygons)
+
+        expected_soil_polygons = [
+            SoilPolygon(soil_type="sand", points=[(0, 0), (0, 1), (0.5, 1), (0.5, 0.5), (1, 0.5), (1, 0)], is_aquifer=True),
+            SoilPolygon(soil_type="clay", points=[(1, 0), (1, 0.5), (1.5, 0.5), (1.5, 1), (2, 1), (2, 0)], is_aquifer=False),
+        ]
+
+        # Starting point could be different, so we take the set and check if each point is present
+        self.assertEqual(set(self.subsoil.soil_polygons[0].points), set(expected_soil_polygons[0].points))
+        self.assertEqual(set(self.subsoil.soil_polygons[1].points), set(expected_soil_polygons[1].points))
+
+        # Check if the is_aquifer attribute is correct
+        self.assertEqual(self.subsoil.soil_polygons[0].is_aquifer, expected_soil_polygons[0].is_aquifer)
+        self.assertEqual(self.subsoil.soil_polygons[1].is_aquifer, expected_soil_polygons[1].is_aquifer)
+
+        # Check if the soil type is correct
+        self.assertEqual(self.subsoil.soil_polygons[0].soil_type, expected_soil_polygons[0].soil_type)
+        self.assertEqual(self.subsoil.soil_polygons[1].soil_type, expected_soil_polygons[1].soil_type)
+
+    def test_remove_soil_polygons_multiple(self):
+        remove_polygons = [
+            Polygon([(0.5, 0.5), (0.5, 1), (1.5, 1), (1.5, 0.5)]),  # Polygon that intersects both layers
+            Polygon([(0, 0.5), (0, 1), (0.25, 1), (0.25, 0.5)]),  # Polygon that intersects only the left layer
+        ]
+        self.subsoil.remove_polygons(remove_polygons)
+
+        expected_soil_polygons = [
+            SoilPolygon(soil_type="sand", points=[(0, 0), (0, 0.5), (0.25, 0.5), (0.25, 1), (0.5, 1), (0.5, 0.5), (1, 0.5), (1, 0)], is_aquifer=True),
+            SoilPolygon(soil_type="clay", points=[(1, 0), (1, 0.5), (1.5, 0.5), (1.5, 1), (2, 1), (2, 0)], is_aquifer=False),
+        ]
+
+        # Starting point could be different, so we take the set and check if each point is present
+        self.assertEqual(set(self.subsoil.soil_polygons[0].points), set(expected_soil_polygons[0].points))
+        self.assertEqual(set(self.subsoil.soil_polygons[1].points), set(expected_soil_polygons[1].points))
+
+        # Check if the is_aquifer attribute is correct
+        self.assertEqual(self.subsoil.soil_polygons[0].is_aquifer, expected_soil_polygons[0].is_aquifer)
+        self.assertEqual(self.subsoil.soil_polygons[1].is_aquifer, expected_soil_polygons[1].is_aquifer)
+
+        # Check if the soil type is correct
+        self.assertEqual(self.subsoil.soil_polygons[0].soil_type, expected_soil_polygons[0].soil_type)
+        self.assertEqual(self.subsoil.soil_polygons[1].soil_type, expected_soil_polygons[1].soil_type)
+    
+    def test_remove_soil_polygons_no_overlap(self):
+        remove_polygons = [
+            Polygon([(0, 0), (0, -1), (1, -1), (1, 0)])
+        ]
+        # We expect the subsoil to not change
+        expected_soil_polygons = deepcopy(self.subsoil.soil_polygons)
+        self.subsoil.remove_polygons(remove_polygons)
+        
+        # Starting point could be different, so we take the set and check if each point is present
+        # The point order actually changes because there is a line intersection, but the geometry stays the same
+        self.assertEqual(set(self.subsoil.soil_polygons[0].points), set(expected_soil_polygons[0].points))
+        self.assertEqual(set(self.subsoil.soil_polygons[1].points), set(expected_soil_polygons[1].points))
+
+        # Check if the is_aquifer attribute is correct
+        self.assertEqual(self.subsoil.soil_polygons[0].is_aquifer, expected_soil_polygons[0].is_aquifer)
+        self.assertEqual(self.subsoil.soil_polygons[1].is_aquifer, expected_soil_polygons[1].is_aquifer)
+
+        # Check if the soil type is correct
+        self.assertEqual(self.subsoil.soil_polygons[0].soil_type, expected_soil_polygons[0].soil_type)
+        self.assertEqual(self.subsoil.soil_polygons[1].soil_type, expected_soil_polygons[1].soil_type)
 
 
 class TestSubsoilFromSoilProfiles(TestCase):
