@@ -6,7 +6,7 @@ from geolib.geometry.one import Point as GLPoint
 from geolib.models.dstability.internal import PersistableLayer
 from pydantic import BaseModel, model_validator
 from shapely.geometry import Polygon, LineString, GeometryCollection, MultiPolygon
-from shapely.ops import split
+from shapely.ops import split, unary_union
 
 from bolus.toolbox.geolib_utils import get_by_id
 from bolus.toolbox.geometry import SurfaceLine, CharPointType, CharPointsProfile
@@ -233,32 +233,36 @@ class Subsoil(BaseModel):
         # Create a new list to store the modified polygons
         new_soil_polygons: list[SoilPolygon] = []
 
+        # Create a single polygon from the list of polygons to remove
+        remove_polygon = unary_union([polygon.to_shapely() for polygon in remove_polygons])
+
+        # Loop through all soil polygons in the subsoil
         for soil_polygon in self.soil_polygons:
             soil_polygon_shapely = soil_polygon.to_shapely()
 
+            # Set should_keep to True initially
             should_keep = True
-            for polygon in remove_polygons:
-                polygon_shapely = polygon.to_shapely()
 
-                if soil_polygon_shapely.intersects(polygon_shapely):
-                    should_keep = False
-                    clipped_polygon = soil_polygon_shapely.difference(polygon_shapely)
+            # Check if the soil polygon intersects with the polygon to remove
+            if soil_polygon_shapely.intersects(remove_polygon):
+                should_keep = False
+                clipped_polygon = soil_polygon_shapely.difference(remove_polygon)
 
-                    # Handle different geometry types
-                    if isinstance(clipped_polygon, (GeometryCollection, MultiPolygon)):
-                        for geom in clipped_polygon.geoms:
-                            if isinstance(geom, Polygon) and is_valid_polygon(geom):
-                                new_soil_polygon = SoilPolygon.from_shapely(
-                                    soil_type=soil_polygon.soil_type, polygon=geom
-                                )
-                                new_soil_polygons.append(new_soil_polygon)
+                # Handle different geometry types
+                if isinstance(clipped_polygon, (GeometryCollection, MultiPolygon)):
+                    for geom in clipped_polygon.geoms:
+                        if isinstance(geom, Polygon) and is_valid_polygon(geom):
+                            new_soil_polygon = SoilPolygon.from_shapely(
+                                soil_type=soil_polygon.soil_type, polygon=geom
+                            )
+                            new_soil_polygon.is_aquifer = soil_polygon.is_aquifer
+                            new_soil_polygons.append(new_soil_polygon)
 
-                    elif isinstance(clipped_polygon, Polygon) and is_valid_polygon(clipped_polygon):
-                        new_soil_polygon = SoilPolygon.from_shapely(
-                            soil_type=soil_polygon.soil_type, polygon=clipped_polygon
-                        )
-                        new_soil_polygons.append(new_soil_polygon)
-                    break  # No need to check other layers once we've clipped this polygon
+                elif isinstance(clipped_polygon, Polygon) and is_valid_polygon(clipped_polygon):
+                    new_soil_polygon = SoilPolygon.from_shapely(
+                        soil_type=soil_polygon.soil_type, polygon=clipped_polygon
+                    )
+                    new_soil_polygons.append(new_soil_polygon)
 
             # If the polygon wasn't clipped, keep it
             if should_keep:
