@@ -262,6 +262,7 @@ class Subsoil(BaseModel):
                     new_soil_polygon = SoilPolygon.from_shapely(
                         soil_type=soil_polygon.soil_type, polygon=clipped_polygon
                     )
+                    new_soil_polygon.is_aquifer = soil_polygon.is_aquifer
                     new_soil_polygons.append(new_soil_polygon)
 
             # If the polygon wasn't clipped, keep it
