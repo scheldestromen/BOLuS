@@ -471,7 +471,7 @@ class ExcelInputReader(BaseModel):
 
         workbook = openpyxl.load_workbook(file_path, data_only=True, read_only=True)
 
-        return RawUserInput(
+        raw_user_input = RawUserInput(
             settings=ExcelInputReader.parse_settings(workbook),
             surface_lines=ExcelInputReader.parse_surface_lines(workbook),
             char_points=ExcelInputReader.parse_char_points(workbook),
@@ -490,6 +490,10 @@ class ExcelInputReader(BaseModel):
             model_configs=ExcelInputReader.parse_model_configs(workbook),
         )
 
+        workbook.close()
+
+        return raw_user_input
+        
     @staticmethod
     def parse_settings(workbook: Any) -> dict[str, str | float | bool | None]:
         settings = parse_key_value_cols(
