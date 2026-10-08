@@ -1,5 +1,4 @@
 pydantic==2.10.2
 openpyxl==3.1.5
 shapely>=2.0.6,<3
-# d-geolib==2.6.0
-git+https://github.com/KentropDevelopment/GEOLib.git@240-fix-connect-layers
+git+https://github.com/DeltaDevNL/GEOLib.git@2.9.1-fix-layers-prob-soils

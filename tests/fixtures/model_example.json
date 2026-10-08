@@ -16,10 +16,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "dilatancy_angle": {
                             "is_probabilistic": false,
@@ -27,10 +24,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle": {
                             "is_probabilistic": false,
@@ -38,10 +32,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle_interface": {
                             "is_probabilistic": false,
@@ -49,10 +40,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "is_delta_angle_automatically_calculated": null,
                         "cohesion_and_friction_angle_correlated": null
@@ -69,10 +57,7 @@
                             "standard_deviation": 0.005,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "shear_strength_ratio_and_shear_strength_exponent_correlated": true,
                         "strength_increase_exponent": {
@@ -81,10 +66,7 @@
                             "standard_deviation": 0.05,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "s_and_m_correlated": null,
                         "undrained_shear_strength": null,
@@ -103,10 +85,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_ratio": {
                             "is_probabilistic": false,
@@ -114,10 +93,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "correlation_reload_primary_compression_ratio": null,
                         "reloading_index": {
@@ -126,10 +102,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_index": {
                             "is_probabilistic": false,
@@ -137,10 +110,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "coef_secondary_compression_Ca": {
                             "is_probabilistic": false,
@@ -148,10 +118,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_RR": {
                             "is_probabilistic": false,
@@ -159,10 +126,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_ratio_CR": {
                             "is_probabilistic": false,
@@ -170,10 +134,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_index_Cr": {
                             "is_probabilistic": false,
@@ -181,10 +142,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_index_Cc": {
                             "is_probabilistic": false,
@@ -192,10 +150,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "isotache_parameters": {
@@ -206,10 +161,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_constant_b": {
                             "is_probabilistic": false,
@@ -217,10 +169,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_compression_constant_c": {
                             "is_probabilistic": false,
@@ -228,10 +177,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "koppejan_parameters": {
@@ -242,10 +188,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "soil_ap_as_approximation_by_Cp_Cs": false,
                         "primary_Cp": {
@@ -254,10 +197,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Cp_point": {
                             "is_probabilistic": false,
@@ -265,10 +205,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs": {
                             "is_probabilistic": false,
@@ -276,10 +213,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs_point": {
                             "is_probabilistic": false,
@@ -287,10 +221,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Ap": {
                             "is_probabilistic": false,
@@ -298,10 +229,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Asec": {
                             "is_probabilistic": false,
@@ -309,10 +237,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "storage_parameters": {
@@ -322,10 +247,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "permeability_horizontal_factor": {
                             "is_probabilistic": false,
@@ -333,10 +255,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "horizontal_permeability": {
                             "is_probabilistic": false,
@@ -344,10 +263,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "storage_type": null,
                         "permeability_strain_type": {
@@ -356,10 +272,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "vertical_consolidation_coefficient": {
                             "is_probabilistic": false,
@@ -367,10 +280,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "soil_weight_parameters": {
@@ -384,10 +294,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "min_void_ratio": null,
                         "max_void_ratio": null,
@@ -397,10 +304,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "relative_density": null,
                         "d_50": null,
@@ -433,10 +337,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "ocr_layer": {
                             "is_probabilistic": false,
@@ -444,10 +345,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "pop_layer": {
                             "is_probabilistic": false,
@@ -455,10 +353,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_swelling_reduced": null,
                         "secondary_swelling_factor": null,
@@ -520,10 +415,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "dilatancy_angle": {
                             "is_probabilistic": false,
@@ -531,10 +423,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle": {
                             "is_probabilistic": false,
@@ -542,10 +431,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle_interface": {
                             "is_probabilistic": false,
@@ -553,10 +439,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "is_delta_angle_automatically_calculated": null,
                         "cohesion_and_friction_angle_correlated": null
@@ -573,10 +456,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "shear_strength_ratio_and_shear_strength_exponent_correlated": null,
                         "strength_increase_exponent": {
@@ -585,10 +465,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "s_and_m_correlated": null,
                         "undrained_shear_strength": null,
@@ -607,10 +484,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_ratio": {
                             "is_probabilistic": false,
@@ -618,10 +492,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "correlation_reload_primary_compression_ratio": null,
                         "reloading_index": {
@@ -630,10 +501,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_index": {
                             "is_probabilistic": false,
@@ -641,10 +509,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "coef_secondary_compression_Ca": {
                             "is_probabilistic": false,
@@ -652,10 +517,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_RR": {
                             "is_probabilistic": false,
@@ -663,10 +525,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_ratio_CR": {
                             "is_probabilistic": false,
@@ -674,10 +533,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_index_Cr": {
                             "is_probabilistic": false,
@@ -685,10 +541,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_index_Cc": {
                             "is_probabilistic": false,
@@ -696,10 +549,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "isotache_parameters": {
@@ -710,10 +560,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_constant_b": {
                             "is_probabilistic": false,
@@ -721,10 +568,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_compression_constant_c": {
                             "is_probabilistic": false,
@@ -732,10 +576,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "koppejan_parameters": {
@@ -746,10 +587,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "soil_ap_as_approximation_by_Cp_Cs": false,
                         "primary_Cp": {
@@ -758,10 +596,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Cp_point": {
                             "is_probabilistic": false,
@@ -769,10 +604,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs": {
                             "is_probabilistic": false,
@@ -780,10 +612,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs_point": {
                             "is_probabilistic": false,
@@ -791,10 +620,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Ap": {
                             "is_probabilistic": false,
@@ -802,10 +628,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Asec": {
                             "is_probabilistic": false,
@@ -813,10 +636,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "storage_parameters": {
@@ -826,10 +646,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "permeability_horizontal_factor": {
                             "is_probabilistic": false,
@@ -837,10 +654,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "horizontal_permeability": {
                             "is_probabilistic": false,
@@ -848,10 +662,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "storage_type": null,
                         "permeability_strain_type": {
@@ -860,10 +671,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "vertical_consolidation_coefficient": {
                             "is_probabilistic": false,
@@ -871,10 +679,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "soil_weight_parameters": {
@@ -888,10 +693,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "min_void_ratio": null,
                         "max_void_ratio": null,
@@ -901,10 +703,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "relative_density": null,
                         "d_50": null,
@@ -937,10 +736,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "ocr_layer": {
                             "is_probabilistic": false,
@@ -948,10 +744,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "pop_layer": {
                             "is_probabilistic": false,
@@ -959,10 +752,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_swelling_reduced": null,
                         "secondary_swelling_factor": null,
@@ -1024,10 +814,7 @@
                             "standard_deviation": 0.1,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "dilatancy_angle": {
                             "is_probabilistic": false,
@@ -1035,10 +822,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle": {
                             "is_probabilistic": true,
@@ -1046,10 +830,7 @@
                             "standard_deviation": 3.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle_interface": {
                             "is_probabilistic": false,
@@ -1057,10 +838,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "is_delta_angle_automatically_calculated": null,
                         "cohesion_and_friction_angle_correlated": true
@@ -1077,10 +855,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "shear_strength_ratio_and_shear_strength_exponent_correlated": null,
                         "strength_increase_exponent": {
@@ -1089,10 +864,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "s_and_m_correlated": null,
                         "undrained_shear_strength": null,
@@ -1111,10 +883,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_ratio": {
                             "is_probabilistic": false,
@@ -1122,10 +891,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "correlation_reload_primary_compression_ratio": null,
                         "reloading_index": {
@@ -1134,10 +900,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_index": {
                             "is_probabilistic": false,
@@ -1145,10 +908,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "coef_secondary_compression_Ca": {
                             "is_probabilistic": false,
@@ -1156,10 +916,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_RR": {
                             "is_probabilistic": false,
@@ -1167,10 +924,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_ratio_CR": {
                             "is_probabilistic": false,
@@ -1178,10 +932,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_index_Cr": {
                             "is_probabilistic": false,
@@ -1189,10 +940,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_index_Cc": {
                             "is_probabilistic": false,
@@ -1200,10 +948,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "isotache_parameters": {
@@ -1214,10 +959,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_constant_b": {
                             "is_probabilistic": false,
@@ -1225,10 +967,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_compression_constant_c": {
                             "is_probabilistic": false,
@@ -1236,10 +975,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "koppejan_parameters": {
@@ -1250,10 +986,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "soil_ap_as_approximation_by_Cp_Cs": false,
                         "primary_Cp": {
@@ -1262,10 +995,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Cp_point": {
                             "is_probabilistic": false,
@@ -1273,10 +1003,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs": {
                             "is_probabilistic": false,
@@ -1284,10 +1011,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs_point": {
                             "is_probabilistic": false,
@@ -1295,10 +1019,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Ap": {
                             "is_probabilistic": false,
@@ -1306,10 +1027,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Asec": {
                             "is_probabilistic": false,
@@ -1317,10 +1035,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "storage_parameters": {
@@ -1330,10 +1045,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "permeability_horizontal_factor": {
                             "is_probabilistic": false,
@@ -1341,10 +1053,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "horizontal_permeability": {
                             "is_probabilistic": false,
@@ -1352,10 +1061,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "storage_type": null,
                         "permeability_strain_type": {
@@ -1364,10 +1070,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "vertical_consolidation_coefficient": {
                             "is_probabilistic": false,
@@ -1375,10 +1078,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "soil_weight_parameters": {
@@ -1392,10 +1092,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "min_void_ratio": null,
                         "max_void_ratio": null,
@@ -1405,10 +1102,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "relative_density": null,
                         "d_50": null,
@@ -1441,10 +1135,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "ocr_layer": {
                             "is_probabilistic": false,
@@ -1452,10 +1143,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "pop_layer": {
                             "is_probabilistic": false,
@@ -1463,10 +1151,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_swelling_reduced": null,
                         "secondary_swelling_factor": null,
@@ -1528,10 +1213,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "dilatancy_angle": {
                             "is_probabilistic": false,
@@ -1539,10 +1221,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle": {
                             "is_probabilistic": false,
@@ -1550,10 +1229,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle_interface": {
                             "is_probabilistic": false,
@@ -1561,10 +1237,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "is_delta_angle_automatically_calculated": null,
                         "cohesion_and_friction_angle_correlated": null
@@ -1581,10 +1254,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "shear_strength_ratio_and_shear_strength_exponent_correlated": null,
                         "strength_increase_exponent": {
@@ -1593,10 +1263,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "s_and_m_correlated": null,
                         "undrained_shear_strength": null,
@@ -1615,10 +1282,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_ratio": {
                             "is_probabilistic": false,
@@ -1626,10 +1290,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "correlation_reload_primary_compression_ratio": null,
                         "reloading_index": {
@@ -1638,10 +1299,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_index": {
                             "is_probabilistic": false,
@@ -1649,10 +1307,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "coef_secondary_compression_Ca": {
                             "is_probabilistic": false,
@@ -1660,10 +1315,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_RR": {
                             "is_probabilistic": false,
@@ -1671,10 +1323,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_ratio_CR": {
                             "is_probabilistic": false,
@@ -1682,10 +1331,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_index_Cr": {
                             "is_probabilistic": false,
@@ -1693,10 +1339,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_index_Cc": {
                             "is_probabilistic": false,
@@ -1704,10 +1347,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "isotache_parameters": {
@@ -1718,10 +1358,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_constant_b": {
                             "is_probabilistic": false,
@@ -1729,10 +1366,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_compression_constant_c": {
                             "is_probabilistic": false,
@@ -1740,10 +1374,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "koppejan_parameters": {
@@ -1754,10 +1385,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "soil_ap_as_approximation_by_Cp_Cs": false,
                         "primary_Cp": {
@@ -1766,10 +1394,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Cp_point": {
                             "is_probabilistic": false,
@@ -1777,10 +1402,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs": {
                             "is_probabilistic": false,
@@ -1788,10 +1410,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs_point": {
                             "is_probabilistic": false,
@@ -1799,10 +1418,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Ap": {
                             "is_probabilistic": false,
@@ -1810,10 +1426,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Asec": {
                             "is_probabilistic": false,
@@ -1821,10 +1434,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "storage_parameters": {
@@ -1834,10 +1444,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "permeability_horizontal_factor": {
                             "is_probabilistic": false,
@@ -1845,10 +1452,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "horizontal_permeability": {
                             "is_probabilistic": false,
@@ -1856,10 +1460,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "storage_type": null,
                         "permeability_strain_type": {
@@ -1868,10 +1469,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "vertical_consolidation_coefficient": {
                             "is_probabilistic": false,
@@ -1879,10 +1477,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "soil_weight_parameters": {
@@ -1896,10 +1491,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "min_void_ratio": null,
                         "max_void_ratio": null,
@@ -1909,10 +1501,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "relative_density": null,
                         "d_50": null,
@@ -1945,10 +1534,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "ocr_layer": {
                             "is_probabilistic": false,
@@ -1956,10 +1542,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "pop_layer": {
                             "is_probabilistic": false,
@@ -1967,10 +1550,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_swelling_reduced": null,
                         "secondary_swelling_factor": null,
@@ -2032,10 +1612,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "dilatancy_angle": {
                             "is_probabilistic": false,
@@ -2043,10 +1620,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle": {
                             "is_probabilistic": false,
@@ -2054,10 +1628,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "friction_angle_interface": {
                             "is_probabilistic": false,
@@ -2065,10 +1636,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "is_delta_angle_automatically_calculated": null,
                         "cohesion_and_friction_angle_correlated": null
@@ -2085,10 +1653,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "shear_strength_ratio_and_shear_strength_exponent_correlated": null,
                         "strength_increase_exponent": {
@@ -2097,10 +1662,7 @@
                             "standard_deviation": null,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "s_and_m_correlated": null,
                         "undrained_shear_strength": null,
@@ -2119,10 +1681,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_ratio": {
                             "is_probabilistic": false,
@@ -2130,10 +1689,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "correlation_reload_primary_compression_ratio": null,
                         "reloading_index": {
@@ -2142,10 +1698,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_index": {
                             "is_probabilistic": false,
@@ -2153,10 +1706,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "coef_secondary_compression_Ca": {
                             "is_probabilistic": false,
@@ -2164,10 +1714,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_RR": {
                             "is_probabilistic": false,
@@ -2175,10 +1722,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_ratio_CR": {
                             "is_probabilistic": false,
@@ -2186,10 +1730,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "reloading_swelling_index_Cr": {
                             "is_probabilistic": false,
@@ -2197,10 +1738,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "compression_index_Cc": {
                             "is_probabilistic": false,
@@ -2208,10 +1746,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "isotache_parameters": {
@@ -2222,10 +1757,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_compression_constant_b": {
                             "is_probabilistic": false,
@@ -2233,10 +1765,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_compression_constant_c": {
                             "is_probabilistic": false,
@@ -2244,10 +1773,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "koppejan_parameters": {
@@ -2258,10 +1784,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "soil_ap_as_approximation_by_Cp_Cs": false,
                         "primary_Cp": {
@@ -2270,10 +1793,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Cp_point": {
                             "is_probabilistic": false,
@@ -2281,10 +1801,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs": {
                             "is_probabilistic": false,
@@ -2292,10 +1809,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secular_Cs_point": {
                             "is_probabilistic": false,
@@ -2303,10 +1817,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Ap": {
                             "is_probabilistic": false,
@@ -2314,10 +1825,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "primary_Asec": {
                             "is_probabilistic": false,
@@ -2325,10 +1833,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "storage_parameters": {
@@ -2338,10 +1843,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "permeability_horizontal_factor": {
                             "is_probabilistic": false,
@@ -2349,10 +1851,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "horizontal_permeability": {
                             "is_probabilistic": false,
@@ -2360,10 +1859,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "storage_type": null,
                         "permeability_strain_type": {
@@ -2372,10 +1868,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "vertical_consolidation_coefficient": {
                             "is_probabilistic": false,
@@ -2383,10 +1876,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         }
                     },
                     "soil_weight_parameters": {
@@ -2400,10 +1890,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "min_void_ratio": null,
                         "max_void_ratio": null,
@@ -2413,10 +1900,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "relative_density": null,
                         "d_50": null,
@@ -2449,10 +1933,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "ocr_layer": {
                             "is_probabilistic": false,
@@ -2460,10 +1941,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "pop_layer": {
                             "is_probabilistic": false,
@@ -2471,10 +1949,7 @@
                             "standard_deviation": 0.0,
                             "distribution_type": 2,
                             "correlation_coefficient": null,
-                            "low_characteristic_value": null,
-                            "high_characteristic_value": null,
-                            "low_design_value": null,
-                            "high_design_value": null
+                            "deterministic": null
                         },
                         "secondary_swelling_reduced": null,
                         "secondary_swelling_factor": null,

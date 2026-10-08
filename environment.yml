@@ -9,6 +9,5 @@ dependencies:
   - shapely>=2.0.6,<3
   - pip>=25.0
   - pip:
-#    - d-geolib==2.6.0  # Tijdelijk - voor aangepaste geolib
-    - git+https://github.com/KentropDevelopment/GEOLib.git@240-fix-connect-layers  # Tijdelijk - is de aangepaste geolib
+    - git+https://github.com/DeltaDevNL/GEOLib.git@2.9.1-fix-layers-prob-soils
     - pydantic==2.10.2
